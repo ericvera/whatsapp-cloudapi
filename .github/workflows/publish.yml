@@ -46,17 +46,19 @@ jobs:
           output-file: 'false'
           github-token: ${{ github.token }}
 
+      - name: Update Package Versions
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: yarn workspaces foreach --all version ${{ steps.changelog.outputs.version }} --deferred
+
+      - name: Apply Version Updates
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: yarn version apply --all
+
       - name: Publish to NPM
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          # Update versions in all package.json files
-          yarn workspaces foreach --all version ${{ steps.changelog.outputs.version }} --deferred
-          # Actually apply the versions
-          yarn version apply --all
-          # Publish all packages
-          yarn workspaces foreach --all run yarn npm publish --access public
+        run: yarn workspaces foreach --all yarn npm publish --access public
 
       - name: Create Release
         uses: ncipollo/release-action@v1
