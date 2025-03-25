@@ -764,7 +764,7 @@ __metadata:
   dependencies:
     "@tsconfig/strictest": "npm:^2.0.5"
     "@types/node": "npm:^22.13.13"
-    "@whatsapp-cloudapi/types": "workspace:*"
+    "@whatsapp-cloudapi/types": "npm:0.1.1"
     eslint: "npm:^9.23.0"
     typescript: "npm:^5.8.2"
     typescript-eslint: "npm:^8.28.0"
@@ -790,7 +790,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@whatsapp-cloudapi/types@workspace:*, @whatsapp-cloudapi/types@workspace:packages/types":
+"@whatsapp-cloudapi/types@npm:0.1.1, @whatsapp-cloudapi/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@whatsapp-cloudapi/types@workspace:packages/types"
   dependencies:
