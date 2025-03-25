@@ -61,7 +61,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'chore(release): v${{ steps.changelog.outputs.version }} [skip ci]'
-          tagging_message: 'v${{ steps.changelog.outputs.version }}'
           skip_dirty_check: true
           skip_fetch: true
           skip_checkout: true
