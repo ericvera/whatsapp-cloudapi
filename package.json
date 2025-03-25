@@ -42,5 +42,5 @@
     "*": "prettier --ignore-unknown --write"
   },
   "packageManager": "yarn@4.7.0",
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
