@@ -56,7 +56,7 @@ jobs:
           # Actually apply the versions
           yarn version apply --all
           # Publish all packages
-          yarn workspaces foreach --all run npm publish
+          yarn workspaces foreach --all run npm publish --access public
 
       - name: Create Release
         uses: ncipollo/release-action@v1
