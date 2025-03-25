@@ -49,14 +49,14 @@ jobs:
       - name: Publish to NPM
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           # Update versions in all package.json files
           yarn workspaces foreach --all version ${{ steps.changelog.outputs.version }} --deferred
           # Actually apply the versions
           yarn version apply --all
           # Publish all packages
-          yarn workspaces foreach --all run npm publish --access public
+          yarn workspaces foreach --all run yarn npm publish --access public
 
       - name: Create Release
         uses: ncipollo/release-action@v1

@@ -1,5 +1,6 @@
 {
   "name": "@whatsapp-cloudapi/monorepo",
+  "version": "0.1.1",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -41,6 +42,5 @@
     "*.{ts,tsx,mjs}": "eslint --cache",
     "*": "prettier --ignore-unknown --write"
   },
-  "packageManager": "yarn@4.7.0",
-  "version": "0.1.1"
+  "packageManager": "yarn@4.7.0"
 }
