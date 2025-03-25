@@ -1,0 +1,34 @@
+---
+description: Enforces flat test structure without unnecessary describe blocks
+globs: ["**/*.test.ts"]
+---
+# Rules
+
+## Use flat test structure
+Tests should be written in a flat structure using only `it` blocks. `describe` blocks should only be used when explicitly requested in the test requirements.
+
+# Examples
+
+## Valid
+```typescript
+it('should render user name', () => {
+  // test code
+})
+
+it('should show edit button', () => {
+  // test code
+})
+```
+
+## Invalid
+```typescript
+describe('UserComponent', () => {
+  it('should render user name', () => {
+    // test code
+  })
+
+  it('should show edit button', () => {
+    // test code
+  })
+})
+```

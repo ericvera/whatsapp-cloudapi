@@ -1,0 +1,68 @@
+---
+description: Applies to any file that contains code comments, including all test files
+globs: ["**/*.ts", "**/*.js", "**/*.vue"]
+---
+# Rules
+
+## No inline comments
+Comments should be on their own line above code, not at the end of code lines.
+
+## Only explain complex segments of code
+Do not add comments explaining the reasoning. Only add it for non-trivial sections of code.
+
+## Document all exported entities
+All exported entities must have documentation comments. All interface properties must have documentation comments.
+
+# Examples
+
+## Valid
+```typescript
+/** 
+ * Represents a business entity that can have multiple locations
+ */
+export interface Business {
+  id: ID
+
+  /** Customer facing name of the business */
+  name: string
+
+  /** Timestamp of when the business was last updated */
+  updated: Date
+}
+```
+
+```typescript
+// Test file example with proper comments
+import { it, expect } from 'vitest'
+
+// Authentication failure tests
+it('throws when not authenticated', async () => {
+  // Test implementation
+})
+
+// Authorization failure tests
+it('throws when user does not have access', async () => {
+  // Test implementation
+})
+```
+
+## Invalid
+```typescript
+export interface Business { // Represents a business
+  id: ID // Unique identifier
+  name: string // Business name
+  updated: Date // Last update time
+}
+```
+
+```typescript
+export interface Business {
+  id: ID
+  name: string  // Missing doc comment
+  updated: Date
+}
+```
+
+```typescript
+expect(diff).toMatchInlineSnapshot() // Will be populated with the actual diff on first run
+```

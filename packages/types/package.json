@@ -1,0 +1,44 @@
+{
+  "name": "@whatsapp-cloudapi/types",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!/**/__test__",
+    "!*.test.*"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^22.13.13",
+    "eslint": "^9.23.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.28.0",
+    "vitest": "^3.0.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericvera/whatsapp-cloudapi"
+  },
+  "keywords": [
+    "whatsapp",
+    "api",
+    "types"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

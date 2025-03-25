@@ -1,0 +1,38 @@
+---
+description: Enforces curly braces around all if statement blocks
+globs: ["**/*.ts", "**/*.js", "**/*.vue"]
+---
+# Rules
+
+## Use curly braces for all if statements
+All if statements must use curly braces, even for single-line statements.
+
+# Examples
+
+## Valid
+```typescript
+if (value > 0) {
+  return value
+}
+
+if (isValid) {
+  doSomething()
+}
+
+if (hasError) {
+  handleError()
+} else {
+  sendSuccess()
+}
+```
+
+## Invalid
+```typescript
+if (value > 0) return value
+
+if (isValid)
+  doSomething()
+
+if (hasError) handleError()
+else sendSuccess()
+```

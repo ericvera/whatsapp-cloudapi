@@ -758,6 +758,51 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@whatsapp-cloudapi/client@workspace:packages/client":
+  version: 0.0.0-use.local
+  resolution: "@whatsapp-cloudapi/client@workspace:packages/client"
+  dependencies:
+    "@tsconfig/strictest": "npm:^2.0.5"
+    "@types/node": "npm:^22.13.13"
+    "@whatsapp-cloudapi/types": "npm:0.0.1"
+    eslint: "npm:^9.23.0"
+    typescript: "npm:^5.8.2"
+    typescript-eslint: "npm:^8.28.0"
+    vitest: "npm:^3.0.9"
+  languageName: unknown
+  linkType: soft
+
+"@whatsapp-cloudapi/monorepo@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@whatsapp-cloudapi/monorepo@workspace:."
+  dependencies:
+    "@eslint/js": "npm:^9.23.0"
+    "@tsconfig/strictest": "npm:^2.0.5"
+    "@types/node": "npm:^22.13.13"
+    eslint: "npm:^9.23.0"
+    husky: "npm:^9.1.7"
+    lint-staged: "npm:^15.5.0"
+    pinst: "npm:^3.0.0"
+    prettier: "npm:^3.5.3"
+    typescript: "npm:^5.8.2"
+    typescript-eslint: "npm:^8.28.0"
+    vitest: "npm:^3.0.9"
+  languageName: unknown
+  linkType: soft
+
+"@whatsapp-cloudapi/types@npm:0.0.1, @whatsapp-cloudapi/types@workspace:packages/types":
+  version: 0.0.0-use.local
+  resolution: "@whatsapp-cloudapi/types@workspace:packages/types"
+  dependencies:
+    "@tsconfig/strictest": "npm:^2.0.5"
+    "@types/node": "npm:^22.13.13"
+    eslint: "npm:^9.23.0"
+    typescript: "npm:^5.8.2"
+    typescript-eslint: "npm:^8.28.0"
+    vitest: "npm:^3.0.9"
+  languageName: unknown
+  linkType: soft
+
 "abbrev@npm:^2.0.0":
   version: 2.0.0
   resolution: "abbrev@npm:2.0.0"
@@ -1729,24 +1774,6 @@ __metadata:
   checksum: 10c0/35bb110a71086c48906aa7cd3ed4913fb913823715359d65e32e0b964cb1e255593b0ae8014a5005c66a68e6fa66c38dcfa8056dbbdfb8b0187c0ffe7ee3a58f
   languageName: node
   linkType: hard
-
-"i-forgot-to-rename-my-package@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "i-forgot-to-rename-my-package@workspace:."
-  dependencies:
-    "@eslint/js": "npm:^9.23.0"
-    "@tsconfig/strictest": "npm:^2.0.5"
-    "@types/node": "npm:^22.13.13"
-    eslint: "npm:^9.23.0"
-    husky: "npm:^9.1.7"
-    lint-staged: "npm:^15.5.0"
-    pinst: "npm:^3.0.0"
-    prettier: "npm:^3.5.3"
-    typescript: "npm:^5.8.2"
-    typescript-eslint: "npm:^8.28.0"
-    vitest: "npm:^3.0.9"
-  languageName: unknown
-  linkType: soft
 
 "iconv-lite@npm:^0.6.2":
   version: 0.6.3

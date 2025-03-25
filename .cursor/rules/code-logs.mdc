@@ -1,0 +1,8 @@
+---
+description: Preserve console.log statements in code modifications
+globs: ["**/*.ts", "**/*.js", "**/*.vue"]
+---
+# Rules
+
+## Preserve console.log statements
+When modifying existing code, preserve all console.log statements unless explicitly asked to remove them. These logs are important for debugging and should not be removed as part of routine code changes. 

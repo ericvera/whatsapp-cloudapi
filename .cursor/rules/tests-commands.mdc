@@ -1,0 +1,24 @@
+---
+description: Use yarn instead of npm for all test commands
+globs: ["**/*.test.ts"]
+---
+# Rules
+
+## Use yarn for test commands
+When running test commands, always use `yarn` instead of `npm`.
+
+# Examples
+
+## Valid
+```bash
+yarn test
+cd functions && yarn test
+yarn test src/utils/usage/updateDailyUsage.test.ts
+```
+
+## Invalid
+```bash
+npm test
+cd functions && npm test
+npm test src/utils/usage/updateDailyUsage.test.ts
+```

@@ -11,15 +11,19 @@ jobs:
       # Give the default GITHUB_TOKEN write permission to commit and push the
       # added or changed files to the repository.
       contents: write
+      id-token: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set Node version
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install Dependencies
         run: yarn
@@ -43,10 +47,16 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Publish to NPM
-        uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Update versions in all package.json files
+          yarn workspaces foreach --all version ${{ steps.changelog.outputs.version }} --deferred
+          # Actually apply the versions
+          yarn version apply --all
+          # Publish all packages
+          yarn workspaces foreach --all --no-private npm publish --access public --tolerate-republish
 
       - name: Create Release
         uses: ncipollo/release-action@v1

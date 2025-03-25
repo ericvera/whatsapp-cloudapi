@@ -1,0 +1,23 @@
+---
+description: Ensures Cursor Rules are created in the .cursor/rules directory with .mdc extension
+globs: ["**/*.mdc"]
+---
+# Rules
+
+## Cursor Rules Location
+Cursor Rules must be placed in .cursor/rules/ directory with .mdc extension.
+
+# Examples
+
+## Valid
+```
+.cursor/rules/my-rule.mdc
+.cursor/rules/another-rule.mdc
+```
+
+## Invalid
+```
+rules/my-rule.mdc
+.cursor/my-rule.mdc
+.cursor/rules/my-rule.txt
+```
