@@ -58,7 +58,7 @@ jobs:
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn workspaces foreach --all yarn npm publish --access public
+        run: yarn workspaces foreach --all run yarn npm publish --access public
 
       - name: Create Release
         uses: ncipollo/release-action@v1
