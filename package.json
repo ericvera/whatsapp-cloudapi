@@ -1,0 +1,56 @@
+{
+  "name": "i-forgot-to-rename-my-package",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "!/**/__test__",
+    "!*.test.*"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "smoke": "yarn build && yarn lint && yarn test",
+    "-- PRE-COMMIT HOOKS --": "",
+    "localAfterInstall": "husky || true",
+    "prepublishOnly": "pinst --disable",
+    "postpublish": "pinst --enable"
+  },
+  "packageManager": "yarn@4.7.0",
+  "devDependencies": {
+    "@eslint/js": "^9.23.0",
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^22.13.13",
+    "eslint": "^9.23.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "pinst": "^3.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.28.0",
+    "vitest": "^3.0.9"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "semi": false,
+    "singleQuote": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/i-forgot-to-rename-my-package"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "lint-staged": {
+    "*.{ts,tsx,mjs}": "eslint --cache",
+    "*": "prettier --ignore-unknown --write"
+  }
+}

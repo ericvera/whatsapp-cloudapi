@@ -1,0 +1,15 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "files.autoSave": "onFocusChange",
+  "search.exclude": {
+    "**/.yarn": true
+  },
+  "todo-tree.general.statusBar": "total",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "todo-tree.tree.showBadges": true,
+  "eslint.useFlatConfig": true
+}
