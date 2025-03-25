@@ -45,6 +45,7 @@ jobs:
           # in the release notes.
           output-file: 'false'
           github-token: ${{ github.token }}
+          skip-commit: 'true'
 
       - name: Update Package Versions
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
@@ -53,6 +54,12 @@ jobs:
       - name: Apply Version Updates
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: yarn version apply --all
+
+      - name: Commit and Push Updates
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(release): v${{ steps.changelog.outputs.version }} [skip ci]'
 
       - name: Publish Types Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
