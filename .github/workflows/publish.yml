@@ -54,11 +54,19 @@ jobs:
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: yarn version apply --all
 
-      - name: Publish to NPM
+      - name: Publish Types Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn workspaces foreach --all run yarn npm publish --access public
+        working-directory: packages/types
+        run: yarn npm publish --access public
+
+      - name: Publish Client Package
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: packages/client
+        run: yarn npm publish --access public
 
       - name: Create Release
         uses: ncipollo/release-action@v1
