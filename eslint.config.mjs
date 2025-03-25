@@ -17,6 +17,9 @@ export default [
       parser: tseslint.parser,
       parserOptions: {
         project: ['./packages/*/tsconfig.json'],
+        cache: true,
+        cacheLocation: './node_modules/.cache/.eslintcache',
+        tsconfigRootDir: '.',
       },
     },
     plugins: {

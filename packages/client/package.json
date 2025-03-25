@@ -1,6 +1,6 @@
 {
   "name": "@whatsapp-cloudapi/client",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
@@ -17,11 +17,11 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "lint": "eslint .",
+    "lint": "eslint . --cache",
     "test": "vitest run"
   },
   "dependencies": {
-    "@whatsapp-cloudapi/types": "0.0.1"
+    "@whatsapp-cloudapi/types": "workspace:*"
   },
   "devDependencies": {
     "@tsconfig/strictest": "^2.0.5",
