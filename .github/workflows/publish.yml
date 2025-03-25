@@ -47,6 +47,7 @@ jobs:
           github-token: ${{ github.token }}
           skip-commit: 'true'
           skip-tag: 'true'
+          git-push: 'false'
 
       - name: Update Package Versions
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
