@@ -1,6 +1,6 @@
 {
   "name": "@whatsapp-cloudapi/cli",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "bin": {
     "wa-emulator": "./dist/index.js"
