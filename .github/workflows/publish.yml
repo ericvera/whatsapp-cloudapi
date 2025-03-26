@@ -80,6 +80,20 @@ jobs:
         working-directory: packages/client
         run: yarn npm publish --access public
 
+      - name: Publish CLI Package
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: packages/cli
+        run: yarn npm publish --access public
+
+      - name: Publish Emulator Package
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: packages/emulator
+        run: yarn npm publish --access public
+
       - name: Create Release
         uses: ncipollo/release-action@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
