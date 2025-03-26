@@ -9,6 +9,12 @@
     },
     {
       "path": "./packages/types"
+    },
+    {
+      "path": "./packages/emulator"
+    },
+    {
+      "path": "./packages/cli"
     }
   ]
 }
