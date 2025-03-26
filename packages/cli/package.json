@@ -1,0 +1,50 @@
+{
+  "name": "@whatsapp-cloudapi/cli",
+  "version": "0.4.0",
+  "type": "module",
+  "bin": {
+    "wa-emulator": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "!/**/__test__",
+    "!*.test.*"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@whatsapp-cloudapi/emulator": "workspace:*",
+    "@whatsapp-cloudapi/types": "workspace:*",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^22.13.13",
+    "eslint": "^9.23.0",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.28.0",
+    "vitest": "^3.0.9"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericvera/whatsapp-cloudapi"
+  },
+  "keywords": [
+    "whatsapp",
+    "api",
+    "emulator",
+    "cli",
+    "testing"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
