@@ -213,7 +213,7 @@ export interface WebhookOrderMessage extends WebhookMessageBase {
     /**
      * Product items in the order
      */
-    product_items: Array<{
+    product_items: {
       /**
        * Product ID
        */
@@ -230,7 +230,7 @@ export interface WebhookOrderMessage extends WebhookMessageBase {
        * Currency code
        */
       currency: string
-    }>
+    }[]
   }
 }
 

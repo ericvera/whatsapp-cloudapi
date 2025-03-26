@@ -98,5 +98,5 @@ export interface WebhookStatus {
   /**
    * Error information if the message failed
    */
-  errors?: Array<WebhookError>
+  errors?: WebhookError[]
 }

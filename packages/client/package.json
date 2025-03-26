@@ -17,7 +17,7 @@
   },
   "scripts": {
     "build": "tsc --build",
-    "lint": "eslint . --cache",
+    "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {

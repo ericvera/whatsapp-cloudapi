@@ -18,7 +18,7 @@ export interface WebhookPayload {
   /**
    * Array of webhook entries containing changes
    */
-  entry: Array<WebhookEntry>
+  entry: WebhookEntry[]
 }
 
 /**
@@ -34,7 +34,7 @@ export interface WebhookEntry {
   /**
    * Array of changes that triggered this webhook
    */
-  changes: Array<WebhookChange>
+  changes: WebhookChange[]
 }
 
 /**
@@ -83,20 +83,20 @@ export interface WebhookValue {
   /**
    * Array of contact objects with information for the customer who sent a message to the business
    */
-  contacts?: Array<WebhookContact>
+  contacts?: WebhookContact[]
 
   /**
    * An array of error objects describing the error
    */
-  errors?: Array<WebhookError>
+  errors?: WebhookError[]
 
   /**
    * Information about a message received by the business that is subscribed to the webhook
    */
-  messages?: Array<WebhookMessage>
+  messages?: WebhookMessage[]
 
   /**
    * Status object for a message that was sent by the business that is subscribed to the webhook
    */
-  statuses?: Array<WebhookStatus>
+  statuses?: WebhookStatus[]
 }

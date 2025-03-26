@@ -13,7 +13,7 @@ export interface CloudAPIResponse {
   /**
    * Array of contacts that received the message
    */
-  contacts: Array<{
+  contacts: {
     /**
      * The phone number or WhatsApp ID provided in the API request
      */
@@ -24,16 +24,16 @@ export interface CloudAPIResponse {
      * Note: This may differ from the input phone number
      */
     wa_id: string
-  }>
+  }[]
 
   /**
    * Information about the sent messages
    */
-  messages: Array<{
+  messages: {
     /**
      * Unique identifier for the message
      * This ID is used in webhooks for tracking message status
      */
     id: string
-  }>
+  }[]
 }
