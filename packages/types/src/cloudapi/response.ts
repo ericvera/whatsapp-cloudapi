@@ -37,3 +37,32 @@ export interface CloudAPIResponse {
     id: string
   }[]
 }
+
+/**
+ * Error response from the WhatsApp Cloud API
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes
+ */
+export interface CloudAPIErrorResponse {
+  error: {
+    /** Error message describing what went wrong */
+    message: string
+    /** Type of error that occurred */
+    type: string
+    /** HTTP status code */
+    code: number
+    /** Additional error code for more specific error types */
+    error_subcode?: number
+    /** Additional error details */
+    error_data?: {
+      /** The messaging product that generated the error */
+      messaging_product: string
+      /** Detailed explanation of the error */
+      details: string
+    }
+  }
+}
+
+/**
+ * Supported WhatsApp Cloud API version
+ */
+export type CloudAPIVersion = 'v22.0'
