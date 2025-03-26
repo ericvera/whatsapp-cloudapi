@@ -29,8 +29,8 @@ import { WhatsAppEmulator } from '@whatsapp-cloudapi/emulator'
 
 // Create a new emulator instance
 const emulator = new WhatsAppEmulator({
-  port: 3000,
-  phoneNumber: '15550123456', // The phone number to emulate
+  businessPhoneNumberId: '15550123456', // The phone number ID to emulate
+  port: 3000, // Optional, defaults to 4004
 })
 
 // Start the emulator
@@ -57,10 +57,16 @@ class WhatsAppEmulator {
 }
 
 interface EmulatorOptions {
-  port: number
-  phoneNumber: string
-  host?: string // defaults to localhost
-  delay?: number // simulate network delay in ms
+  /** Business phone number ID to emulate */
+  businessPhoneNumberId: string
+  /** Port to run the emulator server on (defaults to 4004) */
+  port?: number
+  /** Host to bind to (defaults to localhost) */
+  host?: string
+  /** Simulate network delay in milliseconds */
+  delay?: number
+  /** Function to generate message IDs (useful for testing) */
+  generateMessageId?: (timestamp: number) => string
 }
 ```
 
