@@ -1,37 +1,34 @@
-import js from '@eslint/js'
-import * as tseslint from 'typescript-eslint'
+import eslint from '@eslint/js'
+import { globalIgnores } from 'eslint/config'
+import tseslint from 'typescript-eslint'
 
-export default [
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
+export default tseslint.config(
+  eslint.configs.recommended,
   {
     files: ['**/*.ts'],
-    ignores: [
-      '**/*.js',
-      '**/*.mjs',
-      '**/dist/**',
-      '**/node_modules/**',
-      '.yarn/**',
+    extends: [
+      tseslint.configs.strictTypeChecked,
+      tseslint.configs.stylisticTypeChecked,
     ],
+  },
+
+  globalIgnores([
+    '**/dist/**',
+    '**/node_modules/**',
+    '.cursor',
+    '.github',
+    '.husky',
+    '.vscode',
+    '.yarn',
+  ]),
+  {
     languageOptions: {
-      parser: tseslint.parser,
       parserOptions: {
-        project: ['./packages/*/tsconfig.json'],
-        cache: true,
-        cacheLocation: './node_modules/.cache/.eslintcache',
-        tsconfigRootDir: '.',
+        projectService: {
+          allowDefaultProject: ['eslint.config.mjs'],
+        },
+        tsconfigRootDir: import.meta.dirname,
       },
     },
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-    },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/explicit-module-boundary-types': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_' },
-      ],
-    },
   },
-]
+)
