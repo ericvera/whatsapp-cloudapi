@@ -1,4 +1,4 @@
-// Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/messages/text-messages
+// Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages/
 
 /**
  * Request body for sending a text message
@@ -14,7 +14,12 @@ export interface CloudAPISendTextMessageRequest {
    * Type of recipient
    * Currently only supports individual recipients
    */
-  recipient_type: 'individual'
+  recipient_type?: 'individual'
+
+  /**
+   * An arbitrary string, useful for tracking.
+   */
+  biz_opaque_callback_data?: string
 
   /**
    * WhatsApp ID or phone number of the recipient
