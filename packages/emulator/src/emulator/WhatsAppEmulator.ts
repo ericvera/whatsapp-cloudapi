@@ -1,27 +1,32 @@
-import type {
-  CloudAPIResponse,
-  CloudAPISendTextMessageRequest,
-} from '@whatsapp-cloudapi/types/cloudapi'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import type { Express, NextFunction, Request, Response } from 'express'
 import express from 'express'
 import type { Server } from 'http'
-import { SupportedVersion, UnsupportedVersionError } from './constants.js'
-import type { EmulatorOptions } from './types.js'
+import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
+import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
+import { MessageRoutes } from '../routes/MessageRoutes.js'
+import { WebhookService } from '../services/WebhookService.js'
+import type { EmulatorOptions } from '../types/config.js'
 
 export class WhatsAppEmulator {
   private server: Server | null = null
   private app: Express | null = null
-  private readonly options: Required<EmulatorOptions>
+  private readonly config: EmulatorConfiguration
+  private readonly webhookService: WebhookService | undefined
+  private readonly messageRoutes: MessageRoutes
 
   constructor(options: EmulatorOptions) {
-    this.options = {
-      host: 'localhost',
-      port: 4004,
-      delay: 0,
-      ...options,
+    this.config = new EmulatorConfiguration(options)
+
+    if (this.config.webhook) {
+      this.webhookService = new WebhookService(this.config.webhook)
     }
+
+    this.messageRoutes = new MessageRoutes(
+      this.config.server.businessPhoneNumberId,
+      this.webhookService,
+    )
   }
 
   private setupApp(): void {
@@ -30,9 +35,9 @@ export class WhatsAppEmulator {
     this.app.use(bodyParser.json())
 
     // Add artificial delay if configured
-    if (this.options.delay > 0) {
+    if (this.config.server.delay > 0) {
       this.app.use((_req: Request, _res: Response, next: NextFunction) => {
-        setTimeout(next, this.options.delay)
+        setTimeout(next, this.config.server.delay)
       })
     }
 
@@ -66,31 +71,10 @@ export class WhatsAppEmulator {
 
     // WhatsApp Cloud API endpoints with version validation
     this.app.post(
-      `/:version/${this.options.businessPhoneNumberId}/messages`,
+      `/:version/${this.config.server.businessPhoneNumberId}/messages`,
       this.validateVersion.bind(this),
-      this.handleSendMessage.bind(this),
+      this.messageRoutes.handleSendMessage.bind(this.messageRoutes),
     )
-  }
-
-  private handleSendMessage(req: Request, res: Response): void {
-    const { to } = req.body as CloudAPISendTextMessageRequest
-
-    // Simulate successful message send
-    const response: CloudAPIResponse = {
-      messaging_product: 'whatsapp',
-      contacts: [
-        {
-          input: to,
-          wa_id: to,
-        },
-      ],
-      messages: [
-        {
-          id: `mock_${String(Date.now())}_${Math.random().toString(36).slice(2)}`,
-        },
-      ],
-    }
-    res.status(200).json(response)
   }
 
   /**
@@ -107,12 +91,16 @@ export class WhatsAppEmulator {
     return new Promise((resolve, reject) => {
       try {
         const server = this.app?.listen(
-          this.options.port,
-          this.options.host,
+          this.config.server.port,
+          this.config.server.host,
           () => {
-            console.log(
-              `WhatsApp emulator running at http://${this.options.host}:${String(this.options.port)}`,
-            )
+            const url = this.config.getServerUrl()
+            console.log(`WhatsApp emulator running at ${url.toString()}`)
+            if (this.webhookService && this.config.webhook?.url) {
+              console.log(
+                `Webhook notifications will be sent to ${this.config.webhook.url}`,
+              )
+            }
             resolve()
           },
         )
@@ -147,8 +135,7 @@ export class WhatsAppEmulator {
         return
       }
 
-      const server = this.server
-      server.close((error?: Error) => {
+      this.server.close((error?: Error) => {
         if (error) {
           reject(new Error(`Failed to stop emulator: ${error.message}`))
           return

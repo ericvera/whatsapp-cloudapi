@@ -13,6 +13,7 @@
 - 🧪 Perfect for testing and development
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
+- 🔔 Webhook support for status updates
 
 ## Installation
 
@@ -31,6 +32,11 @@ import { WhatsAppEmulator } from '@whatsapp-cloudapi/emulator'
 const emulator = new WhatsAppEmulator({
   businessPhoneNumberId: '15550123456', // The phone number ID to emulate
   port: 3000, // Optional, defaults to 4004
+  webhook: {
+    url: 'https://your-webhook-endpoint.com/webhook', // URL to receive webhook events
+    secret: 'your-webhook-secret', // Required secret for webhook verification
+    timeout: 5000, // Optional timeout in milliseconds (defaults to 5000)
+  },
 })
 
 // Start the emulator
@@ -65,8 +71,15 @@ interface EmulatorOptions {
   host?: string
   /** Simulate network delay in milliseconds */
   delay?: number
-  /** Function to generate message IDs (useful for testing) */
-  generateMessageId?: (timestamp: number) => string
+  /** Webhook configuration */
+  webhook?: {
+    /** URL to send webhook events to */
+    url: string
+    /** Required secret token for webhook verification */
+    secret: string
+    /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
+    timeout?: number
+  }
 }
 ```
 
@@ -88,6 +101,49 @@ try {
   await emulator.start()
 } catch (error) {
   console.error('Failed to start emulator:', error.message)
+}
+```
+
+#### Webhook Events
+
+When webhook support is enabled, the emulator will send webhook events to the configured URL for message status updates. The webhook payload follows the official WhatsApp Cloud API webhook format. The webhook request will include the configured secret in the `X-Hub-Signature-256` header for verification.
+
+Example webhook payload:
+
+```typescript
+{
+  object: 'whatsapp_business_account',
+  entry: [
+    {
+      id: '15550123456',
+      changes: [
+        {
+          value: {
+            messaging_product: 'whatsapp',
+            metadata: {
+              display_phone_number: '15550123456',
+              phone_number_id: '15550123456',
+            },
+            statuses: [
+              {
+                id: 'message_id',
+                recipient_id: 'recipient_phone_number',
+                status: 'sent',
+                timestamp: '1234567890',
+                conversation: {
+                  id: 'conversation_id',
+                  origin: {
+                    type: 'utility',
+                  },
+                },
+              },
+            ],
+          },
+          field: 'messages',
+        },
+      ],
+    },
+  ],
 }
 ```
 
