@@ -1,10 +1,17 @@
-# @whatsapp-cloudapi/types
+# WhatsApp Cloud API Types
 
-🎯 TypeScript types for the WhatsApp Cloud API.
+**TypeScript types for the WhatsApp Cloud API**
 
-## What's this?
+[![github license](https://img.shields.io/github/license/ericvera/whatsapp-cloudapi.svg?style=flat-square)](https://github.com/ericvera/whatsapp-cloudapi/blob/master/LICENSE)
+[![npm version](https://img.shields.io/npm/v/%40whatsapp-cloudapi%2Ftypes.svg?style=flat-square)](https://npmjs.org/package/%40whatsapp-cloudapi%2Ftypes)
 
-This package provides TypeScript definitions for working with the WhatsApp Cloud API. Whether you're sending messages or handling webhooks, we've got you covered with comprehensive and well-documented types.
+## Features
+
+- ✨ Full TypeScript support
+- 📝 Comprehensive JSDoc comments
+- 🎯 Separate imports for Cloud API and webhook types
+- 🔒 Strict type checking
+- 📦 Zero runtime overhead - types only!
 
 ## Installation
 
@@ -14,7 +21,7 @@ npm install @whatsapp-cloudapi/types
 yarn add @whatsapp-cloudapi/types
 ```
 
-## Usage
+## Quick Start
 
 The types are split into two main categories:
 
@@ -58,19 +65,45 @@ function handleWebhook(payload: WebhookPayload) {
 }
 ```
 
-## Features
+## API Reference
 
-- ✨ Full TypeScript support
-- 📝 Comprehensive JSDoc comments
-- 🎯 Separate imports for Cloud API and webhook types
-- 🔒 Strict type checking
-- 📦 Zero runtime overhead - types only!
+### Cloud API Types
+
+```typescript
+interface CloudAPISendTextMessageRequest {
+  messaging_product: 'whatsapp'
+  recipient_type: 'individual'
+  to: string // Recipient's phone number (e.g., "+16505551234")
+  type: 'text'
+  text: {
+    body: string // Message text (max 4096 characters)
+    preview_url?: boolean
+  }
+}
+```
+
+### Webhook Types
+
+```typescript
+interface WebhookPayload {
+  object: 'whatsapp_business_account'
+  entry: {
+    id: string
+    changes: {
+      value: {
+        messages?: WebhookMessage[]
+        statuses?: WebhookStatus[]
+      }
+    }[]
+  }[]
+}
+```
 
 ## Requirements
 
 - Node.js >= 22
 - TypeScript >= 5.0
 
-## License
+## Related Packages
 
-MIT
+- [@whatsapp-cloudapi/client](https://www.npmjs.com/package/@whatsapp-cloudapi/client) - Type-safe WhatsApp Cloud API client
