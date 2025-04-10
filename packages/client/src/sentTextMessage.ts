@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendTextMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { sendRequest } from './internal/sendRequest.js'
 
 interface SendTextMessageParams {
   /** The access token for the WhatsApp Cloud API */
@@ -17,14 +18,6 @@ interface SendTextMessageParams {
   /** An arbitrary string, useful for tracking */
   bizOpaqueCallbackData?: string
 }
-
-/**
- * Creates headers for WhatsApp API requests
- */
-const createHeaders = (accessToken: string): Record<string, string> => ({
-  Authorization: `Bearer ${accessToken}`,
-  'Content-Type': 'application/json',
-})
 
 /**
  * Helper function to send a WhatsApp text message
@@ -54,20 +47,5 @@ export const sendTextMessage = async ({
     message.biz_opaque_callback_data = bizOpaqueCallbackData
   }
 
-  const response = await fetch(
-    `https://graph.facebook.com/v22.0/${from}/messages`,
-    {
-      method: 'POST',
-      headers: createHeaders(accessToken),
-      body: JSON.stringify(message),
-    },
-  )
-
-  if (!response.ok) {
-    const error = await response.json()
-
-    throw new Error(`WhatsApp API Error: ${JSON.stringify(error)}`)
-  }
-
-  return response.json() as Promise<CloudAPIResponse>
+  return sendRequest(accessToken, from, message)
 }
