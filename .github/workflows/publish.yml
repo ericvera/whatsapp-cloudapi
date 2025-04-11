@@ -66,32 +66,32 @@ jobs:
           skip_checkout: true
 
       - name: Publish Types Package
+        uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: packages/types
-        run: yarn npm publish --access public
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: packages/types
 
       - name: Publish Client Package
+        uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: packages/client
-        run: yarn npm publish --access public
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: packages/client
 
       - name: Publish CLI Package
+        uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: packages/cli
-        run: yarn npm publish --access public
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: packages/cli
 
       - name: Publish Emulator Package
+        uses: JS-DevTools/npm-publish@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: packages/emulator
-        run: yarn npm publish --access public
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+          package: packages/emulator
 
       - name: Create Release
         uses: ncipollo/release-action@v1
