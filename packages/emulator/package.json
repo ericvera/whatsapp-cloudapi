@@ -30,7 +30,7 @@
     "@tsconfig/strictest": "^2.0.5",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
-    "@types/node": "^22.14.0",
+    "@types/node": "^22.14.1",
     "eslint": "^9.24.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.1",
