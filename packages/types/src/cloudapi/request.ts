@@ -1,4 +1,5 @@
 // Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages/
+// Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates/
 
 /**
  * Request body for sending a text message
@@ -70,12 +71,19 @@ export interface CloudAPITemplateParameter {
     | 'document'
     | 'video'
     | 'payload'
+    | 'location'
 
   /**
    * Text parameter
    * Used when type='text'
    */
   text?: string
+
+  /**
+   * Parameter name for named parameters in templates
+   * Used when implementing named parameters in template's body text
+   */
+  parameter_name?: string
 
   /**
    * Currency parameter
@@ -170,6 +178,29 @@ export interface CloudAPITemplateParameter {
      * Caption for the video
      */
     caption?: string
+  }
+
+  /**
+   * Location parameter
+   * Used when type='location'
+   */
+  location?: {
+    /**
+     * Location latitude
+     */
+    latitude: string
+    /**
+     * Location longitude
+     */
+    longitude: string
+    /**
+     * Name that will appear below the map
+     */
+    name?: string
+    /**
+     * Address that will appear after the name
+     */
+    address?: string
   }
 
   /**

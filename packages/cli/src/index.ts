@@ -37,7 +37,7 @@ const program = new Command()
 program
   .name('wa-emulator')
   .description('WhatsApp Cloud API Emulator CLI')
-  .version('0.4.0')
+  .version('0.8.2')
 
 program
   .command('start')

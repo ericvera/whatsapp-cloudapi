@@ -44,6 +44,58 @@ const message: CloudAPISendTextMessageRequest = {
 }
 ```
 
+### Template Messages
+
+For sending template messages with various parameter types:
+
+```typescript
+import { CloudAPISendTemplateMessageRequest } from '@whatsapp-cloudapi/types/cloudapi'
+
+// Example of a template message with location parameter and named parameters
+const templateMessage: CloudAPISendTemplateMessageRequest = {
+  messaging_product: 'whatsapp',
+  to: '+1234567890',
+  type: 'template',
+  template: {
+    name: 'location_template',
+    language: {
+      code: 'en_US',
+    },
+    components: [
+      {
+        type: 'header',
+        parameters: [
+          {
+            type: 'location',
+            location: {
+              latitude: '37.483307',
+              longitude: '122.148981',
+              name: 'Tech Company HQ',
+              address: '1 Hacker Way, Menlo Park, CA 94025',
+            },
+          },
+        ],
+      },
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'text',
+            text: 'John',
+            parameter_name: 'customer_name',
+          },
+          {
+            type: 'text',
+            text: '9128312831',
+            parameter_name: 'order_id',
+          },
+        ],
+      },
+    ],
+  },
+}
+```
+
 ### Webhook Types
 
 For handling incoming webhooks from WhatsApp:
@@ -81,6 +133,19 @@ interface CloudAPISendTextMessageRequest {
   }
 }
 ```
+
+### Template Parameter Types
+
+The library supports all WhatsApp Cloud API template parameter types:
+
+- `text` - Text parameters for templates
+- `currency` - Currency values with code, amount and fallback
+- `date_time` - Date and time parameters
+- `image` - Image parameters (via ID or link)
+- `document` - Document parameters (via ID or link)
+- `video` - Video parameters (via ID or link)
+- `location` - Location parameters (latitude, longitude, name, address)
+- `payload` - Payload for interactive buttons
 
 ### Webhook Types
 

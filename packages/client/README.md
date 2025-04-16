@@ -45,6 +45,58 @@ const responseWithPreview = await sendTextMessage(
 )
 ```
 
+## Template Messages
+
+This client supports all WhatsApp template types, including location-based templates:
+
+```typescript
+import { sendTemplateMessage } from '@whatsapp-cloudapi/client'
+
+// Send a location template message
+const response = await sendTemplateMessage(
+  'YOUR_ACCESS_TOKEN',
+  'YOUR_PHONE_NUMBER_ID',
+  'RECIPIENT_PHONE_NUMBER',
+  {
+    name: 'location_update',
+    language: {
+      code: 'en_US',
+    },
+    components: [
+      {
+        type: 'header',
+        parameters: [
+          {
+            type: 'location',
+            location: {
+              latitude: '37.483307',
+              longitude: '122.148981',
+              name: 'Company HQ',
+              address: '1 Hacker Way, Menlo Park, CA 94025',
+            },
+          },
+        ],
+      },
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'text',
+            text: 'John',
+            parameter_name: 'customer_name',
+          },
+          {
+            type: 'text',
+            text: '9128312831',
+            parameter_name: 'order_id',
+          },
+        ],
+      },
+    ],
+  },
+)
+```
+
 ## API Reference
 
 ### sendTextMessage
