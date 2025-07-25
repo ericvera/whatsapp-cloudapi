@@ -11,6 +11,7 @@
 - 🔒 Type-safe request and response handling
 - 🛠️ Mock server implementation
 - 🧪 Perfect for testing and development
+- 📲 Simulation endpoints for incoming messages
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
 - 🔔 Webhook support for status updates
@@ -146,6 +147,100 @@ Example webhook payload:
   ],
 }
 ```
+
+## Simulation Endpoints
+
+The emulator provides REST endpoints for simulating incoming messages, enabling comprehensive testing of your webhook handling logic.
+
+### POST `/simulate/incoming/text`
+
+Simulates an incoming text message from a user to your business phone number.
+
+**Endpoint:** `POST http://localhost:4004/simulate/incoming/text`
+
+**Request Body:**
+
+```typescript
+{
+  from: string // Phone number in E.164 format (e.g., "+1234567890")
+  name: string // Sender's display name (e.g., "John Doe")
+  message: string // Text message content
+}
+```
+
+**Response:**
+
+```typescript
+{
+  success: true,
+  messageSimulated: true
+}
+```
+
+**Example:**
+
+```bash
+curl -X POST http://localhost:4004/simulate/incoming/text \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from": "+1234567890",
+    "name": "John Doe",
+    "message": "Hello, I need help with my order!"
+  }'
+```
+
+**Generated Webhook:**
+
+When you simulate an incoming message, the emulator will send a webhook to your configured webhook URL with the following structure:
+
+```typescript
+{
+  object: 'whatsapp_business_account',
+  entry: [
+    {
+      id: 'your_business_phone_number_id',
+      changes: [
+        {
+          value: {
+            messaging_product: 'whatsapp',
+            metadata: {
+              display_phone_number: 'your_business_phone_number_id',
+              phone_number_id: 'your_business_phone_number_id',
+            },
+            contacts: [
+              {
+                wa_id: '+1234567890',
+                profile: {
+                  name: 'John Doe',
+                },
+              },
+            ],
+            messages: [
+              {
+                id: 'mock_incoming_1234567890_abc123',
+                from: '+1234567890',
+                timestamp: '1734567890',
+                type: 'text',
+                text: {
+                  body: 'Hello, I need help with my order!',
+                },
+              },
+            ],
+          },
+          field: 'messages',
+        },
+      ],
+    },
+  ],
+}
+```
+
+**Error Responses:**
+
+- `400 Bad Request` - When webhook is not configured or required fields are missing
+- `400 Bad Request` - When `from` or `message` fields are invalid
+
+**Note:** The simulation endpoint requires webhook configuration when starting the emulator. Without webhook configuration, the endpoint will return an error.
 
 ## Requirements
 

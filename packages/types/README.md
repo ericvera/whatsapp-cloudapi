@@ -9,7 +9,7 @@
 
 - ✨ Full TypeScript support
 - 📝 Comprehensive JSDoc comments
-- 🎯 Separate imports for Cloud API and webhook types
+- 🎯 Separate imports for Cloud API, webhook, and simulation types
 - 🔒 Strict type checking
 - 📦 Zero runtime overhead - types only!
 
@@ -23,7 +23,7 @@ yarn add @whatsapp-cloudapi/types
 
 ## Quick Start
 
-The types are split into two main categories:
+The types are split into three main categories:
 
 ### Cloud API Types
 
@@ -117,7 +117,43 @@ function handleWebhook(payload: WebhookPayload) {
 }
 ```
 
+### Simulation Types
+
+For simulating incoming messages with the emulator:
+
+```typescript
+import { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation'
+
+// Type-safe simulation request
+const simulationRequest: SimulateIncomingTextRequest = {
+  from: '+1234567890',
+  name: 'John Doe',
+  message: 'Hello, I need help!',
+}
+```
+
 ## API Reference
+
+### Simulation Types
+
+```typescript
+interface SimulateIncomingTextRequest {
+  /**
+   * Phone number of the sender in E.164 format
+   */
+  from: string
+
+  /**
+   * Display name of the sender
+   */
+  name: string
+
+  /**
+   * Text content of the message
+   */
+  message: string
+}
+```
 
 ### Cloud API Types
 
