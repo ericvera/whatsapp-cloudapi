@@ -1,14 +1,18 @@
 #!/usr/bin/env node
 
+import type { EmulatorOptions } from '@whatsapp-cloudapi/emulator'
 import { WhatsAppEmulator } from '@whatsapp-cloudapi/emulator'
-import type { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation'
 import { Command } from 'commander'
 import { getPartialE164PhoneNumber, isValidE164PhoneNumber } from 'e164num'
+import type { SimulateIncomingTextRequest } from '../../types/src/simulation/request.js'
 
 export interface StartOptions {
   port: string
   host: string
   number: string
+  webhookUrl?: string
+  webhookSecret?: string
+  webhookTimeout?: string
 }
 
 export interface StatusOptions {
@@ -87,12 +91,40 @@ program
   .option('-p, --port <number>', 'Port to run the emulator on', '4004')
   .option('-h, --host <string>', 'Host to bind to', 'localhost')
   .option('-n, --number <string>', 'Business phone number ID')
+  .option('--webhook-url <url>', 'URL to send webhook events to')
+  .option('--webhook-secret <secret>', 'Secret token for webhook verification')
+  .option(
+    '--webhook-timeout <ms>',
+    'Timeout in milliseconds for webhook requests',
+    '5000',
+  )
   .action(async (options: StartOptions) => {
-    const emulator = new WhatsAppEmulator({
+    if (!options.number) {
+      console.error('Error: Business phone number ID is required (--number)')
+      process.exit(1)
+    }
+
+    const emulatorConfig: EmulatorOptions = {
       businessPhoneNumberId: options.number,
       port: parseInt(options.port, 10),
       host: options.host,
-    })
+    }
+
+    // Add webhook configuration if provided
+    if (options.webhookUrl && options.webhookSecret) {
+      emulatorConfig.webhook = {
+        url: options.webhookUrl,
+        secret: options.webhookSecret,
+        timeout: parseInt(options.webhookTimeout ?? '5000', 10),
+      }
+    } else if (options.webhookUrl || options.webhookSecret) {
+      console.error(
+        'Error: Both --webhook-url and --webhook-secret are required for webhook configuration',
+      )
+      process.exit(1)
+    }
+
+    const emulator = new WhatsAppEmulator(emulatorConfig)
 
     try {
       await emulator.start()

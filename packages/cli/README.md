@@ -25,8 +25,10 @@ yarn global add @whatsapp-cloudapi/cli
 ## Quick Start
 
 ```bash
-# Start the emulator with a business phone number
-wa-emulator start --number 15550123456
+# Start the emulator with webhook configuration (required for simulation)
+wa-emulator start --number 15550123456 \
+  --webhook-url http://localhost:8080/webhook \
+  --webhook-secret my-secret-key
 
 # Check if the emulator is running
 wa-emulator status
@@ -50,12 +52,26 @@ Options:
 - `-p, --port <number>` - Port to run the emulator on (default: 4004)
 - `-h, --host <string>` - Host to bind to (default: localhost)
 - `-n, --number <string>` - Business phone number ID (required)
+- `--webhook-url <url>` - URL to send webhook events to
+- `--webhook-secret <secret>` - Secret token for webhook verification
+- `--webhook-timeout <ms>` - Timeout in milliseconds for webhook requests (default: 5000)
 
-Example:
+Examples:
 
 ```bash
+# Basic usage without webhooks
+wa-emulator start --number 15550123456
+
+# With custom port and host
 wa-emulator start --port 3000 --host 0.0.0.0 --number 15550123456
+
+# With webhook configuration (required for simulation)
+wa-emulator start --number 15550123456 \
+  --webhook-url http://localhost:8080/webhook \
+  --webhook-secret my-secret-key
 ```
+
+**Note:** Webhook configuration (both `--webhook-url` and `--webhook-secret`) is required to use the `simulate` command for testing incoming messages.
 
 ### Check Status
 
