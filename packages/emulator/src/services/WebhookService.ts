@@ -123,6 +123,8 @@ export class WebhookService {
         console.error(
           `Failed to deliver webhook: ${response.status.toString()} ${response.statusText}`,
         )
+      } else {
+        console.log(`🔗 Webhook delivered successfully to ${this.config.url}`)
       }
     } catch (error) {
       console.error(

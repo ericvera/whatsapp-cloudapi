@@ -104,6 +104,10 @@ export class WhatsAppEmulator {
 
       const contactName = typeof name === 'string' ? name : 'Test User'
 
+      console.log(
+        `📲 Incoming message from ${from} (${contactName}): "${message}"`,
+      )
+
       void this.webhookService.sendIncomingMessage(
         from,
         contactName,
