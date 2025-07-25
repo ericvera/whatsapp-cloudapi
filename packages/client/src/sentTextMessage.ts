@@ -17,6 +17,8 @@ interface SendTextMessageParams {
   previewUrl?: boolean
   /** An arbitrary string, useful for tracking */
   bizOpaqueCallbackData?: string
+  /** Optional base URL for the API (defaults to Facebook Graph API, use http://localhost:4004 for emulator) */
+  baseUrl?: string
 }
 
 /**
@@ -31,6 +33,7 @@ export const sendTextMessage = async ({
   text,
   previewUrl,
   bizOpaqueCallbackData,
+  baseUrl,
 }: SendTextMessageParams): Promise<CloudAPIResponse> => {
   const message: CloudAPISendTextMessageRequest = {
     messaging_product: 'whatsapp',
@@ -47,5 +50,5 @@ export const sendTextMessage = async ({
     message.biz_opaque_callback_data = bizOpaqueCallbackData
   }
 
-  return sendRequest(accessToken, from, message)
+  return sendRequest(accessToken, from, message, baseUrl)
 }

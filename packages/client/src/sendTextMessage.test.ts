@@ -52,6 +52,73 @@ it('sends a text message successfully', async () => {
   expect(response).toEqual(mockResponse)
 })
 
+it('sends a text message with custom baseUrl', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp',
+    contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
+    messages: [{ id: 'message_id' }],
+  }
+
+  mockFetch.mockResolvedValueOnce(
+    new Response(JSON.stringify(mockResponse), { status: 200 }),
+  )
+
+  const response = await sendTextMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    to: '+1234567890',
+    text: 'Hello World',
+    baseUrl: 'http://localhost:4004',
+  })
+
+  expect(mockFetch).toHaveBeenCalledWith(
+    'http://localhost:4004/v22.0/123456789/messages',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: '+1234567890',
+        type: 'text',
+        text: {
+          body: 'Hello World',
+        },
+      }),
+    },
+  )
+
+  expect(response).toEqual(mockResponse)
+})
+
+it('uses default baseUrl when not provided', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp',
+    contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
+    messages: [{ id: 'message_id' }],
+  }
+
+  mockFetch.mockResolvedValueOnce(
+    new Response(JSON.stringify(mockResponse), { status: 200 }),
+  )
+
+  await sendTextMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    to: '+1234567890',
+    text: 'Hello World',
+    // baseUrl not provided - should use default
+  })
+
+  expect(mockFetch).toHaveBeenCalledWith(
+    'https://graph.facebook.com/v22.0/123456789/messages',
+    expect.any(Object),
+  )
+})
+
 it('sends a text message with preview URL enabled', async () => {
   const mockResponse = {
     messaging_product: 'whatsapp',

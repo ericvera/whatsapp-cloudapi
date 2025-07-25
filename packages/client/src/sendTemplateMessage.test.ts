@@ -56,6 +56,78 @@ it('sends a template message successfully', async () => {
   expect(response).toEqual(mockResponse)
 })
 
+it('sends a template message with custom baseUrl', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp',
+    contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
+    messages: [{ id: 'message_id' }],
+  }
+
+  mockFetch.mockResolvedValueOnce(
+    new Response(JSON.stringify(mockResponse), { status: 200 }),
+  )
+
+  const response = await sendTemplateMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    to: '+1234567890',
+    templateName: 'hello_world',
+    languageCode: 'en_US',
+    baseUrl: 'http://localhost:4004',
+  })
+
+  expect(mockFetch).toHaveBeenCalledWith(
+    'http://localhost:4004/v22.0/123456789/messages',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer test_token',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: '+1234567890',
+        type: 'template',
+        template: {
+          name: 'hello_world',
+          language: {
+            code: 'en_US',
+          },
+        },
+      }),
+    },
+  )
+
+  expect(response).toEqual(mockResponse)
+})
+
+it('uses default baseUrl when not provided for template message', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp',
+    contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
+    messages: [{ id: 'message_id' }],
+  }
+
+  mockFetch.mockResolvedValueOnce(
+    new Response(JSON.stringify(mockResponse), { status: 200 }),
+  )
+
+  await sendTemplateMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    to: '+1234567890',
+    templateName: 'hello_world',
+    languageCode: 'en_US',
+    // baseUrl not provided - should use default
+  })
+
+  expect(mockFetch).toHaveBeenCalledWith(
+    'https://graph.facebook.com/v22.0/123456789/messages',
+    expect.any(Object),
+  )
+})
+
 it('sends a template message with deterministic language policy', async () => {
   const mockResponse = {
     messaging_product: 'whatsapp',

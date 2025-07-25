@@ -83,6 +83,8 @@ interface SendTemplateMessageParams {
    * Maximum length: 512 characters
    */
   bizOpaqueCallbackData?: string
+  /** Optional base URL for the API (defaults to Facebook Graph API, use http://localhost:4004 for emulator) */
+  baseUrl?: string
 }
 
 /**
@@ -160,6 +162,7 @@ export const sendTemplateMessage = async ({
   replyToMessageId,
   components,
   bizOpaqueCallbackData,
+  baseUrl,
 }: SendTemplateMessageParams): Promise<CloudAPIResponse> => {
   const message: CloudAPISendTemplateMessageRequest = {
     messaging_product: 'whatsapp',
@@ -189,5 +192,5 @@ export const sendTemplateMessage = async ({
     message.biz_opaque_callback_data = bizOpaqueCallbackData
   }
 
-  return sendRequest(accessToken, from, message)
+  return sendRequest(accessToken, from, message, baseUrl)
 }
