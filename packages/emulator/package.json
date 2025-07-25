@@ -1,6 +1,6 @@
 {
   "name": "@whatsapp-cloudapi/emulator",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
