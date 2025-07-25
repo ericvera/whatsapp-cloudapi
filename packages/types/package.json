@@ -10,6 +10,10 @@
     "./cloudapi": {
       "types": "./dist/cloudapi/index.d.ts",
       "default": "./dist/cloudapi/index.js"
+    },
+    "./simulation": {
+      "types": "./dist/simulation/index.d.ts",
+      "default": "./dist/simulation/index.js"
     }
   },
   "files": [

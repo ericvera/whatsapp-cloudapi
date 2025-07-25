@@ -3,6 +3,7 @@ import cors from 'cors'
 import type { Express, NextFunction, Request, Response } from 'express'
 import express from 'express'
 import type { Server } from 'http'
+import type { SimulateIncomingTextRequest } from '../../../types/src/simulation/request.js'
 import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
@@ -75,6 +76,43 @@ export class WhatsAppEmulator {
       this.validateVersion.bind(this),
       this.messageRoutes.handleSendMessage.bind(this.messageRoutes),
     )
+
+    // Simulation endpoints for testing
+    this.app.post('/simulate/incoming/text', (req: Request, res: Response) => {
+      if (!this.webhookService) {
+        res.status(400).json({
+          error:
+            'Webhook not configured. Please configure webhook when starting the emulator.',
+        })
+        return
+      }
+
+      const body = req.body as Partial<SimulateIncomingTextRequest>
+      const { from, name = 'Test User', message } = body
+
+      if (
+        !from ||
+        !message ||
+        typeof from !== 'string' ||
+        typeof message !== 'string'
+      ) {
+        res
+          .status(400)
+          .json({ error: 'from and message are required and must be strings' })
+        return
+      }
+
+      const contactName = typeof name === 'string' ? name : 'Test User'
+
+      void this.webhookService.sendIncomingMessage(
+        from,
+        contactName,
+        message,
+        this.config.server.businessPhoneNumberId,
+      )
+
+      res.json({ success: true, messageSimulated: true })
+    })
   }
 
   /**

@@ -934,6 +934,7 @@ __metadata:
     "@whatsapp-cloudapi/emulator": "workspace:*"
     "@whatsapp-cloudapi/types": "workspace:*"
     commander: "npm:^14.0.0"
+    e164num: "npm:^2.0.0"
     eslint: "npm:^9.31.0"
     typescript: "npm:^5.8.3"
     typescript-eslint: "npm:^8.38.0"
@@ -1440,6 +1441,13 @@ __metadata:
     es-errors: "npm:^1.3.0"
     gopd: "npm:^1.2.0"
   checksum: 10c0/199f2a0c1c16593ca0a145dbf76a962f8033ce3129f01284d48c45ed4e14fea9bbacd7b3610b6cdc33486cef20385ac054948fefc6272fcce645c09468f93031
+  languageName: node
+  linkType: hard
+
+"e164num@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "e164num@npm:2.0.0"
+  checksum: 10c0/e16a7452253f2626f7ba9b5603541588363ac936ffc083a2c5347ad25618cfd76ea75541a5faa912f59ce076759097925530a3d2d7d1795af324ab758e56e4ee
   languageName: node
   linkType: hard
 
