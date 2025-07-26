@@ -60,6 +60,30 @@ export class WhatsAppEmulator {
     next()
   }
 
+  private validatePhoneNumberId(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): void {
+    const phoneNumberId = req.params['phoneNumberId']
+
+    if (!phoneNumberId) {
+      res.status(400).json({ error: 'Phone number ID is required' })
+      return
+    }
+
+    if (phoneNumberId !== this.config.server.businessPhoneNumberId) {
+      res.status(400).json({
+        error: 'Invalid phone number ID',
+        expected: this.config.server.businessPhoneNumberId,
+        received: phoneNumberId,
+      })
+      return
+    }
+
+    next()
+  }
+
   private setupRoutes(): void {
     if (!this.app) {
       throw new Error('App not initialized')
@@ -72,8 +96,9 @@ export class WhatsAppEmulator {
 
     // WhatsApp Cloud API endpoints with version validation
     this.app.post(
-      `/:version/${this.config.server.businessPhoneNumberId}/messages`,
+      '/:version/:phoneNumberId/messages',
       this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
       this.messageRoutes.handleSendMessage.bind(this.messageRoutes),
     )
 
@@ -149,7 +174,7 @@ export class WhatsAppEmulator {
       // Return helpful error response
       const availableRoutes = [
         `GET /are-you-ok`,
-        `POST /v{version}/${this.config.server.businessPhoneNumberId}/messages`,
+        `POST /v{version}/{phoneNumberId}/messages (phoneNumberId must be: ${this.config.server.businessPhoneNumberId})`,
         `POST /simulate/incoming/text`,
       ]
 
