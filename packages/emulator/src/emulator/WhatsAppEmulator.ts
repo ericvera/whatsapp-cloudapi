@@ -53,6 +53,9 @@ export class WhatsAppEmulator {
     const version = req.params['version']
 
     if (!version || version !== SupportedVersion) {
+      console.error(
+        `❌ Version validation failed: expected ${SupportedVersion}, received ${version ?? 'undefined'}`,
+      )
       res.status(400).json(UnsupportedVersionError)
       return
     }
@@ -68,11 +71,17 @@ export class WhatsAppEmulator {
     const phoneNumberId = req.params['phoneNumberId']
 
     if (!phoneNumberId) {
+      console.error(
+        '❌ Phone number ID validation failed: missing phoneNumberId parameter',
+      )
       res.status(400).json({ error: 'Phone number ID is required' })
       return
     }
 
     if (phoneNumberId !== this.config.server.businessPhoneNumberId) {
+      console.error(
+        `❌ Phone number ID validation failed: expected ${this.config.server.businessPhoneNumberId}, received ${phoneNumberId}`,
+      )
       res.status(400).json({
         error: 'Invalid phone number ID',
         expected: this.config.server.businessPhoneNumberId,
@@ -111,8 +120,12 @@ export class WhatsAppEmulator {
     // Simulation endpoints for testing
     this.app.post('/simulate/incoming/text', (req: Request, res: Response) => {
       if (!this.webhookService) {
-        res.status(400).json({
-          error:
+        console.error(
+          '❌ Simulation failed: Webhook not configured. Please configure webhook when starting the emulator.',
+        )
+        res.status(503).json({
+          error: 'Service Unavailable',
+          message:
             'Webhook not configured. Please configure webhook when starting the emulator.',
         })
         return
@@ -127,6 +140,9 @@ export class WhatsAppEmulator {
         typeof from !== 'string' ||
         typeof message !== 'string'
       ) {
+        console.error(
+          `❌ Simulation failed: Invalid request parameters. from: ${typeof from}, message: ${typeof message}`,
+        )
         res
           .status(400)
           .json({ error: 'from and message are required and must be strings' })
@@ -152,21 +168,20 @@ export class WhatsAppEmulator {
     // Catch-all route for unhandled requests (must be last)
     this.app.use('/{*any}', (req: Request, res: Response) => {
       // Log the unhandled request for troubleshooting
-      console.log(`❌ Unhandled request: ${req.method} ${req.originalUrl}`)
+      console.error(`❌ Unhandled request: ${req.method} ${req.originalUrl}`)
 
       // Log headers (always safe)
-      console.log(`   Headers: ${JSON.stringify(req.headers, null, 2)}`)
+      console.error(`   Headers: ${JSON.stringify(req.headers, null, 2)}`)
 
       // Log body if present
       if (req.body) {
         try {
           const bodyStr = JSON.stringify(req.body, null, 2)
-
           if (bodyStr !== '{}' && bodyStr !== 'null') {
-            console.log(`   Body: ${bodyStr}`)
+            console.error(`   Body: ${bodyStr}`)
           }
         } catch {
-          console.log(`   Body: [unable to stringify]`)
+          console.error(`   Body: [unable to stringify]`)
         }
       }
 
@@ -174,7 +189,7 @@ export class WhatsAppEmulator {
       const queryStr = JSON.stringify(req.query, null, 2)
 
       if (queryStr !== '{}') {
-        console.log(`   Query: ${queryStr}`)
+        console.error(`   Query: ${queryStr}`)
       }
 
       // Return helpful error response
@@ -229,14 +244,14 @@ export class WhatsAppEmulator {
         this.server = server
 
         server.on('error', (error: Error) => {
+          console.error(`❌ Server error: ${error.message}`)
           reject(new Error(`Failed to start emulator: ${error.message}`))
         })
       } catch (error) {
-        reject(
-          new Error(
-            `Failed to start emulator: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          ),
-        )
+        const errorMessage = `Failed to start emulator: ${error instanceof Error ? error.message : 'Unknown error'}`
+
+        console.error(`❌ ${errorMessage}`)
+        reject(new Error(errorMessage))
       }
     })
   }
@@ -254,6 +269,7 @@ export class WhatsAppEmulator {
 
       this.server.close((error?: Error) => {
         if (error) {
+          console.error(`❌ Failed to stop emulator: ${error.message}`)
           reject(new Error(`Failed to stop emulator: ${error.message}`))
           return
         }
