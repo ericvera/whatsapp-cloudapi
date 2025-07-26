@@ -117,6 +117,49 @@ export class WhatsAppEmulator {
 
       res.json({ success: true, messageSimulated: true })
     })
+
+    // Catch-all route for unhandled requests (must be last)
+    this.app.use('*', (req: Request, res: Response) => {
+      // Log the unhandled request for troubleshooting
+      console.log(`❌ Unhandled request: ${req.method} ${req.originalUrl}`)
+
+      // Log headers (always safe)
+      console.log(`   Headers: ${JSON.stringify(req.headers, null, 2)}`)
+
+      // Log body if present
+      if (req.body) {
+        try {
+          const bodyStr = JSON.stringify(req.body, null, 2)
+
+          if (bodyStr !== '{}' && bodyStr !== 'null') {
+            console.log(`   Body: ${bodyStr}`)
+          }
+        } catch {
+          console.log(`   Body: [unable to stringify]`)
+        }
+      }
+
+      // Log query parameters if present
+      const queryStr = JSON.stringify(req.query, null, 2)
+
+      if (queryStr !== '{}') {
+        console.log(`   Query: ${queryStr}`)
+      }
+
+      // Return helpful error response
+      const availableRoutes = [
+        `GET /are-you-ok`,
+        `POST /v{version}/${this.config.server.businessPhoneNumberId}/messages`,
+        `POST /simulate/incoming/text`,
+      ]
+
+      res.status(404).json({
+        error: 'Route not found',
+        message: `The endpoint ${req.method} ${req.originalUrl} is not supported by the WhatsApp Cloud API emulator`,
+        availableRoutes,
+        documentation: 'See the emulator documentation for supported endpoints',
+      })
+    })
   }
 
   /**
@@ -137,6 +180,7 @@ export class WhatsAppEmulator {
           this.config.server.host,
           () => {
             const url = this.config.getServerUrl()
+
             console.log(`WhatsApp emulator running at ${url.toString()}`)
             if (this.webhookService && this.config.webhook?.url) {
               console.log(

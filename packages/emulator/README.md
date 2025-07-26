@@ -242,6 +242,55 @@ When you simulate an incoming message, the emulator will send a webhook to your 
 
 **Note:** The simulation endpoint requires webhook configuration when starting the emulator. Without webhook configuration, the endpoint will return an error.
 
+## Troubleshooting and Debugging
+
+### Request Logging
+
+The emulator provides comprehensive logging for troubleshooting:
+
+- **📤 Outgoing Messages** - Logs when API calls are made to send messages
+- **📲 Incoming Messages** - Logs when simulation endpoint receives messages
+- **🔗 Webhook Events** - Logs successful webhook deliveries and failures
+- **❌ Unhandled Requests** - Logs any requests to unsupported endpoints
+
+#### Unhandled Request Logging
+
+If you make a request to an endpoint that isn't supported by the emulator, it will:
+
+1. Log the full request details to the console for troubleshooting
+2. Return a helpful error response with available routes
+
+**Example log output:**
+
+```
+❌ Unhandled request: POST /v15.0/1234567890/media
+   Headers: {
+     "content-type": "application/json",
+     "authorization": "Bearer your-token"
+   }
+   Body: {
+     "messaging_product": "whatsapp",
+     "media": {...}
+   }
+```
+
+**Example error response:**
+
+```json
+{
+  "error": "Route not found",
+  "message": "The endpoint POST /v15.0/1234567890/media is not supported by the WhatsApp Cloud API emulator",
+  "availableRoutes": [
+    "GET /are-you-ok",
+    "POST /v{version}/1234567890/messages",
+    "POST /simulate/incoming/text"
+  ],
+  "documentation": "See the emulator documentation for supported endpoints"
+}
+```
+
+This helps identify what functionality might be missing from the emulator or if there are typos in your API calls.
+
 ## Requirements
 
 - Node.js >= 22
