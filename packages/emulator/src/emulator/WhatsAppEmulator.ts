@@ -144,7 +144,7 @@ export class WhatsAppEmulator {
     })
 
     // Catch-all route for unhandled requests (must be last)
-    this.app.use('*', (req: Request, res: Response) => {
+    this.app.use('/{*any}', (req: Request, res: Response) => {
       // Log the unhandled request for troubleshooting
       console.log(`❌ Unhandled request: ${req.method} ${req.originalUrl}`)
 
