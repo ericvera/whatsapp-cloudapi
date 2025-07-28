@@ -49,6 +49,8 @@ export const uploadMedia = async (
   const formData = new FormData()
   formData.append('messaging_product', 'whatsapp')
   formData.append('file', file)
+  // Note: Browser will automatically set Content-Length header to include
+  // the entire multipart body (file.size + multipart boundaries/headers)
 
   // Send the upload request
   const response = await fetch(`${apiUrl}/v22.0/${from}/media`, {

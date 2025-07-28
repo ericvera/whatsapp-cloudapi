@@ -2,6 +2,7 @@
 
 import type {
   EmulatorOptions,
+  MediaExpireResponse,
   MediaListResponse,
 } from '@whatsapp-cloudapi/emulator'
 import { WhatsAppEmulator } from '@whatsapp-cloudapi/emulator'
@@ -239,8 +240,12 @@ program
     }
   })
 
-program
-  .command('list-media')
+const mediaCommand = program
+  .command('media')
+  .description('Media management commands')
+
+mediaCommand
+  .command('list')
   .description('List uploaded media in the emulator')
   .option('-p, --port <number>', 'Port where emulator is running', '4004')
   .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
@@ -256,7 +261,7 @@ program
 
       // Fetch media list from the emulator debug endpoint
       const response = await fetch(
-        `http://${options.host}:${options.port}/debug/media`,
+        `http://${options.host}:${options.port}/debug/media/list`,
       )
 
       if (!response.ok) {
@@ -300,6 +305,82 @@ program
 
       console.log('')
       console.log('Note: ' + mediaData.note)
+    } catch (error) {
+      console.error(
+        'Error:',
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      process.exit(1)
+    }
+  })
+
+mediaCommand
+  .command('expire')
+  .description('Expire media files')
+  .option('--id <mediaId>', 'Expire specific media ID')
+  .option('--all', 'Expire all media files')
+  .option('-p, --port <number>', 'Port where emulator is running', '4004')
+  .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
+  .action(async (options: StatusOptions & { id?: string; all?: boolean }) => {
+    try {
+      // Validate options
+      if (!options.id && !options.all) {
+        console.error('✗ Either --id <mediaId> or --all is required')
+        process.exit(1)
+      }
+
+      if (options.id && options.all) {
+        console.error('✗ Cannot use both --id and --all options together')
+        process.exit(1)
+      }
+
+      // Check if emulator is running first
+      const isRunning = await checkEmulatorStatus(options.host, options.port)
+
+      if (!isRunning) {
+        console.error('✗ Emulator is not running')
+        process.exit(1)
+      }
+
+      let endpoint: string
+      if (options.id) {
+        endpoint = `http://${options.host}:${options.port}/debug/media/expire/${options.id}`
+      } else {
+        endpoint = `http://${options.host}:${options.port}/debug/media/expire/all`
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('✗ Failed to expire media:', error)
+        process.exit(1)
+      }
+
+      const result = (await response.json()) as MediaExpireResponse
+
+      if (options.id) {
+        console.log('✓ Media expired successfully!')
+        console.log(`📁 Media ID: ${options.id}`)
+        console.log(`⏰ Expired at: ${result.expired_at}`)
+      } else {
+        console.log('✓ All media expired successfully!')
+        console.log(
+          `📁 Expired media count: ${result.expired_media_ids?.length.toString() ?? '0'}`,
+        )
+        console.log(`⏰ Expired at: ${result.expired_at}`)
+
+        if (result.expired_media_ids && result.expired_media_ids.length > 0) {
+          console.log(
+            `📋 Expired media IDs: [${result.expired_media_ids.join(', ')}]`,
+          )
+        }
+      }
     } catch (error) {
       console.error(
         'Error:',

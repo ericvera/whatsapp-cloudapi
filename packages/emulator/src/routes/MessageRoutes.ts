@@ -5,11 +5,13 @@ import type {
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
 import type { WebhookService } from '../services/WebhookService.js'
+import type { MediaRoutes } from './MediaRoutes.js'
 
 export class MessageRoutes {
   constructor(
     private readonly businessPhoneNumberId: string,
     private readonly webhookService: WebhookService | undefined,
+    private readonly mediaRoutes: MediaRoutes,
   ) {}
 
   private extractMessageContent(body: CloudAPIRequest): string {
@@ -42,6 +44,26 @@ export class MessageRoutes {
           },
         })
         return
+      }
+
+      // Validate media ID for image messages
+      if (body.type === 'image') {
+        const mediaExists = this.mediaRoutes.isMediaValid(body.image.id)
+
+        if (!mediaExists) {
+          console.error(
+            `❌ Image message failed: Media ID ${body.image.id} not found or expired`,
+          )
+          res.status(400).json({
+            error: {
+              message: 'Media not found',
+              type: 'WhatsAppBusinessAPIError',
+              code: 131052,
+              error_subcode: 1404,
+            },
+          })
+          return
+        }
       }
 
       const messageId = `message_${nanoid(6)}`
