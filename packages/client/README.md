@@ -178,6 +178,159 @@ try {
 }
 ```
 
+## Image Media Messages
+
+This client supports uploading and sending image media through WhatsApp Cloud API.
+
+### uploadMedia
+
+Uploads an image to the WhatsApp Cloud API media endpoint.
+
+```typescript
+function uploadMedia(params: {
+  accessToken: string
+  from: string
+  file: Blob
+  baseUrl?: string
+}): Promise<CloudAPIMediaUploadResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `file` (Blob) - The image file to upload as a Blob
+- `baseUrl` (string, optional) - Custom API base URL (defaults to Facebook Graph API, use `http://localhost:4004` for emulator)
+
+#### Supported Image Formats
+
+- **JPEG** (.jpg, .jpeg) - `image/jpeg`
+- **PNG** (.png) - `image/png`
+- **Maximum size**: 5MB
+- **Requirements**: Images must be 8-bit, RGB or RGBA
+
+#### Returns
+
+Returns a Promise that resolves to a `CloudAPIMediaUploadResponse` object:
+
+```typescript
+interface CloudAPIMediaUploadResponse {
+  id: string // Media ID to use when sending the image
+}
+```
+
+#### Example
+
+```typescript
+import { uploadMedia } from '@whatsapp-cloudapi/client'
+
+// Create a Blob from file data (example using fetch)
+const response = await fetch('/path/to/image.jpg')
+const imageBlob = await response.blob()
+
+// Or create from buffer/array
+const imageData = new Uint8Array([
+  /* your image data */
+])
+const imageBlob = new Blob([imageData], { type: 'image/jpeg' })
+
+// Upload the Blob
+const mediaResponse = await uploadMedia({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  file: imageBlob,
+})
+
+// Use this ID to send the image
+console.log('Media ID:', mediaResponse.id)
+```
+
+### sendImageMessage
+
+Sends an image message using a media ID obtained from the media upload endpoint.
+
+```typescript
+function sendImageMessage(params: {
+  accessToken: string
+  from: string
+  to: string
+  mediaId: string
+  caption?: string
+  bizOpaqueCallbackData?: string
+  baseUrl?: string
+}): Promise<CloudAPIResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `mediaId` (string) - The media ID obtained from `uploadMedia()`
+- `caption` (string, optional) - Optional caption for the image (max 1024 characters)
+- `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
+- `baseUrl` (string, optional) - Custom API base URL (defaults to Facebook Graph API, use `http://localhost:4004` for emulator)
+
+#### Example
+
+```typescript
+import { uploadMedia, sendImageMessage } from '@whatsapp-cloudapi/client'
+
+// Step 1: Create Blob from image data
+const response = await fetch('/path/to/image.jpg')
+const imageBlob = await response.blob()
+
+// Step 2: Upload the image
+const mediaResponse = await uploadMedia({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  file: imageBlob,
+})
+
+// Step 3: Send the image message
+const messageResponse = await sendImageMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+1234567890',
+  mediaId: mediaResponse.id,
+  caption: 'Check out this image!',
+})
+
+console.log('Message sent:', messageResponse.messages[0].id)
+```
+
+#### Error Handling
+
+Both functions throw errors for common issues:
+
+```typescript
+try {
+  // Upload validation errors
+  await uploadMedia({
+    /* ... */
+  })
+} catch (error) {
+  // Possible errors:
+  // - Unsupported MIME type (not JPEG/PNG)
+  // - File size too large (>5MB)
+  // - API authentication errors
+  console.error('Upload failed:', error.message)
+}
+
+try {
+  // Send validation errors
+  await sendImageMessage({
+    /* ... */
+  })
+} catch (error) {
+  // Possible errors:
+  // - Caption too long (>1024 characters)
+  // - Invalid media ID
+  // - API authentication errors
+  console.error('Send failed:', error.message)
+}
+```
+
 ## Requirements
 
 - Node.js >= 22

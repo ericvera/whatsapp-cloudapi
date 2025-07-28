@@ -1,5 +1,58 @@
 // Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages/
 // Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates/
+// Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+
+/**
+ * Request body for sending an image message
+ */
+export interface CloudAPISendImageMessageRequest {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Type of recipient
+   * Currently only supports individual recipients
+   */
+  recipient_type?: 'individual'
+
+  /**
+   * An arbitrary string, useful for tracking.
+   */
+  biz_opaque_callback_data?: string
+
+  /**
+   * WhatsApp ID or phone number of the recipient
+   * Phone numbers must include the country code
+   * @example "+16505551234"
+   */
+  to: string
+
+  /**
+   * Type of message
+   * Set to 'image' for image messages
+   */
+  type: 'image'
+
+  /**
+   * The image message content
+   */
+  image: {
+    /**
+     * Media ID of the uploaded image
+     * Obtained from the media upload endpoint
+     */
+    id: string
+
+    /**
+     * Optional caption for the image
+     * Maximum length: 1024 characters
+     */
+    caption?: string
+  }
+}
 
 /**
  * Request body for sending a text message
@@ -330,3 +383,4 @@ export interface CloudAPISendTemplateMessageRequest {
 export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
+  | CloudAPISendImageMessageRequest

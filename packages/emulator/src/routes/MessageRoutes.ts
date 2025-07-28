@@ -3,6 +3,7 @@ import type {
   CloudAPIResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
+import { nanoid } from 'nanoid'
 import type { WebhookService } from '../services/WebhookService.js'
 
 export class MessageRoutes {
@@ -17,6 +18,8 @@ export class MessageRoutes {
         return body.text.body
       case 'template':
         return `[template: ${body.template.name}, params: ${JSON.stringify(body.template.components)}]`
+      case 'image':
+        return `[image: media_id=${body.image.id}${body.image.caption ? `, caption="${body.image.caption}"` : ''}]`
       default: {
         // Exhaustive check - this should never happen with current types
         return '[unknown message type]'
@@ -25,41 +28,65 @@ export class MessageRoutes {
   }
 
   public handleSendMessage(req: Request, res: Response): void {
-    const body = req.body as CloudAPIRequest
-    const { to } = body
-    const messageId = `mock_${String(Date.now())}_${Math.random().toString(36).slice(2)}`
+    try {
+      const body = req.body as CloudAPIRequest
+      const { to } = body
 
-    const messageContent = this.extractMessageContent(body)
+      if (!to) {
+        console.error('❌ Message send failed: Missing recipient phone number')
+        res.status(400).json({
+          error: {
+            message: 'Recipient phone number is required',
+            type: 'OAuthException',
+            code: 400,
+          },
+        })
+        return
+      }
 
-    console.log(
-      `📤 Outgoing message (ID: ${messageId}) to ${to}: "${messageContent}"`,
-    )
+      const messageId = `message_${nanoid(6)}`
 
-    // Simulate successful message send
-    const response: CloudAPIResponse = {
-      messaging_product: 'whatsapp',
-      contacts: [
-        {
-          input: to,
-          wa_id: to,
-        },
-      ],
-      messages: [
-        {
-          id: messageId,
-        },
-      ],
-    }
+      const messageContent = this.extractMessageContent(body)
 
-    // Send webhook asynchronously if configured
-    if (this.webhookService) {
-      void this.webhookService.sendMessageStatus(
-        messageId,
-        to,
-        this.businessPhoneNumberId,
+      console.log(
+        `📤 Outgoing message (ID: ${messageId}) to ${to}: "${messageContent}"`,
       )
-    }
 
-    res.status(200).json(response)
+      // Simulate successful message send
+      const response: CloudAPIResponse = {
+        messaging_product: 'whatsapp',
+        contacts: [
+          {
+            input: to,
+            wa_id: to,
+          },
+        ],
+        messages: [
+          {
+            id: messageId,
+          },
+        ],
+      }
+
+      // Send webhook asynchronously if configured
+      if (this.webhookService) {
+        void this.webhookService.sendMessageStatus(
+          messageId,
+          to,
+          this.businessPhoneNumberId,
+        )
+      }
+
+      res.status(200).json(response)
+    } catch (error) {
+      console.error('❌ Message send error:', error)
+      res.status(500).json({
+        error: {
+          message: 'Internal server error during message send',
+          type: 'OAuthException',
+          code: 500,
+        },
+      })
+    }
   }
 }

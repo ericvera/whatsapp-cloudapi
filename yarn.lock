@@ -962,6 +962,7 @@ __metadata:
     cors: "npm:^2.8.5"
     eslint: "npm:^9.32.0"
     express: "npm:^5.1.0"
+    nanoid: "npm:^5.1.5"
     typescript: "npm:^5.8.3"
     typescript-eslint: "npm:^8.38.0"
     vitest: "npm:^3.2.4"
@@ -2717,6 +2718,15 @@ __metadata:
   bin:
     nanoid: bin/nanoid.cjs
   checksum: 10c0/40e7f70b3d15f725ca072dfc4f74e81fcf1fbb02e491cf58ac0c79093adc9b0a73b152bcde57df4b79cd097e13023d7504acb38404a4da7bc1cd8e887b82fe0b
+  languageName: node
+  linkType: hard
+
+"nanoid@npm:^5.1.5":
+  version: 5.1.5
+  resolution: "nanoid@npm:5.1.5"
+  bin:
+    nanoid: bin/nanoid.js
+  checksum: 10c0/e6004f1ad6c7123eeb037062c4441d44982037dc043aabb162457ef6986e99964ba98c63c975f96c547403beb0bf95bc537bd7bf9a09baf381656acdc2975c3c
   languageName: node
   linkType: hard
 

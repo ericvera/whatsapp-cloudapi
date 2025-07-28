@@ -1,4 +1,31 @@
 // Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/messages/text-messages
+// Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+
+/**
+ * Response from uploading media to WhatsApp Cloud API
+ */
+export interface CloudAPIMediaUploadResponse {
+  /**
+   * The unique identifier for the uploaded media
+   * Use this ID when sending media messages
+   */
+  id: string
+}
+
+/**
+ * Image media constraints and supported formats
+ */
+export const ImageMediaConstraints = {
+  /**
+   * Supported MIME types for images
+   */
+  SupportedMimeTypes: ['image/jpeg', 'image/png'],
+
+  /**
+   * Maximum file size for images (5MB)
+   */
+  MaxFileSize: 5 * 1024 * 1024,
+}
 
 /**
  * Main response type for WhatsApp Cloud API requests

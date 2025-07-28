@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
-import type { EmulatorOptions } from '@whatsapp-cloudapi/emulator'
+import type {
+  EmulatorOptions,
+  MediaListResponse,
+} from '@whatsapp-cloudapi/emulator'
 import { WhatsAppEmulator } from '@whatsapp-cloudapi/emulator'
+import type { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation'
 import { Command } from 'commander'
 import { getPartialE164PhoneNumber, isValidE164PhoneNumber } from 'e164num'
-import type { SimulateIncomingTextRequest } from '../../types/src/simulation/request.js'
 
 export interface StartOptions {
   port: string
@@ -227,6 +230,76 @@ program
       console.log(
         `✓ Simulated incoming text from ${from} (${options.name}): "${options.message}"`,
       )
+    } catch (error) {
+      console.error(
+        'Error:',
+        error instanceof Error ? error.message : 'Unknown error',
+      )
+      process.exit(1)
+    }
+  })
+
+program
+  .command('list-media')
+  .description('List uploaded media in the emulator')
+  .option('-p, --port <number>', 'Port where emulator is running', '4004')
+  .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
+  .action(async (options: StatusOptions) => {
+    try {
+      // Check if emulator is running first
+      const isRunning = await checkEmulatorStatus(options.host, options.port)
+
+      if (!isRunning) {
+        console.error('✗ Emulator is not running')
+        process.exit(1)
+      }
+
+      // Fetch media list from the emulator debug endpoint
+      const response = await fetch(
+        `http://${options.host}:${options.port}/debug/media`,
+      )
+
+      if (!response.ok) {
+        console.error(
+          `Failed to fetch media list: ${response.status.toString()}`,
+        )
+        process.exit(1)
+      }
+
+      const mediaData = (await response.json()) as MediaListResponse
+
+      console.log('\n📁 Uploaded Media (Emulator):')
+      console.log(`Total: ${mediaData.media.length.toString()} media file(s)`)
+      console.log('')
+
+      if (mediaData.media.length === 0) {
+        console.log('No media files uploaded yet.')
+      } else {
+        console.log(
+          'Media ID'.padEnd(25) +
+            'Filename'.padEnd(20) +
+            'Size'.padEnd(10) +
+            'Type'.padEnd(15) +
+            'Uploaded',
+        )
+        console.log('─'.repeat(80))
+
+        for (const media of mediaData.media) {
+          const uploadedTime = new Date(media.uploadedAt).toLocaleString()
+          const sizeKB = Math.round(media.size / 1024)
+
+          console.log(
+            media.id.padEnd(25) +
+              media.filename.padEnd(20) +
+              `${sizeKB.toString()}KB`.padEnd(10) +
+              media.mimeType.padEnd(15) +
+              uploadedTime,
+          )
+        }
+      }
+
+      console.log('')
+      console.log('Note: ' + mediaData.note)
     } catch (error) {
       console.error(
         'Error:',

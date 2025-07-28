@@ -1,14 +1,16 @@
+import type { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import type { Express, NextFunction, Request, Response } from 'express'
 import express from 'express'
 import type { Server } from 'http'
-import type { SimulateIncomingTextRequest } from '../../../types/src/simulation/request.js'
 import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
+import { MediaRoutes } from '../routes/MediaRoutes.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
 import { WebhookService } from '../services/WebhookService.js'
 import type { EmulatorOptions } from '../types/config.js'
+import type { MediaListResponse } from '../types/media.js'
 
 export class WhatsAppEmulator {
   private server: Server | null = null
@@ -16,6 +18,7 @@ export class WhatsAppEmulator {
   private readonly config: EmulatorConfiguration
   private readonly webhookService: WebhookService | undefined
   private readonly messageRoutes: MessageRoutes
+  private readonly mediaRoutes: MediaRoutes
 
   constructor(options: EmulatorOptions) {
     this.config = new EmulatorConfiguration(options)
@@ -28,6 +31,8 @@ export class WhatsAppEmulator {
       this.config.server.businessPhoneNumberId,
       this.webhookService,
     )
+
+    this.mediaRoutes = new MediaRoutes()
   }
 
   private setupApp(): void {
@@ -109,12 +114,31 @@ export class WhatsAppEmulator {
       res.json({ status: 'ok' })
     })
 
+    // Debug endpoint to list uploaded media
+    this.app.get('/debug/media', (_req: Request, res: Response) => {
+      const mediaList = this.mediaRoutes.listMedia()
+
+      const response: MediaListResponse = {
+        media: mediaList,
+        note: 'This is emulator mock data. Media uploads are temporary and stored in memory.',
+      }
+      res.json(response)
+    })
+
     // WhatsApp Cloud API endpoints with version validation
     this.app.post(
       '/:version/:phoneNumberId/messages',
       this.validateVersion.bind(this),
       this.validatePhoneNumberId.bind(this),
       this.messageRoutes.handleSendMessage.bind(this.messageRoutes),
+    )
+
+    // Media upload endpoint
+    this.app.post(
+      '/:version/:phoneNumberId/media',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.mediaRoutes.handleMediaUpload.bind(this.mediaRoutes),
     )
 
     // Simulation endpoints for testing

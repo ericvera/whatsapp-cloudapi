@@ -2,6 +2,7 @@ import {
   CloudAPIRequest,
   CloudAPIResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { WhatsAppCloudAPIBaseUrl } from '../constants.js'
 
 /**
  * Creates headers for WhatsApp API requests
@@ -25,7 +26,7 @@ export const sendRequest = async (
   message: CloudAPIRequest,
   baseUrl?: string,
 ): Promise<CloudAPIResponse> => {
-  const apiUrl = baseUrl ?? 'https://graph.facebook.com'
+  const apiUrl = baseUrl ?? WhatsAppCloudAPIBaseUrl
   const response = await fetch(`${apiUrl}/v22.0/${from}/messages`, {
     method: 'POST',
     headers: createHeaders(accessToken),
@@ -34,6 +35,7 @@ export const sendRequest = async (
 
   if (!response.ok) {
     const error = await response.json()
+
     throw new Error(`WhatsApp API Error: ${JSON.stringify(error)}`)
   }
 

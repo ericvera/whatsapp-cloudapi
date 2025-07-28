@@ -1,28 +1,24 @@
-import { CloudAPISendTemplateMessageRequest } from '@whatsapp-cloudapi/types/cloudapi'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { sendTemplateMessage } from './sendTemplateMessage.js'
 
-// Mock global fetch
-const mockFetch = vi.fn()
-vi.stubGlobal('fetch', mockFetch)
+// Mock the sendRequest function
+vi.mock('./internal/sendRequest.js', () => ({
+  sendRequest: vi.fn(),
+}))
 
-// Reset mocks before each test
-beforeEach(() => {
-  mockFetch.mockReset()
-})
+import { sendRequest } from './internal/sendRequest.js'
+const mockSendRequest = vi.mocked(sendRequest)
 
 it('sends a template message successfully', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
-  const response = await sendTemplateMessage({
+  const result = await sendTemplateMessage({
     accessToken: 'test_token',
     from: '123456789',
     to: '+1234567890',
@@ -30,44 +26,36 @@ it('sends a template message successfully', async () => {
     languageCode: 'en_US',
   })
 
-  expect(mockFetch).toHaveBeenCalledWith(
-    'https://graph.facebook.com/v22.0/123456789/messages',
+  expect(result).toEqual(mockResponse)
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
     {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer test_token',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: '+1234567890',
-        type: 'template',
-        template: {
-          name: 'hello_world',
-          language: {
-            code: 'en_US',
-          },
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
         },
-      }),
+      },
     },
+    undefined,
   )
-
-  expect(response).toEqual(mockResponse)
 })
 
 it('sends a template message with custom baseUrl', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
-  const response = await sendTemplateMessage({
+  await sendTemplateMessage({
     accessToken: 'test_token',
     from: '123456789',
     to: '+1234567890',
@@ -76,42 +64,22 @@ it('sends a template message with custom baseUrl', async () => {
     baseUrl: 'http://localhost:4004',
   })
 
-  expect(mockFetch).toHaveBeenCalledWith(
-    'http://localhost:4004/v22.0/123456789/messages',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer test_token',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: '+1234567890',
-        type: 'template',
-        template: {
-          name: 'hello_world',
-          language: {
-            code: 'en_US',
-          },
-        },
-      }),
-    },
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    expect.anything(),
+    'http://localhost:4004',
   )
-
-  expect(response).toEqual(mockResponse)
 })
 
 it('uses default baseUrl when not provided for template message', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   await sendTemplateMessage({
     accessToken: 'test_token',
@@ -119,25 +87,24 @@ it('uses default baseUrl when not provided for template message', async () => {
     to: '+1234567890',
     templateName: 'hello_world',
     languageCode: 'en_US',
-    // baseUrl not provided - should use default
   })
 
-  expect(mockFetch).toHaveBeenCalledWith(
-    'https://graph.facebook.com/v22.0/123456789/messages',
-    expect.any(Object),
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    expect.anything(),
+    undefined,
   )
 })
 
 it('sends a template message with deterministic language policy', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   await sendTemplateMessage({
     accessToken: 'test_token',
@@ -148,23 +115,34 @@ it('sends a template message with deterministic language policy', async () => {
     languagePolicy: 'deterministic',
   })
 
-  const mockCall = mockFetch.mock.calls[0] as [string, { body: string }]
-  const requestBody = JSON.parse(mockCall[1].body) as {
-    template: { language: { policy: string } }
-  }
-  expect(requestBody.template.language.policy).toBe('deterministic')
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
+          policy: 'deterministic',
+        },
+      },
+    },
+    undefined,
+  )
 })
 
 it('sends a template message as a reply to a previous message', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   const messageId = 'wamid.HBgLMTY1MDUwNzY1MjAVAgARGBI5QTNDQTVCM0Q0Q0Q2RTY3RTcA'
 
@@ -177,23 +155,36 @@ it('sends a template message as a reply to a previous message', async () => {
     replyToMessageId: messageId,
   })
 
-  const mockCall = mockFetch.mock.calls[0] as [string, { body: string }]
-  const requestBody = JSON.parse(mockCall[1].body) as {
-    context: { message_id: string }
-  }
-  expect(requestBody.context).toEqual({ message_id: messageId })
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
+        },
+      },
+      context: {
+        message_id: messageId,
+      },
+    },
+    undefined,
+  )
 })
 
 it('sends a template message with components', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   const components = [
     {
@@ -202,7 +193,7 @@ it('sends a template message with components', async () => {
         {
           type: 'image' as const,
           image: {
-            link: 'https://example.com/image.jpg',
+            id: 'media_123',
           },
         },
       ],
@@ -212,7 +203,7 @@ it('sends a template message with components', async () => {
       parameters: [
         {
           type: 'text' as const,
-          text: 'John Doe',
+          text: 'John',
         },
         {
           type: 'currency' as const,
@@ -235,23 +226,34 @@ it('sends a template message with components', async () => {
     components,
   })
 
-  const mockCall = mockFetch.mock.calls[0] as [string, { body: string }]
-  const requestBody = JSON.parse(mockCall[1].body) as {
-    template: { components: typeof components }
-  }
-  expect(requestBody.template.components).toEqual(components)
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'order_confirmation',
+        language: {
+          code: 'en_US',
+        },
+        components,
+      },
+    },
+    undefined,
+  )
 })
 
 it('sends a template message with bizOpaqueCallbackData', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   await sendTemplateMessage({
     accessToken: 'test_token',
@@ -262,64 +264,65 @@ it('sends a template message with bizOpaqueCallbackData', async () => {
     bizOpaqueCallbackData: 'tracking-456',
   })
 
-  const mockCall = mockFetch.mock.calls[0] as [string, { body: string }]
-  const requestBody = JSON.parse(
-    mockCall[1].body,
-  ) as CloudAPISendTemplateMessageRequest
-  expect(requestBody.biz_opaque_callback_data).toBe('tracking-456')
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
+        },
+      },
+      biz_opaque_callback_data: 'tracking-456',
+    },
+    undefined,
+  )
 })
 
 it('throws an error when API request fails', async () => {
-  const errorResponse = {
-    error: {
-      message: 'Template not found',
-      type: 'WhatsAppBusinessApiError',
-      code: 132000,
-    },
-  }
-
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(errorResponse), { status: 404 }),
-  )
+  mockSendRequest.mockRejectedValueOnce(new Error('API Error'))
 
   await expect(
     sendTemplateMessage({
       accessToken: 'test_token',
       from: '123456789',
       to: '+1234567890',
-      templateName: 'non_existent_template',
+      templateName: 'hello_world',
       languageCode: 'en_US',
     }),
-  ).rejects.toThrow(`WhatsApp API Error: ${JSON.stringify(errorResponse)}`)
+  ).rejects.toThrow('API Error')
 })
 
 it('sends a template message with button component', async () => {
   const mockResponse = {
-    messaging_product: 'whatsapp',
+    messaging_product: 'whatsapp' as const,
     contacts: [{ input: '+1234567890', wa_id: '1234567890' }],
     messages: [{ id: 'message_id' }],
   }
 
-  mockFetch.mockResolvedValueOnce(
-    new Response(JSON.stringify(mockResponse), { status: 200 }),
-  )
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
 
   const components = [
     {
       type: 'button' as const,
       sub_type: 'quick_reply' as const,
-      index: '0',
+      index: 0,
       parameters: [
         {
           type: 'payload' as const,
-          payload: 'PAYLOAD_VALUE',
+          payload: 'quick_reply_payload',
         },
       ],
     },
     {
       type: 'button' as const,
       sub_type: 'url' as const,
-      index: '1',
+      index: 1,
       parameters: [
         {
           type: 'text' as const,
@@ -338,9 +341,22 @@ it('sends a template message with button component', async () => {
     components,
   })
 
-  const mockCall = mockFetch.mock.calls[0] as [string, { body: string }]
-  const requestBody = JSON.parse(mockCall[1].body) as {
-    template: { components: typeof components }
-  }
-  expect(requestBody.template.components).toEqual(components)
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: '+1234567890',
+      type: 'template',
+      template: {
+        name: 'button_template',
+        language: {
+          code: 'en_US',
+        },
+        components,
+      },
+    },
+    undefined,
+  )
 })
