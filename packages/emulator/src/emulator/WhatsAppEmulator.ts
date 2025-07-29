@@ -14,7 +14,6 @@ import {
 } from '../services/MediaPersistenceService.js'
 import { WebhookService } from '../services/WebhookService.js'
 import type { EmulatorOptions } from '../types/config.js'
-import type { MediaListResponse } from '../types/media.js'
 import type { SimulateIncomingMessageResponse } from '../types/simulation.js'
 
 export class WhatsAppEmulator {
@@ -95,6 +94,56 @@ export class WhatsAppEmulator {
     next()
   }
 
+  private handleSimulateIncomingMessage(req: Request, res: Response): void {
+    try {
+      const body = req.body as Partial<SimulateIncomingTextRequest>
+
+      if (!body.from || !body.message) {
+        console.error(
+          '❌ Simulate incoming message failed: Missing from or message in request body',
+        )
+        res.status(400).json({
+          error: {
+            message: 'Both "from" and "message" are required in request body',
+            type: 'ValidationError',
+            code: 400,
+          },
+        })
+        return
+      }
+
+      console.log(
+        `📥 Simulating incoming message from ${body.from}: "${body.message}"`,
+      )
+
+      if (this.webhookService) {
+        void this.webhookService.sendIncomingMessage(
+          body.from,
+          body.name ?? 'Test User',
+          body.message,
+          this.config?.server.businessPhoneNumberId ?? '',
+        )
+      }
+
+      const response: SimulateIncomingMessageResponse = {
+        message: 'Incoming message simulated successfully',
+        from: body.from,
+        text: body.message,
+      }
+
+      res.status(200).json(response)
+    } catch (error) {
+      console.error('❌ Simulate incoming message error:', error)
+      res.status(500).json({
+        error: {
+          message: 'Internal server error during message simulation',
+          type: 'InternalServerError',
+          code: 500,
+        },
+      })
+    }
+  }
+
   private setupRoutes(): void {
     if (!this.app || !this.messageRoutes || !this.mediaRoutes) {
       throw new Error('App or routes not initialized')
@@ -130,65 +179,16 @@ export class WhatsAppEmulator {
       this.mediaRoutes?.expireMedia(req, res)
     })
 
-    // Health check endpoint
+    // Debug health check endpoint
     this.app.get('/debug/health', (_req: Request, res: Response) => {
-      const response: MediaListResponse = {
-        media: [],
-        note: `WhatsApp Cloud API Emulator is running on phone number: ${this.config?.server.businessPhoneNumberId ?? 'unknown'}`,
-      }
-      res.status(200).json(response)
+      res.status(200).json({ status: 'ok' })
     })
 
-    // Simulate incoming message endpoint
-    this.app.post('/debug/simulate-incoming', (req: Request, res: Response) => {
-      try {
-        const body = req.body as Partial<SimulateIncomingTextRequest>
-
-        if (!body.from || !body.message) {
-          console.error(
-            '❌ Simulate incoming message failed: Missing from or message in request body',
-          )
-          res.status(400).json({
-            error: {
-              message: 'Both "from" and "message" are required in request body',
-              type: 'ValidationError',
-              code: 400,
-            },
-          })
-          return
-        }
-
-        console.log(
-          `📥 Simulating incoming message from ${body.from}: "${body.message}"`,
-        )
-
-        if (this.webhookService) {
-          void this.webhookService.sendIncomingMessage(
-            body.from,
-            body.name ?? 'Test User',
-            body.message,
-            this.config?.server.businessPhoneNumberId ?? '',
-          )
-        }
-
-        const response: SimulateIncomingMessageResponse = {
-          message: 'Incoming message simulated successfully',
-          from: body.from,
-          text: body.message,
-        }
-
-        res.status(200).json(response)
-      } catch (error) {
-        console.error('❌ Simulate incoming message error:', error)
-        res.status(500).json({
-          error: {
-            message: 'Internal server error during message simulation',
-            type: 'InternalServerError',
-            code: 500,
-          },
-        })
-      }
-    })
+    // Debug simulate incoming text endpoint
+    this.app.post(
+      '/debug/messages/send-text',
+      this.handleSimulateIncomingMessage.bind(this),
+    )
   }
 
   public async start(): Promise<void> {

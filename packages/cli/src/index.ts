@@ -70,7 +70,7 @@ const checkEmulatorStatus = async (
   port: string,
 ): Promise<boolean> => {
   try {
-    const response = await fetch(`http://${host}:${port}/are-you-ok`)
+    const response = await fetch(`http://${host}:${port}/debug/health`)
 
     if (!response.ok) {
       return false
@@ -243,7 +243,7 @@ program
       }
 
       const response = await fetch(
-        `http://${options.host}:${options.port}/simulate/incoming/text`,
+        `http://${options.host}:${options.port}/debug/messages/send-text`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
