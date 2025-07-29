@@ -17,6 +17,8 @@ export interface StartOptions {
   webhookUrl?: string
   webhookSecret?: string
   webhookTimeout?: string
+  import?: string
+  exportOnExit?: string | boolean
 }
 
 export interface StatusOptions {
@@ -102,6 +104,11 @@ program
     'Timeout in milliseconds for webhook requests',
     '5000',
   )
+  .option('--import <path>', 'Directory to import media metadata from')
+  .option(
+    '--export-on-exit [path]',
+    'Export media metadata on shutdown (uses import path if no path provided)',
+  )
   .action(async (options: StartOptions) => {
     if (!options.number) {
       console.error('Error: Business phone number ID is required (--number)')
@@ -126,6 +133,31 @@ program
         'Error: Both --webhook-url and --webhook-secret are required for webhook configuration',
       )
       process.exit(1)
+    }
+
+    // Add persistence configuration if provided
+    if (options.import || options.exportOnExit !== undefined) {
+      if (
+        options.exportOnExit !== undefined &&
+        !options.exportOnExit &&
+        !options.import
+      ) {
+        console.error(
+          'Error: --export-on-exit requires a path or --import to be specified',
+        )
+        process.exit(1)
+      }
+
+      emulatorConfig.persistence = {
+        ...(options.import && { importPath: options.import }),
+        ...(typeof options.exportOnExit === 'string' && {
+          exportOnExit: options.exportOnExit,
+          shouldExport: true,
+        }),
+        ...(typeof options.exportOnExit === 'boolean' &&
+          options.import && { exportOnExit: options.import }),
+        shouldExport: options.exportOnExit !== undefined,
+      }
     }
 
     const emulator = new WhatsAppEmulator(emulatorConfig)

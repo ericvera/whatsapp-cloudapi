@@ -18,7 +18,18 @@ export interface EmulatorWebhookConfig {
   timeout?: number
 }
 
+export interface EmulatorPersistenceConfig {
+  /** Directory to import media metadata from */
+  importPath?: string
+  /** Directory to export media metadata to (defaults to importPath if not specified) */
+  exportOnExit?: string
+  /** Whether export was explicitly requested */
+  shouldExport: boolean
+}
+
 export interface EmulatorOptions extends EmulatorConfig {
   /** Webhook configuration */
   webhook?: EmulatorWebhookConfig
+  /** Media persistence configuration */
+  persistence?: EmulatorPersistenceConfig
 }

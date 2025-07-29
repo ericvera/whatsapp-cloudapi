@@ -161,7 +161,8 @@ interface SimulateIncomingTextRequest {
 interface CloudAPISendTextMessageRequest {
   messaging_product: 'whatsapp'
   recipient_type: 'individual'
-  to: string // Recipient's phone number (e.g., "+16505551234")
+  // Recipient's phone number (e.g., "+16505551234")
+  to: string
   type: 'text'
   text: {
     body: string // Message text (max 4096 characters)

@@ -8,6 +8,10 @@ import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
 import { MediaRoutes } from '../routes/MediaRoutes.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
+import {
+  exportMedia,
+  importMedia,
+} from '../services/MediaPersistenceService.js'
 import { WebhookService } from '../services/WebhookService.js'
 import type { EmulatorOptions } from '../types/config.js'
 import type { MediaListResponse } from '../types/media.js'
@@ -20,8 +24,10 @@ export class WhatsAppEmulator {
   private webhookService: WebhookService | undefined
   private messageRoutes: MessageRoutes | null = null
   private mediaRoutes: MediaRoutes | null = null
+  private options: EmulatorOptions
 
   constructor(options: EmulatorOptions) {
+    this.options = options
     this.app = express()
     this.config = new EmulatorConfiguration(options)
 
@@ -29,12 +35,9 @@ export class WhatsAppEmulator {
       this.webhookService = new WebhookService(this.config.webhook)
     }
 
-    this.mediaRoutes = new MediaRoutes()
-    this.messageRoutes = new MessageRoutes(
-      this.config.server.businessPhoneNumberId,
-      this.webhookService,
-      this.mediaRoutes,
-    )
+    // MediaRoutes will be initialized after potential import
+    this.mediaRoutes = null
+    this.messageRoutes = null
 
     this.app.use(cors())
     this.app.use(bodyParser.json())
@@ -50,8 +53,6 @@ export class WhatsAppEmulator {
       console.log(`🌐 ${req.method} ${req.url}`)
       next()
     })
-
-    this.setupRoutes()
   }
 
   private validateVersion(
@@ -190,69 +191,102 @@ export class WhatsAppEmulator {
     })
   }
 
-  public start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        if (!this.config) {
-          reject(new Error('Emulator configuration not initialized'))
-          return
-        }
+  public async start(): Promise<void> {
+    if (!this.app || !this.config) {
+      throw new Error('Emulator not properly initialized')
+    }
 
-        // Local reference to avoid repeated null checks
-        const config = this.config
+    // Local reference after null check
+    const config = this.config
 
-        const server = this.app?.listen(
-          config.server.port,
-          config.server.host,
-          () => {
-            console.log(
-              `🚀 WhatsApp Cloud API Emulator started on http://${config.server.host}:${config.server.port.toString()}`,
-            )
-            console.log(
-              `📞 Emulated business phone number ID: ${config.server.businessPhoneNumberId}`,
-            )
+    try {
+      // Import media metadata if specified
+      let initialMediaStorage
 
-            if (config.webhook) {
-              console.log(`🔗 Webhook URL configured: ${config.webhook.url}`)
-            }
-            resolve()
-          },
+      if (this.options.persistence?.importPath) {
+        console.log(
+          `📁 Importing media metadata from: ${this.options.persistence.importPath}`,
         )
-
-        this.server = server ?? null
-
-        server?.on('error', (error: Error) => {
-          console.error('❌ Failed to start emulator:', error)
-          reject(error)
-        })
-      } catch (error) {
-        console.error('❌ Failed to start emulator:', error)
-        reject(
-          error instanceof Error
-            ? error
-            : new Error('Unknown error during start'),
+        initialMediaStorage = await importMedia(
+          this.options.persistence.importPath,
         )
       }
-    })
+
+      // Initialize routes with imported media storage
+      this.mediaRoutes = new MediaRoutes(initialMediaStorage)
+      this.messageRoutes = new MessageRoutes(
+        config.server.businessPhoneNumberId,
+        this.webhookService,
+        this.mediaRoutes,
+      )
+
+      // Setup routes after initialization
+      this.setupRoutes()
+
+      const { host, port } = config.server
+
+      this.server = this.app.listen(port, host, () => {
+        console.log(
+          `🚀 WhatsApp Cloud API Emulator running at http://${host}:${port.toString()}`,
+        )
+        console.log(
+          `📞 Emulating phone number: ${config.server.businessPhoneNumberId}`,
+        )
+
+        if (this.options.persistence?.importPath) {
+          console.log(
+            `📁 Media persistence: Import from ${this.options.persistence.importPath}`,
+          )
+        }
+
+        if (this.options.persistence?.shouldExport) {
+          const exportPath =
+            this.options.persistence.exportOnExit ??
+            this.options.persistence.importPath
+          console.log(
+            `💾 Media persistence: Export on exit to ${exportPath ?? 'unknown'}`,
+          )
+        }
+      })
+    } catch (error) {
+      console.error('❌ Failed to start emulator:', error)
+      throw error
+    }
   }
 
-  public stop(): Promise<void> {
-    return new Promise((resolve) => {
-      try {
-        if (this.server) {
-          this.server.close(() => {
-            this.server = null
-            console.log('🛑 WhatsApp Cloud API Emulator stopped')
-            resolve()
-          })
-        } else {
-          resolve()
+  public async stop(): Promise<void> {
+    try {
+      // Export media metadata if specified
+      if (this.options.persistence?.shouldExport && this.mediaRoutes) {
+        const exportPath =
+          this.options.persistence.exportOnExit ??
+          this.options.persistence.importPath
+
+        if (!exportPath) {
+          throw new Error('Export path is required when shouldExport is true')
         }
-      } catch (error) {
-        console.error('❌ Failed to stop emulator:', error)
-        // Still resolve to avoid hanging
-        resolve()
+
+        console.log(`💾 Exporting media metadata to: ${exportPath}`)
+        await exportMedia(exportPath, this.mediaRoutes.getMediaStorage())
       }
-    })
+
+      if (this.server) {
+        await new Promise<void>((resolve, reject) => {
+          this.server?.close((error) => {
+            if (error) {
+              reject(error)
+            } else {
+              resolve()
+            }
+          })
+        })
+
+        this.server = null
+        console.log('🛑 Emulator stopped')
+      }
+    } catch (error) {
+      console.error('❌ Error during emulator shutdown:', error)
+      throw error
+    }
   }
 }

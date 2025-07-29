@@ -12,8 +12,13 @@ export class MediaRoutes {
   private mediaStorage = new Map<string, MockMediaEntry>()
   private upload: multer.Multer
 
-  constructor() {
-    // Configure multer for memory storage (files stored in memory as Buffer)
+  constructor(initialMediaStorage?: Map<string, MockMediaEntry>) {
+    // Initialize with imported media storage if provided
+    if (initialMediaStorage) {
+      this.mediaStorage = initialMediaStorage
+    }
+
+    // Configure multer for memory storage (files validated then discarded)
     this.upload = multer({
       storage: multer.memoryStorage(),
       limits: {
@@ -167,8 +172,9 @@ export class MediaRoutes {
 
         this.mediaStorage.set(mediaId, mockEntry)
 
+        // File is now discarded - we only keep metadata
         console.log(
-          `📁 Media uploaded: ${mediaId} (${req.file.size.toString()} bytes, expires: ${expiresAt.toISOString()})`,
+          `📁 Media metadata stored: ${mediaId} (${req.file.size.toString()} bytes, expires: ${expiresAt.toISOString()})`,
         )
 
         const response: CloudAPIMediaUploadResponse = {
@@ -302,5 +308,12 @@ export class MediaRoutes {
         },
       })
     }
+  }
+
+  /**
+   * Get the current media storage for export purposes
+   */
+  public getMediaStorage(): Map<string, MockMediaEntry> {
+    return this.mediaStorage
   }
 }

@@ -55,6 +55,8 @@ Options:
 - `--webhook-url <url>` - URL to send webhook events to
 - `--webhook-secret <secret>` - Secret token for webhook verification
 - `--webhook-timeout <ms>` - Timeout in milliseconds for webhook requests (default: 5000)
+- `--import <path>` - Directory to import media metadata from
+- `--export-on-exit [path]` - Export media metadata on shutdown (uses import path if no path provided)
 
 Examples:
 
@@ -69,9 +71,23 @@ wa-emulator start --port 3000 --host 0.0.0.0 --number 15550123456
 wa-emulator start --number 15550123456 \
   --webhook-url http://localhost:8080/webhook \
   --webhook-secret my-secret-key
+
+# With media persistence - import only
+wa-emulator start --number 15550123456 --import ./emulator-data
+
+# With media persistence - import and export to same location
+wa-emulator start --number 15550123456 --import ./emulator-data --export-on-exit
+
+# With media persistence - import and export to different locations
+wa-emulator start --number 15550123456 --import ./old-data --export-on-exit ./new-data
+
+# Export only (no import)
+wa-emulator start --number 15550123456 --export-on-exit ./emulator-data
 ```
 
 **Note:** Webhook configuration (both `--webhook-url` and `--webhook-secret`) is required to use the `simulate` command for testing incoming messages.
+
+**Media Persistence:** Use `--import` to load previously saved media metadata and `--export-on-exit` to save media metadata on shutdown. This allows media state to persist across emulator restarts for long-term testing scenarios.
 
 ### Check Status
 

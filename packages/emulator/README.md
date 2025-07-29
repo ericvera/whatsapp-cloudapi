@@ -12,6 +12,7 @@
 - 🛠️ Mock server implementation
 - 🧪 Perfect for testing and development
 - 📲 Simulation endpoints for incoming messages
+- 💾 Media persistence across emulator restarts
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
 - 🔔 Webhook support for status updates
@@ -38,6 +39,11 @@ const emulator = new WhatsAppEmulator({
     secret: 'your-webhook-secret', // Required secret for webhook verification
     timeout: 5000, // Optional timeout in milliseconds (defaults to 5000)
   },
+  persistence: {
+    importPath: './emulator-data', // Optional: Import media metadata on startup
+    exportOnExit: './emulator-data', // Optional: Export media metadata on shutdown
+    shouldExport: true, // Required when exportOnExit is specified
+  },
 })
 
 // Start the emulator
@@ -48,6 +54,69 @@ await emulator.start()
 
 // When done, stop the emulator
 await emulator.stop()
+```
+
+## Media Persistence
+
+The emulator supports persisting media metadata across restarts using export/import functionality. This is useful for long-term testing scenarios where you want to maintain media state between development sessions.
+
+### Features
+
+- **Metadata-only storage**: Only media metadata is persisted (filename, size, MIME type, expiration), not actual files
+- **Automatic cleanup**: Expired media entries are automatically removed during import and export
+- **Flexible paths**: Import from one location, export to another
+
+### Configuration
+
+```typescript
+const emulator = new WhatsAppEmulator({
+  businessPhoneNumberId: '15550123456',
+  persistence: {
+    // Import media metadata on startup
+    importPath: './test-data',
+    // Export media metadata on shutdown
+    exportOnExit: './backup-data',
+    // Must be true to enable export
+    shouldExport: true,
+  },
+})
+```
+
+### CLI Usage
+
+```bash
+# Import only (no export)
+wa-emulator start --number 15550123456 --import ./emulator-data
+
+# Import and export to same location
+wa-emulator start --number 15550123456 --import ./emulator-data --export-on-exit
+
+# Import and export to different locations
+wa-emulator start --number 15550123456 --import ./old-data --export-on-exit ./new-data
+
+# Export only
+wa-emulator start --number 15550123456 --export-on-exit ./emulator-data
+```
+
+### Data Format
+
+Media metadata is stored in `media-manifest.json`:
+
+```json
+{
+  "version": "1.0",
+  "exportedAt": "2024-01-15T10:30:00.000Z",
+  "media": [
+    {
+      "id": "abc123",
+      "filename": "image.jpg",
+      "mimeType": "image/jpeg",
+      "size": 2048576,
+      "uploadedAt": "2024-01-15T10:15:00.000Z",
+      "expiresAt": "2024-02-14T10:15:00.000Z"
+    }
+  ]
+}
 ```
 
 ## API Reference
@@ -80,6 +149,15 @@ interface EmulatorOptions {
     secret: string
     /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
     timeout?: number
+  }
+  /** Media persistence configuration */
+  persistence?: {
+    /** Directory to import media metadata from */
+    importPath?: string
+    /** Directory to export media metadata to (defaults to importPath if not specified) */
+    exportOnExit?: string
+    /** Whether export was explicitly requested */
+    shouldExport: boolean
   }
 }
 ```
@@ -162,9 +240,12 @@ Simulates an incoming text message from a user to your business phone number.
 
 ```typescript
 {
-  from: string // Phone number in E.164 format (e.g., "+1234567890")
-  name: string // Sender's display name (e.g., "John Doe")
-  message: string // Text message content
+  // Phone number in E.164 format (e.g., "+1234567890")
+  from: string
+  // Sender's display name (e.g., "John Doe")
+  name: string
+  // Text message content
+  message: string
 }
 ```
 
