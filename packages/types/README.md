@@ -117,6 +117,45 @@ function handleWebhook(payload: WebhookPayload) {
 }
 ```
 
+### Template Parameter Types
+
+The library supports all WhatsApp Cloud API template parameter types:
+
+- `text` - Text parameters for templates
+- `currency` - Currency values with code, amount and fallback
+- `date_time` - Date and time parameters
+- `image` - Image parameters (via ID only)
+- `document` - Document parameters (via ID only)
+- `video` - Video parameters (via ID only)
+- `location` - Location parameters (latitude, longitude, name, address)
+- `payload` - Payload for interactive buttons
+
+### Webhook Types
+
+```typescript
+interface WebhookPayload {
+  object: 'whatsapp_business_account'
+  entry: {
+    id: string
+    changes: {
+      value: {
+        messages?: WebhookMessage[]
+        statuses?: WebhookStatus[]
+      }
+    }[]
+  }[]
+}
+```
+
+## Requirements
+
+- Node.js >= 22
+- TypeScript >= 5.0
+
+## Related Packages
+
+- [@whatsapp-cloudapi/client](https://www.npmjs.com/package/@whatsapp-cloudapi/client) - Type-safe WhatsApp Cloud API client
+
 ### Simulation Types
 
 For simulating incoming messages with the emulator:
@@ -157,7 +196,7 @@ interface SimulateIncomingTextRequest {
 
 ### Cloud API Types
 
-```typescript
+````typescript
 interface CloudAPISendTextMessageRequest {
   messaging_product: 'whatsapp'
   recipient_type: 'individual'
@@ -169,43 +208,107 @@ interface CloudAPISendTextMessageRequest {
     preview_url?: boolean
   }
 }
-```
 
-### Template Parameter Types
+interface CloudAPISendInteractiveCTAURLRequest {
+  messaging_product: 'whatsapp'
+  recipient_type: 'individual'
+  // Recipient's phone number (e.g., "+16505551234")
+  to: string
+  type: 'interactive'
+  interactive: {
+    type: 'cta_url'
+    // Optional header (text or image only)
+    header?:
+      | {
+          type: 'text'
+          // Max 60 characters
+          text: string
+        }
+      | {
+          type: 'image'
+          image: { id: string }
+        }
+    // Required message body
+    body: {
+      // Max 1024 characters
+      text: string
+    }
+    // Optional footer
+    footer?: {
+      // Max 60 characters
+      text: string
+    }
+    // Required action with CTA URL button
+    action: {
+      name: 'cta_url'
+      parameters: {
+        // Button text, max 20 characters
+        display_text: string
+        // Must start with http:// or https://, cannot be IP address
+        url: string
+      }
+    }
+  }
+  // Optional tracking data
+  biz_opaque_callback_data?: string
+}
 
-The library supports all WhatsApp Cloud API template parameter types:
+## Interactive CTA URL Messages
 
-- `text` - Text parameters for templates
-- `currency` - Currency values with code, amount and fallback
-- `date_time` - Date and time parameters
-- `image` - Image parameters (via ID or link)
-- `document` - Document parameters (via ID or link)
-- `video` - Video parameters (via ID or link)
-- `location` - Location parameters (latitude, longitude, name, address)
-- `payload` - Payload for interactive buttons
-
-### Webhook Types
+Send interactive call-to-action URL messages with text or image headers:
 
 ```typescript
-interface WebhookPayload {
-  object: 'whatsapp_business_account'
-  entry: {
-    id: string
-    changes: {
-      value: {
-        messages?: WebhookMessage[]
-        statuses?: WebhookStatus[]
+import { CloudAPISendInteractiveCTAURLRequest } from '@whatsapp-cloudapi/types/cloudapi'
+
+// CTA with text header
+const ctaWithText: CloudAPISendInteractiveCTAURLRequest = {
+  messaging_product: 'whatsapp',
+  recipient_type: 'individual',
+  to: '+1234567890',
+  type: 'interactive',
+  interactive: {
+    type: 'cta_url',
+    header: {
+      type: 'text',
+      text: 'Special Offer!'
+    },
+    body: {
+      text: 'Check out our latest deals and save up to 50% on selected items.'
+    },
+    action: {
+      name: 'cta_url',
+      parameters: {
+        display_text: 'Shop Now',
+        url: 'https://shop.example.com/deals'
       }
-    }[]
-  }[]
+    }
+  }
 }
-```
 
-## Requirements
-
-- Node.js >= 22
-- TypeScript >= 5.0
-
-## Related Packages
-
-- [@whatsapp-cloudapi/client](https://www.npmjs.com/package/@whatsapp-cloudapi/client) - Type-safe WhatsApp Cloud API client
+// CTA with image header
+const ctaWithImage: CloudAPISendInteractiveCTAURLRequest = {
+  messaging_product: 'whatsapp',
+  recipient_type: 'individual',
+  to: '+1234567890',
+  type: 'interactive',
+  interactive: {
+    type: 'cta_url',
+    header: {
+      type: 'image',
+      image: {
+        id: 'MEDIA_ID_FROM_UPLOAD'
+      }
+    },
+    body: {
+      text: 'Browse our complete product catalog with detailed specifications.'
+    },
+    action: {
+      name: 'cta_url',
+      parameters: {
+        display_text: 'View Catalog',
+        url: 'https://catalog.example.com'
+      }
+    }
+  }
+}
+````

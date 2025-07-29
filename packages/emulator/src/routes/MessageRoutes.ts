@@ -22,6 +22,16 @@ export class MessageRoutes {
         return `[template: ${body.template.name}, params: ${JSON.stringify(body.template.components)}]`
       case 'image':
         return `[image: media_id=${body.image.id}${body.image.caption ? `, caption="${body.image.caption}"` : ''}]`
+      case 'interactive': {
+        // Currently only CTA URL messages are supported in the type system
+        const headerInfo = body.interactive.header
+          ? `, header=${body.interactive.header.type}`
+          : ''
+        const footerInfo = body.interactive.footer
+          ? `, footer="${body.interactive.footer.text}"`
+          : ''
+        return `[cta_url: "${body.interactive.body.text}", button="${body.interactive.action.parameters.display_text}", url="${body.interactive.action.parameters.url}"${headerInfo}${footerInfo}]`
+      }
       default: {
         // Exhaustive check - this should never happen with current types
         return '[unknown message type]'
@@ -60,6 +70,167 @@ export class MessageRoutes {
               type: 'WhatsAppBusinessAPIError',
               code: 131052,
               error_subcode: 1404,
+            },
+          })
+          return
+        }
+      }
+
+      // Validate media IDs for interactive CTA URL messages
+      if (body.type === 'interactive') {
+        // Note: Currently only CTA URL messages are supported in the type system
+        const header = body.interactive.header
+
+        // Validate header type - only text and image are supported
+        if (header) {
+          const headerType = header.type as string
+
+          if (headerType !== 'text' && headerType !== 'image') {
+            console.error(
+              `❌ CTA message failed: Unsupported header type: ${headerType}`,
+            )
+            res.status(400).json({
+              error: {
+                message:
+                  'Only text and image headers are supported for CTA URL messages',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+        }
+
+        if (header && header.type === 'image') {
+          const mediaId = header.image.id
+          const mediaExists = this.mediaRoutes.isMediaValid(mediaId)
+          if (!mediaExists) {
+            console.error(
+              `❌ CTA message failed: Media ID ${mediaId} not found or expired`,
+            )
+            res.status(400).json({
+              error: {
+                message: 'Media not found',
+                type: 'WhatsAppBusinessAPIError',
+                code: 131052,
+                error_subcode: 1404,
+              },
+            })
+            return
+          }
+        }
+
+        // Validate CTA URL format and ensure it's not an IP address
+        const url = body.interactive.action.parameters.url
+
+        // Validate URL format
+        try {
+          const urlObj = new URL(url)
+
+          // Check if protocol is HTTP or HTTPS
+          if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+            console.error('❌ CTA message failed: Invalid URL protocol')
+            res.status(400).json({
+              error: {
+                message: 'URL must use http:// or https:// protocol',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          // Check if hostname is an IP address (IPv4 or IPv6)
+          const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
+
+          // Check for IPv6 by looking for colons (IPv6 addresses contain colons)
+          const hasColons = urlObj.hostname.includes(':')
+
+          if (ipv4Pattern.test(urlObj.hostname) || hasColons) {
+            console.error(
+              '❌ CTA message failed: URL hostname cannot be an IP address',
+            )
+            res.status(400).json({
+              error: {
+                message: 'URL hostname cannot be an IP address',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+        } catch {
+          console.error('❌ CTA message failed: Invalid URL format')
+          res.status(400).json({
+            error: {
+              message: 'Invalid URL format',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+          return
+        }
+
+        // Validate character limits
+        const bodyText = body.interactive.body.text
+        const buttonText = body.interactive.action.parameters.display_text
+        const headerText =
+          body.interactive.header?.type === 'text'
+            ? body.interactive.header.text
+            : undefined
+        const footerText = body.interactive.footer?.text
+
+        if (bodyText.length > 1024) {
+          console.error(
+            '❌ CTA message failed: Body text exceeds 1024 characters',
+          )
+          res.status(400).json({
+            error: {
+              message: 'Body text cannot exceed 1024 characters',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+          return
+        }
+
+        if (buttonText.length > 20) {
+          console.error(
+            '❌ CTA message failed: Button text exceeds 20 characters',
+          )
+          res.status(400).json({
+            error: {
+              message: 'Button text cannot exceed 20 characters',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+          return
+        }
+
+        if (headerText && headerText.length > 60) {
+          console.error(
+            '❌ CTA message failed: Header text exceeds 60 characters',
+          )
+          res.status(400).json({
+            error: {
+              message: 'Header text cannot exceed 60 characters',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+          return
+        }
+
+        if (footerText && footerText.length > 60) {
+          console.error(
+            '❌ CTA message failed: Footer text exceeds 60 characters',
+          )
+          res.status(400).json({
+            error: {
+              message: 'Footer text cannot exceed 60 characters',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
             },
           })
           return

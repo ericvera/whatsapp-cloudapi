@@ -323,6 +323,89 @@ When you simulate an incoming message, the emulator will send a webhook to your 
 
 **Note:** The simulation endpoint requires webhook configuration when starting the emulator. Without webhook configuration, the endpoint will return an error.
 
+### Supported Message Types
+
+The emulator supports simulating various types of outgoing messages and receiving them as incoming webhook events:
+
+#### CTA URL Messages
+
+The emulator can receive and process Call-to-Action (CTA) URL messages from clients, generating appropriate webhook events for message delivery status.
+
+**CTA Message Format:**
+
+```typescript
+// Example request that the emulator handles
+{
+  "messaging_product": "whatsapp",
+  // Type of recipient
+  "recipient_type": "individual",
+  "to": "+1234567890",
+  "type": "interactive",
+  "interactive": {
+    "type": "cta_url",
+    "header": {
+      "type": "text",
+      "text": "Special Offer!"
+    },
+    "body": {
+      "text": "Get 20% off your next purchase. Limited time offer!"
+    },
+    "footer": {
+      "text": "Valid until end of month"
+    },
+    "action": {
+      "name": "cta_url",
+      "parameters": {
+        "display_text": "Shop Now",
+        "url": "https://shop.example.com/sale"
+      }
+    }
+  }
+}
+```
+
+**Generated Webhook for CTA Messages:**
+
+When a CTA message is sent through the emulator, it generates delivery status webhooks:
+
+```typescript
+{
+  object: 'whatsapp_business_account',
+  entry: [
+    {
+      id: 'your_business_phone_number_id',
+      changes: [
+        {
+          value: {
+            messaging_product: 'whatsapp',
+            metadata: {
+              display_phone_number: 'your_business_phone_number_id',
+              phone_number_id: 'your_business_phone_number_id',
+            },
+            statuses: [
+              {
+                id: 'wamid.emulated_cta_message_id',
+                status: 'sent',
+                timestamp: '1734567890',
+                recipient_id: '+1234567890'
+              }
+            ]
+          },
+          field: 'messages'
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Important Notes for CTA Messages:**
+
+- **No User Response Simulation**: CTA URL clicks direct users to external websites and do not generate webhook responses back to the business
+- **Status Webhooks Only**: The emulator generates delivery status webhooks (sent, delivered, read) but not interaction webhooks
+- **Header Support**: All header types are supported (text, image, video, document) using media IDs only
+- **Validation**: The emulator validates CTA message structure according to WhatsApp API specifications
+
 ## Troubleshooting and Debugging
 
 ### Request Logging

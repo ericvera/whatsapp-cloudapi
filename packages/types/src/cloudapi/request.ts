@@ -380,7 +380,143 @@ export interface CloudAPISendTemplateMessageRequest {
   }
 }
 
+/**
+ * Request body for sending an interactive CTA URL message
+ */
+export interface CloudAPISendInteractiveCTAURLRequest {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Type of recipient
+   * Currently only supports individual recipients
+   */
+  recipient_type?: 'individual'
+
+  /**
+   * The context of a previous message to reply to
+   */
+  context?: {
+    /**
+     * The message ID of the message being replied to
+     */
+    message_id: string
+  }
+
+  /**
+   * An arbitrary string, useful for tracking.
+   * Maximum length: 512 characters
+   */
+  biz_opaque_callback_data?: string
+
+  /**
+   * WhatsApp ID or phone number of the recipient
+   * Phone numbers must include the country code
+   * @example "+16505551234"
+   */
+  to: string
+
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'cta_url' for call-to-action URL messages
+     */
+    type: 'cta_url'
+
+    /**
+     * Optional header content
+     * Only one header type can be used per message
+     * Currently only text and image headers are supported
+     */
+    header?:
+      | {
+          type: 'text'
+          /**
+           * Header text content
+           * Maximum 60 characters
+           */
+          text: string
+        }
+      | {
+          type: 'image'
+          image: {
+            /**
+             * Media ID of the uploaded image
+             * Obtained from the media upload endpoint
+             */
+            id: string
+          }
+        }
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Required action with CTA URL button
+     */
+    action: {
+      /**
+       * Action name
+       * Must be 'cta_url' for CTA URL messages
+       */
+      name: 'cta_url'
+
+      /**
+       * Action parameters
+       */
+      parameters: {
+        /**
+         * Text displayed on the CTA button
+         * Maximum 20 characters
+         */
+        display_text: string
+
+        /**
+         * URL to open when button is tapped
+         * Must start with http:// or https://
+         * Must include a hostname (IP addresses not supported)
+         */
+        url: string
+      }
+    }
+  }
+}
+
 export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
+  | CloudAPISendInteractiveCTAURLRequest

@@ -331,12 +331,151 @@ try {
 }
 ```
 
+## Call-to-Action (CTA) URL Messages
+
+Interactive call-to-action URL messages allow you to send buttons that direct users to external websites. These messages are ideal when you want users to visit a URL without displaying the full URL in the message text.
+
+### sendCTAURLMessage
+
+Sends an interactive call-to-action URL button message to a WhatsApp user.
+
+```typescript
+function sendCTAURLMessage(params: {
+  accessToken: string
+  from: string
+  to: string
+  bodyText: string
+  buttonText: string
+  url: string
+  headerText?: string
+  headerImage?: { id: string }
+  footerText?: string
+  bizOpaqueCallbackData?: string
+  baseUrl?: string
+}): Promise<CloudAPIResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `to` (string) - Recipient's phone number with country code or phone number ID (e.g., "+16505551234" or "5551234")
+- `bodyText` (string) - Main message text. Maximum 1024 characters. URLs are automatically hyperlinked
+- `buttonText` (string) - Text displayed on the CTA button. Maximum 20 characters
+- `url` (string) - URL to open when button is tapped. Must start with `http://` or `https://` and cannot be an IP address
+- `headerText` (string, optional) - Header text. Maximum 60 characters. Cannot be used with headerImage
+- `headerImage` (object, optional) - Image header using media ID. Cannot be used with headerText
+- `footerText` (string, optional) - Footer text. Maximum 60 characters. URLs are automatically hyperlinked
+- `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
+- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API, use http://localhost:4004 for emulator)
+
+#### Returns
+
+Returns a Promise that resolves to a `CloudAPIResponse` object:
+
+```typescript
+interface CloudAPIResponse {
+  messaging_product: 'whatsapp'
+  contacts: {
+    // The phone number provided in the request
+    input: string
+    // The WhatsApp ID for the contact
+    wa_id: string
+  }[]
+  messages: {
+    // Unique message identifier
+    id: string
+  }[]
+}
+```
+
+#### Examples
+
+##### Simple CTA with Text Header
+
+```typescript
+import { sendCTAURLMessage } from '@whatsapp-cloudapi/client'
+
+// Send a CTA message with text header
+const response = await sendCTAURLMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  headerText: 'Special Offer!',
+  bodyText: 'Get 20% off your next purchase. Limited time offer!',
+  buttonText: 'Shop Now',
+  url: 'https://shop.example.com/sale',
+  footerText: 'Valid until end of month',
+})
+
+console.log('CTA message sent:', response.messages[0].id)
+```
+
+##### CTA with Image Header
+
+```typescript
+// Send a CTA message with image header using media ID
+const response = await sendCTAURLMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  headerImage: { id: 'MEDIA_ID_FROM_UPLOAD' },
+  bodyText:
+    'Browse our complete product catalog with detailed specifications and pricing.',
+  buttonText: 'View Catalog',
+  url: 'https://catalog.example.com',
+})
+```
+
+##### Minimal CTA Message
+
+```typescript
+// Send a minimal CTA message with just body and button
+const response = await sendCTAURLMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Visit our website for more information.',
+  buttonText: 'Visit Website',
+  url: 'https://example.com',
+})
+```
+
+#### Error Handling
+
+The function throws errors for various validation and API issues:
+
+```typescript
+try {
+  await sendCTAURLMessage({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    to: '+16505551234',
+    bodyText: 'Check this out!',
+    buttonText: 'Click Me',
+    url: 'https://example.com',
+  })
+} catch (error) {
+  // Possible errors:
+  // - Body text too long (>1024 characters)
+  // - Button text too long (>20 characters)
+  // - Footer text too long (>60 characters)
+  // - Header text too long (>60 characters)
+  // - Invalid URL format
+  // - URL hostname is an IP address
+  // - Multiple header types specified
+  // - API authentication errors
+  // - Network/connectivity issues
+  console.error('Failed to send CTA message:', error.message)
+}
+```
+
+#### Important Notes
+
+- **No Webhook Response**: Unlike reply buttons, CTA URL clicks do not generate webhook responses. Users navigate directly to the external URL.
+- **URL Requirements**: URLs must start with `http://` or `https://` and include a hostname (IP addresses are not supported).
+- **Header Types**: Only one header type can be used per message (headerText or headerImage).
+- **Character Limits**: Strictly enforced - messages will fail if limits are exceeded.
+- **Media Headers**: When using headerImage, ensure the media is uploaded first using the `uploadMedia()` function to obtain a media ID.
+
 ## Requirements
-
-- Node.js >= 22
-- TypeScript >= 5.0 (for TypeScript users)
-
-## Related Packages
-
-- [@whatsapp-cloudapi/emulator](https://www.npmjs.com/package/@whatsapp-cloudapi/emulator) - WhatsApp Cloud API emulator for testing
-- [@whatsapp-cloudapi/types](https://www.npmjs.com/package/@whatsapp-cloudapi/types) - TypeScript types for the WhatsApp Cloud API
