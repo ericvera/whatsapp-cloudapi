@@ -166,7 +166,7 @@ export interface WebhookInteractiveMessage extends WebhookMessageBase {
     /**
      * Type of interactive message
      */
-    type: 'button_reply' | 'list_reply'
+    type: 'button_reply' | 'list_reply' | 'nfm_reply'
     /**
      * Button reply message payload
      */
@@ -196,6 +196,23 @@ export interface WebhookInteractiveMessage extends WebhookMessageBase {
        * Description of the selected item
        */
       description: string
+    }
+    /**
+     * NFM reply message payload
+     */
+    nfm_reply?: {
+      /**
+       * The name of the flow
+       */
+      name: string
+      /**
+       * The body/content of the flow
+       */
+      body: string
+      /**
+       * JSON response from the flow
+       */
+      response_json: string
     }
   }
 }
