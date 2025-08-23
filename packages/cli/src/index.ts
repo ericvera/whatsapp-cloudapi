@@ -194,7 +194,7 @@ program
 
     if (isRunning) {
       console.log(
-        `✓ Emulator is running at http://${options.host}:${String(options.port)}`,
+        `✓ Emulator is running at http://${options.host}:${options.port}`,
       )
       process.exit(0)
     } else {
