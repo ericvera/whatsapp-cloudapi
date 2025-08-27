@@ -3,7 +3,7 @@ import type {
   CloudAPIVersion,
 } from '@whatsapp-cloudapi/types/cloudapi'
 
-export const SupportedVersion: CloudAPIVersion = 'v22.0'
+export const SupportedVersion: CloudAPIVersion = 'v23.0'
 
 export const UnsupportedVersionError: CloudAPIErrorResponse = {
   error: {

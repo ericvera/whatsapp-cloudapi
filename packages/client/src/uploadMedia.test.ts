@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import { WhatsAppCloudAPIBaseUrl } from './constants.js'
+import {
+  WhatsAppCloudAPIBaseUrl,
+  WhatsAppCloudAPIVersion,
+} from './constants.js'
 import { uploadMedia } from './uploadMedia.js'
 
 // Mock fetch globally
@@ -21,7 +24,7 @@ it('should upload a Blob successfully', async () => {
 
   expect(result).toEqual({ id: 'mock_media_123' })
   expect(mockFetch).toHaveBeenCalledWith(
-    `${WhatsAppCloudAPIBaseUrl}/v22.0/1234567890/media`,
+    `${WhatsAppCloudAPIBaseUrl}/${WhatsAppCloudAPIVersion}/1234567890/media`,
     expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({
@@ -46,7 +49,7 @@ it('should use custom base URL when provided', async () => {
   })
 
   expect(mockFetch).toHaveBeenCalledWith(
-    'http://localhost:4004/v22.0/1234567890/media',
+    `http://localhost:4004/${WhatsAppCloudAPIVersion}/1234567890/media`,
     expect.anything(),
   )
 })

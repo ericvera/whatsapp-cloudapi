@@ -2,7 +2,10 @@ import {
   CloudAPIRequest,
   CloudAPIResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
-import { WhatsAppCloudAPIBaseUrl } from '../constants.js'
+import {
+  WhatsAppCloudAPIBaseUrl,
+  WhatsAppCloudAPIVersion,
+} from '../constants.js'
 
 /**
  * Creates headers for WhatsApp API requests
@@ -27,11 +30,14 @@ export const sendRequest = async (
   baseUrl?: string,
 ): Promise<CloudAPIResponse> => {
   const apiUrl = baseUrl ?? WhatsAppCloudAPIBaseUrl
-  const response = await fetch(`${apiUrl}/v22.0/${from}/messages`, {
-    method: 'POST',
-    headers: createHeaders(accessToken),
-    body: JSON.stringify(message),
-  })
+  const response = await fetch(
+    `${apiUrl}/${WhatsAppCloudAPIVersion}/${from}/messages`,
+    {
+      method: 'POST',
+      headers: createHeaders(accessToken),
+      body: JSON.stringify(message),
+    },
+  )
 
   if (!response.ok) {
     const error = await response.json()

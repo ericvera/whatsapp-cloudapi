@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest'
-import { WhatsAppCloudAPIBaseUrl } from '../constants.js'
+import {
+  WhatsAppCloudAPIBaseUrl,
+  WhatsAppCloudAPIVersion,
+} from '../constants.js'
 import { createHeaders, sendRequest } from './sendRequest.js'
 
 // Mock fetch globally
@@ -38,7 +41,7 @@ it('sends request with correct URL, method, headers, and body', async () => {
   const result = await sendRequest('test-token', '123456789', message)
 
   expect(mockFetch).toHaveBeenCalledWith(
-    `${WhatsAppCloudAPIBaseUrl}/v22.0/123456789/messages`,
+    `${WhatsAppCloudAPIBaseUrl}/${WhatsAppCloudAPIVersion}/123456789/messages`,
     {
       method: 'POST',
       headers: {
@@ -75,7 +78,7 @@ it('uses custom base URL when provided', async () => {
   await sendRequest('test-token', '123456789', message, 'http://localhost:5555')
 
   expect(mockFetch).toHaveBeenCalledWith(
-    'http://localhost:5555/v22.0/123456789/messages',
+    `http://localhost:5555/${WhatsAppCloudAPIVersion}/123456789/messages`,
     expect.objectContaining({
       method: 'POST',
     }),
@@ -105,7 +108,7 @@ it('uses default base URL when not provided', async () => {
   await sendRequest('test-token', '123456789', message)
 
   expect(mockFetch).toHaveBeenCalledWith(
-    `${WhatsAppCloudAPIBaseUrl}/v22.0/123456789/messages`,
+    `${WhatsAppCloudAPIBaseUrl}/${WhatsAppCloudAPIVersion}/123456789/messages`,
     expect.any(Object),
   )
 })

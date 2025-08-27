@@ -2,7 +2,10 @@ import {
   CloudAPIMediaUploadResponse,
   ImageMediaConstraints,
 } from '@whatsapp-cloudapi/types/cloudapi'
-import { WhatsAppCloudAPIBaseUrl } from './constants.js'
+import {
+  WhatsAppCloudAPIBaseUrl,
+  WhatsAppCloudAPIVersion,
+} from './constants.js'
 
 interface UploadMediaParams {
   /** The access token for the WhatsApp Cloud API */
@@ -53,14 +56,17 @@ export const uploadMedia = async (
   // the entire multipart body (file.size + multipart boundaries/headers)
 
   // Send the upload request
-  const response = await fetch(`${apiUrl}/v22.0/${from}/media`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      // Note: Don't set Content-Type header - let the browser set it for FormData
+  const response = await fetch(
+    `${apiUrl}/${WhatsAppCloudAPIVersion}/${from}/media`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        // Note: Don't set Content-Type header - let the browser set it for FormData
+      },
+      body: formData,
     },
-    body: formData,
-  })
+  )
 
   if (!response.ok) {
     const error = await response.json()

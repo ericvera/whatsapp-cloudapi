@@ -92,4 +92,4 @@ export interface CloudAPIErrorResponse {
 /**
  * Supported WhatsApp Cloud API version
  */
-export type CloudAPIVersion = 'v22.0'
+export type CloudAPIVersion = 'v23.0'
