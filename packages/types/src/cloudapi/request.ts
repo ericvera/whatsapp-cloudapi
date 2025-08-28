@@ -261,6 +261,35 @@ export interface CloudAPITemplateParameter {
    * Used when type='payload'
    */
   payload?: string
+
+  /**
+   * OTP code for authentication templates (v23.0)
+   * Used when implementing one-tap or zero-tap authentication
+   */
+  code?: string
+
+  /**
+   * Button configuration for authentication templates (v23.0)
+   */
+  button?: {
+    /** Button type for authentication */
+    type: 'otp'
+    /** OTP type: copy_code or one_tap */
+    otp_type?: 'copy_code' | 'one_tap'
+    /** Text shown on the button */
+    text?: string
+    /** Autofill text for one-tap */
+    autofill_text?: string
+    /** Zero-tap terms acceptance */
+    zero_tap_terms_accepted?: boolean
+    /** Supported apps for authentication */
+    supported_apps?: {
+      /** Android package name */
+      package_name: string
+      /** App signature hash */
+      signature_hash: string
+    }[]
+  }
 }
 
 /**
@@ -515,8 +544,187 @@ export interface CloudAPISendInteractiveCTAURLRequest {
   }
 }
 
+/**
+ * Request body for sending a WhatsApp Flow message (v23.0)
+ */
+export interface CloudAPISendFlowMessageRequest {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Type of recipient
+   * Currently only supports individual recipients
+   */
+  recipient_type?: 'individual'
+
+  /**
+   * WhatsApp ID or phone number of the recipient
+   * Phone numbers must include the country code
+   * @example "+16505551234"
+   */
+  to: string
+
+  /**
+   * Type of message
+   * Set to 'interactive' for flow messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive flow message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'flow' for WhatsApp Flow messages
+     */
+    type: 'flow'
+
+    /**
+     * Optional header content
+     */
+    header?: {
+      type: 'text' | 'image' | 'video' | 'document'
+      text?: string
+      image?: { id?: string; link?: string }
+      video?: { id?: string; link?: string }
+      document?: { id?: string; link?: string; filename?: string }
+    }
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required flow action configuration
+     */
+    action: {
+      /**
+       * Action name
+       * Must be 'flow' for flow messages
+       */
+      name: 'flow'
+
+      /**
+       * Flow parameters
+       */
+      parameters: {
+        /**
+         * Flow message version
+         * Currently only version 3 is supported
+         */
+        flow_message_version: '3'
+
+        /**
+         * Token for flow session
+         */
+        flow_token: string
+
+        /**
+         * Unique ID of the flow
+         */
+        flow_id: string
+
+        /**
+         * Call-to-action text on the button
+         */
+        flow_cta: string
+
+        /**
+         * Type of flow action
+         */
+        flow_action: 'navigate' | 'data_exchange'
+
+        /**
+         * Payload for flow action
+         */
+        flow_action_payload?: {
+          /**
+           * Screen to navigate to
+           */
+          screen: string
+
+          /**
+           * Additional data to pass to the flow
+           */
+          data?: Record<string, unknown>
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Request body for sending a reaction message (v23.0)
+ */
+export interface CloudAPISendReactionMessageRequest {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Type of recipient
+   * Currently only supports individual recipients
+   */
+  recipient_type?: 'individual'
+
+  /**
+   * WhatsApp ID or phone number of the recipient
+   * Phone numbers must include the country code
+   * @example "+16505551234"
+   */
+  to: string
+
+  /**
+   * Type of message
+   * Set to 'reaction' for reaction messages
+   */
+  type: 'reaction'
+
+  /**
+   * The reaction content
+   */
+  reaction: {
+    /**
+     * ID of the message to react to
+     */
+    message_id: string
+
+    /**
+     * Emoji to use as reaction
+     * Send empty string to remove reaction
+     */
+    emoji: string
+  }
+}
+
 export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
   | CloudAPISendInteractiveCTAURLRequest
+  | CloudAPISendFlowMessageRequest
+  | CloudAPISendReactionMessageRequest

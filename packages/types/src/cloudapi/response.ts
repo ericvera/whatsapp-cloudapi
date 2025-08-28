@@ -10,6 +10,21 @@ export interface CloudAPIMediaUploadResponse {
    * Use this ID when sending media messages
    */
   id: string
+
+  /**
+   * File size in bytes (v23.0)
+   */
+  file_size?: number
+
+  /**
+   * MIME type of the uploaded file (v23.0)
+   */
+  mime_type?: string
+
+  /**
+   * SHA256 hash of the file (v23.0)
+   */
+  sha256?: string
 }
 
 /**
@@ -63,6 +78,12 @@ export interface CloudAPIResponse {
      */
     id: string
   }[]
+
+  /**
+   * Status of message acceptance (v23.0)
+   * Only 'accepted' indicates successful queueing
+   */
+  message_status?: 'accepted'
 }
 
 /**
@@ -79,12 +100,24 @@ export interface CloudAPIErrorResponse {
     code: number
     /** Additional error code for more specific error types */
     error_subcode?: number
+    /** Indicates if the error is transient and can be retried (v23.0) */
+    is_transient?: boolean
+    /** User-friendly error title (v23.0) */
+    error_user_title?: string
+    /** User-friendly error message (v23.0) */
+    error_user_msg?: string
+    /** Facebook trace ID for debugging (v23.0) */
+    fbtrace_id?: string
     /** Additional error details */
     error_data?: {
       /** The messaging product that generated the error */
       messaging_product: string
       /** Detailed explanation of the error */
       details: string
+      /** Field that caused the error (v23.0) */
+      blame_field?: string
+      /** Specification of the field (v23.0) */
+      blame_field_spec?: string
     }
   }
 }
