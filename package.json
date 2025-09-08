@@ -20,16 +20,16 @@
     "postpublish": "pinst --enable"
   },
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
+    "@eslint/js": "^9.35.0",
     "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^24.3.0",
-    "eslint": "^9.34.0",
+    "@types/node": "^24.3.1",
+    "eslint": "^9.35.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.5",
+    "lint-staged": "^16.1.6",
     "pinst": "^3.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.40.0",
+    "typescript-eslint": "^8.42.0",
     "vitest": "^3.2.4"
   },
   "prettier": {
