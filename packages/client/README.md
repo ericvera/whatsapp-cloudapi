@@ -478,4 +478,154 @@ try {
 - **Character Limits**: Strictly enforced - messages will fail if limits are exceeded.
 - **Media Headers**: When using headerImage, ensure the media is uploaded first using the `uploadMedia()` function to obtain a media ID.
 
-## Requirements
+## WhatsApp Flow Messages
+
+Interactive flow messages allow you to create structured, guided experiences within WhatsApp. Flows are ideal for collecting information, generating leads, or creating multi-step interactions.
+
+### sendFlowMessage
+
+Sends a WhatsApp Flow message to guide users through interactive forms and experiences.
+
+```typescript
+function sendFlowMessage(params: {
+  accessToken: string
+  from: string
+  to: string
+  bodyText: string
+  flowToken: string
+  flowId: string
+  flowCta: string
+  flowAction: 'navigate' | 'data_exchange'
+  screen?: string
+  data?: Record<string, unknown>
+  headerText?: string
+  headerImage?: { id?: string; link?: string }
+  headerVideo?: { id?: string; link?: string }
+  headerDocument?: { id?: string; link?: string; filename?: string }
+  footerText?: string
+  bizOpaqueCallbackData?: string
+  baseUrl?: string
+}): Promise<CloudAPIResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `bodyText` (string) - Main message text. Maximum 1024 characters
+- `flowToken` (string) - Session token for the flow
+- `flowId` (string) - Unique ID of the flow
+- `flowCta` (string) - Call-to-action text on the button
+- `flowAction` (string) - Type of flow action: 'navigate' or 'data_exchange'
+- `screen` (string, optional) - Screen to navigate to (required for 'navigate' action)
+- `data` (object, optional) - Additional data to pass to the flow
+- `headerText` (string, optional) - Header text. Maximum 60 characters. Cannot be used with other header types
+- `headerImage` (object, optional) - Image header using media ID or link. Cannot be used with other header types
+- `headerVideo` (object, optional) - Video header using media ID or link. Cannot be used with other header types
+- `headerDocument` (object, optional) - Document header using media ID or link. Cannot be used with other header types
+- `footerText` (string, optional) - Footer text. Maximum 60 characters
+- `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
+- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API)
+
+#### Examples
+
+##### Navigate Flow with Text Header
+
+```typescript
+import { sendFlowMessage } from '@whatsapp-cloudapi/client'
+
+// Send a flow message that navigates to a specific screen
+const response = await sendFlowMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Complete your loan application form to get started.',
+  flowToken: 'FLOW_SESSION_TOKEN_123',
+  flowId: 'FLOW_ID_456',
+  flowCta: 'Start Application',
+  flowAction: 'navigate',
+  screen: 'welcome_screen',
+  headerText: 'Loan Application',
+  footerText: 'Secure and fast process',
+})
+
+console.log('Flow message sent:', response.messages[0].id)
+```
+
+##### Data Exchange Flow with Image Header
+
+```typescript
+// Send a flow message for data exchange with image header
+const response = await sendFlowMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Update your preferences with our interactive form.',
+  flowToken: 'FLOW_TOKEN_789',
+  flowId: 'PREFERENCES_FLOW_101',
+  flowCta: 'Update Preferences',
+  flowAction: 'data_exchange',
+  data: { userId: '12345', currentPlan: 'premium' },
+  headerImage: { id: 'MEDIA_ID_FROM_UPLOAD' },
+})
+```
+
+##### Flow with Video Header
+
+```typescript
+// Send a flow message with video header
+const response = await sendFlowMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Watch our tutorial and complete the setup process.',
+  flowToken: 'SETUP_TOKEN_456',
+  flowId: 'SETUP_FLOW_789',
+  flowCta: 'Start Setup',
+  flowAction: 'navigate',
+  screen: 'tutorial_screen',
+  headerVideo: { link: 'https://example.com/tutorial.mp4' },
+})
+```
+
+#### Error Handling
+
+The function validates parameters and throws errors for various issues:
+
+```typescript
+try {
+  await sendFlowMessage({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    to: '+16505551234',
+    bodyText: 'Complete our survey.',
+    flowToken: 'FLOW_TOKEN_123',
+    flowId: 'SURVEY_FLOW_456',
+    flowCta: 'Start Survey',
+    flowAction: 'navigate', // Missing required 'screen' parameter
+  })
+} catch (error) {
+  // Possible errors:
+  // - Screen parameter required for navigate action
+  // - Body text too long (>1024 characters)
+  // - Header text too long (>60 characters)
+  // - Footer text too long (>60 characters)
+  // - Multiple header types specified
+  // - API authentication errors
+  console.error('Failed to send flow message:', error.message)
+}
+```
+
+#### Flow Actions
+
+- **navigate**: Directs users to a specific screen within the flow. Requires the `screen` parameter.
+- **data_exchange**: Initiates data collection or exchange. Can include optional `data` parameter with initial values.
+
+#### Important Notes
+
+- **Flow Version**: Currently only flow message version 3 is supported.
+- **Header Types**: Only one header type can be used per message (text, image, video, or document).
+- **Screen Parameter**: Required when using 'navigate' flow action.
+- **Character Limits**: Strictly enforced for all text fields.
+- **Media Headers**: When using media headers, ensure media is uploaded first or use valid external links.

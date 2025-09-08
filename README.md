@@ -14,7 +14,7 @@ This monorepo contains the following packages:
 ## Features
 
 - 🔒 Comprehensive type definitions for the WhatsApp Cloud API
-- 📱 Support for text, template, media, interactive, and location-based messages
+- 📱 Support for text, template, media, interactive, flow, and location-based messages
 - 🧪 Local emulation for development and testing
 - 📲 Simulation of incoming messages to trigger webhooks
 - 💻 CLI tools for managing the emulator and simulating messages

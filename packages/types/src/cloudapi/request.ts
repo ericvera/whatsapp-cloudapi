@@ -561,6 +561,12 @@ export interface CloudAPISendFlowMessageRequest {
   recipient_type?: 'individual'
 
   /**
+   * An arbitrary string, useful for tracking.
+   * Maximum length: 512 characters
+   */
+  biz_opaque_callback_data?: string
+
+  /**
    * WhatsApp ID or phone number of the recipient
    * Phone numbers must include the country code
    * @example "+16505551234"
@@ -663,7 +669,7 @@ export interface CloudAPISendFlowMessageRequest {
           /**
            * Screen to navigate to
            */
-          screen: string
+          screen?: string
 
           /**
            * Additional data to pass to the flow
