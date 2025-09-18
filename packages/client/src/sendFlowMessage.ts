@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendFlowMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { WhatsAppFlowMessageVersion } from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendFlowMessageParams {
@@ -125,7 +126,7 @@ export const sendFlowMessage = async ({
       action: {
         name: 'flow',
         parameters: {
-          flow_message_version: '3',
+          flow_message_version: WhatsAppFlowMessageVersion,
           flow_token: flowToken,
           flow_id: flowId,
           flow_cta: flowCta,

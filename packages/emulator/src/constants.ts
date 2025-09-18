@@ -5,6 +5,12 @@ import type {
 
 export const SupportedVersion: CloudAPIVersion = 'v23.0'
 
+/**
+ * WhatsApp Flow message version
+ * Currently only version 3 is supported by the WhatsApp Cloud API
+ */
+export const WhatsAppFlowMessageVersion = '3'
+
 export const UnsupportedVersionError: CloudAPIErrorResponse = {
   error: {
     message: `This version is not supported. Supported version: ${SupportedVersion}`,

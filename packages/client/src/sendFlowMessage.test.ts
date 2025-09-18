@@ -1,4 +1,5 @@
 import { expect, it, vi } from 'vitest'
+import { WhatsAppFlowMessageVersion } from './constants.js'
 import { sendFlowMessage } from './sendFlowMessage.js'
 
 // Mock the sendRequest function
@@ -56,7 +57,7 @@ it('sends a flow message with navigate action successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Start Application',
@@ -112,7 +113,7 @@ it('sends a flow message with data_exchange action successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_789',
             flow_id: 'FLOW_ID_101',
             flow_cta: 'Update Preferences',
@@ -173,7 +174,7 @@ it('sends a flow message with image header successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Browse Products',
@@ -234,7 +235,7 @@ it('sends a flow message with video header successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Start Tutorial',
@@ -296,7 +297,7 @@ it('sends a flow message with document header successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Complete Registration',
@@ -349,7 +350,7 @@ it('sends a minimal flow message successfully', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Start Survey',
@@ -428,7 +429,7 @@ it('sends a flow message with bizOpaqueCallbackData', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Start Survey',
@@ -600,7 +601,7 @@ it('accepts exact character limits for all text fields', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Start',
@@ -653,7 +654,7 @@ it('sends flow message with both screen and data in payload', async () => {
         action: {
           name: 'flow',
           parameters: {
-            flow_message_version: '3',
+            flow_message_version: WhatsAppFlowMessageVersion,
             flow_token: 'FLOW_TOKEN_123',
             flow_id: 'FLOW_ID_456',
             flow_cta: 'Continue',
