@@ -145,7 +145,7 @@ interface EmulatorOptions {
   webhook?: {
     /** URL to send webhook events to */
     url: string
-    /** Required secret token for webhook verification */
+    /** Secret token for webhook endpoint validation (used for GET /webhook verification) */
     secret: string
     /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
     timeout?: number
@@ -185,7 +185,18 @@ try {
 
 #### Webhook Events
 
-When webhook support is enabled, the emulator will send webhook events to the configured URL for message status updates. The webhook payload follows the official WhatsApp Cloud API webhook format. The webhook request will include the configured secret in the `X-Hub-Signature-256` header for verification.
+When webhook support is enabled, the emulator will send webhook events to the configured URL for message status updates. The webhook payload follows the official WhatsApp Cloud API webhook format.
+
+#### Webhook Validation
+
+The emulator provides a webhook validation endpoint at `/webhook` that supports the WhatsApp Cloud API verification flow:
+
+- **GET /webhook**: Handles webhook endpoint validation
+  - Expects `hub.mode=subscribe`, `hub.verify_token`, and `hub.challenge` query parameters
+  - Returns the `hub.challenge` value if the `hub.verify_token` matches the configured secret
+  - Used during initial webhook setup to verify endpoint ownership
+
+The configured secret is only used for this endpoint validation process, not for generating request signatures.
 
 Example webhook payload:
 

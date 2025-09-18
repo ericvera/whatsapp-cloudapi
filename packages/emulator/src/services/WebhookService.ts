@@ -109,7 +109,6 @@ export class WebhookService {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        'X-Hub-Signature-256': this.config.secret,
       }
 
       const response = await fetch(this.config.url, {

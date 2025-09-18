@@ -12,7 +12,10 @@ export interface EmulatorConfig {
 export interface EmulatorWebhookConfig {
   /** URL to send webhook events to */
   url: string
-  /** Required secret token for webhook verification */
+  /**
+   * Secret token for webhook endpoint validation (used for GET /webhook
+   * verification)
+   */
   secret: string
   /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
   timeout?: number

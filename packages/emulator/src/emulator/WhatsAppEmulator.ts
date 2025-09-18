@@ -144,6 +144,30 @@ export class WhatsAppEmulator {
     }
   }
 
+  private handleWebhookValidation(req: Request, res: Response): void {
+    const mode = req.query['hub.mode']
+    const token = req.query['hub.verify_token']
+    const challenge = req.query['hub.challenge']
+
+    if (
+      mode === 'subscribe' &&
+      this.config?.webhook?.secret &&
+      token === this.config.webhook.secret
+    ) {
+      console.log('✅ Webhook endpoint validation successful')
+      res.status(200).send(challenge)
+    } else {
+      console.log('❌ Webhook endpoint validation failed')
+      res.status(403).json({
+        error: {
+          message: 'Webhook validation failed',
+          type: 'ValidationError',
+          code: 403,
+        },
+      })
+    }
+  }
+
   private setupRoutes(): void {
     if (!this.app || !this.messageRoutes || !this.mediaRoutes) {
       throw new Error('App or routes not initialized')
@@ -189,6 +213,9 @@ export class WhatsAppEmulator {
       '/debug/messages/send-text',
       this.handleSimulateIncomingMessage.bind(this),
     )
+
+    // Webhook validation endpoint
+    this.app.get('/webhook', this.handleWebhookValidation.bind(this))
   }
 
   public async start(): Promise<void> {
