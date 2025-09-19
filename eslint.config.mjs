@@ -1,15 +1,25 @@
+// @ts-check
 import eslint from '@eslint/js'
-import { globalIgnores } from 'eslint/config'
+import { defineConfig, globalIgnores } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
+export default defineConfig(
   eslint.configs.recommended,
+
+  ...tseslint.configs.strictTypeChecked,
+  ...tseslint.configs.stylisticTypeChecked,
+
   {
-    files: ['**/*.ts'],
-    extends: [
-      tseslint.configs.strictTypeChecked,
-      tseslint.configs.stylisticTypeChecked,
-    ],
+    languageOptions: {
+      parserOptions: {
+        project: [
+          './tsconfig.json',
+          './tsconfig.eslint.json',
+          './packages/*/tsconfig.json',
+        ],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
   },
 
   globalIgnores([
@@ -21,21 +31,18 @@ export default tseslint.config(
     '.vscode',
     '.yarn',
   ]),
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: {
-          allowDefaultProject: ['eslint.config.mjs'],
-        },
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
-  },
+
   // Other configs
   {
     name: 'local:rules',
     rules: {
       curly: 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          ignoreRestSiblings: true,
+        },
+      ],
 
       // Enforce comments above code, never inline
       'line-comment-position': ['error', { position: 'above' }],
