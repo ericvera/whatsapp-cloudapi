@@ -20,7 +20,8 @@ export const createHeaders = (accessToken: string): Record<string, string> => ({
  * @param accessToken - The access token for authentication
  * @param from - The sender's phone number ID
  * @param message - The message payload to send
- * @param baseUrl - Optional base URL for the API (defaults to Facebook Graph API)
+ * @param baseUrl - Optional base URL for the API (defaults to Facebook Graph
+ *   API)
  * @returns Promise with the API response
  */
 export const sendRequest = async (

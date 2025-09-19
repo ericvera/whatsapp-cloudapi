@@ -94,7 +94,8 @@ export interface CloudAPISendTextMessageRequest {
   text: {
     /**
      * Whether to enable link preview for URLs in the message
-     * If true, WhatsApp will attempt to render a preview of the first URL in the body text
+     * If true, WhatsApp will attempt to render a preview of the first URL in
+     * the body text
      * URLs must begin with http:// or https://
      * If multiple URLs are present, only the first one will be previewed
      */
@@ -395,8 +396,10 @@ export interface CloudAPISendTemplateMessageRequest {
 
       /**
        * Language policy
-       * When set to 'deterministic', messages are sent using the exact language and locale code you specify
-       * If not specified, WhatsApp determines which language to use when the template is available in multiple languages
+       * When set to 'deterministic', messages are sent using the exact
+       * language and locale code you specify
+       * If not specified, WhatsApp determines which language to use when the
+       * template is available in multiple languages
        */
       policy?: 'deterministic'
     }

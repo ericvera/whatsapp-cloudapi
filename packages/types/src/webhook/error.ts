@@ -28,7 +28,8 @@ export interface WebhookError {
   error_data?: {
     /**
      * Detailed explanation of the error
-     * @example "Message failed to send because there were too many messages sent from this phone number in a short period of time"
+     * @example "Message failed to send because there were too many messages
+     *   sent from this phone number in a short period of time"
      */
     details: string
   }

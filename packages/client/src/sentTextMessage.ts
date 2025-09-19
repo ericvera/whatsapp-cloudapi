@@ -9,7 +9,10 @@ interface SendTextMessageParams {
   accessToken: string
   /** The senders phone number ID (e.g. "1234567890") */
   from: string
-  /** The recipient's phone number with country code or phone number ID (e.g. "+16505551234" or "5551234") */
+  /**
+   * The recipient's phone number with country code or phone number ID
+   * (e.g. "+16505551234" or "5551234")
+   */
   to: string
   /** The text message to send */
   text: string

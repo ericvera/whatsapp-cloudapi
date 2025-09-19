@@ -27,13 +27,15 @@ interface SendTemplateMessageParams {
   languageCode: string
   /**
    * Optional language policy
-   * When set to 'deterministic', messages are sent using the language and locale code you specify
+   * When set to 'deterministic', messages are sent using the language and
+   * locale code you specify
    * If not provided, WhatsApp will determine the language to use
    */
   languagePolicy?: 'deterministic'
   /**
    * Optional message ID to reply to
-   * When provided, the template message will be sent as a reply to the specified message
+   * When provided, the template message will be sent as a reply to the
+   * specified message
    */
   replyToMessageId?: string
   /**
@@ -120,7 +122,8 @@ interface SendTemplateMessageParams {
  *   to: "+16505551234",
  *   templateName: "hello_world",
  *   languageCode: "en_US",
- *   replyToMessageId: "wamid.HBgLMTY1MDUwNzY1MjAVAgARGBI5QTNDQTVCM0Q0Q0Q2RTY3RTcA"
+ *   replyToMessageId:
+ *     "wamid.HBgLMTY1MDUwNzY1MjAVAgARGBI5QTNDQTVCM0Q0Q0Q2RTY3RTcA"
  * });
  *
  * // Send a template with components

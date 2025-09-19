@@ -9,7 +9,10 @@ interface SendImageMessageParams {
   accessToken: string
   /** The sender's phone number ID (e.g. "1234567890") */
   from: string
-  /** The recipient's phone number with country code or phone number ID (e.g. "+16505551234" or "5551234") */
+  /**
+   * The recipient's phone number with country code or phone number ID
+   * (e.g. "+16505551234" or "5551234")
+   */
   to: string
   /** The media ID of the uploaded image */
   mediaId: string
@@ -17,12 +20,16 @@ interface SendImageMessageParams {
   caption?: string
   /** An arbitrary string, useful for tracking */
   bizOpaqueCallbackData?: string
-  /** Optional base URL for the API (defaults to Facebook Graph API, use http://localhost:4004 for emulator) */
+  /**
+   * Optional base URL for the API (defaults to Facebook Graph API, use
+   * http://localhost:4004 for emulator)
+   */
   baseUrl?: string
 }
 
 /**
- * Sends an image message using a media ID obtained from the media upload endpoint
+ * Sends an image message using a media ID obtained from the media upload
+ * endpoint
  * @param params - Send image message parameters
  * @returns Promise with the API response
  */

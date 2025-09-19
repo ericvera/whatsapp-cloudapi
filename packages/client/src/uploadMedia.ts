@@ -62,7 +62,8 @@ export const uploadMedia = async (
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        // Note: Don't set Content-Type header - let the browser set it for FormData
+        // NOTE: Don't set Content-Type header - let the browser set it for
+        // FormData
       },
       body: formData,
     },

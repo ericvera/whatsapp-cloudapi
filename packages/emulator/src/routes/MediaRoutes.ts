@@ -158,7 +158,8 @@ export class MediaRoutes {
 
         const mediaId = this.generateMediaId()
         const now = new Date()
-        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        // 30 days
+        const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
         // Store mock media entry with actual file information
         const mockEntry: MockMediaEntry = {

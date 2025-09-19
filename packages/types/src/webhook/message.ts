@@ -277,7 +277,8 @@ export interface WebhookStickerMessage extends WebhookMessageBase {
 }
 
 /**
- * System message type received through webhook (e.g. customer number change messages)
+ * System message type received through webhook (e.g. customer number change
+ * messages)
  */
 export interface WebhookSystemMessage extends WebhookMessageBase {
   type: 'system'

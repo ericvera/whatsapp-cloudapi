@@ -81,7 +81,8 @@ export interface WebhookValue {
   }
 
   /**
-   * Array of contact objects with information for the customer who sent a message to the business
+   * Array of contact objects with information for the customer who sent a
+   * message to the business
    */
   contacts?: WebhookContact[]
 
@@ -91,12 +92,14 @@ export interface WebhookValue {
   errors?: WebhookError[]
 
   /**
-   * Information about a message received by the business that is subscribed to the webhook
+   * Information about a message received by the business that is subscribed
+   * to the webhook
    */
   messages?: WebhookMessage[]
 
   /**
-   * Status object for a message that was sent by the business that is subscribed to the webhook
+   * Status object for a message that was sent by the business that is
+   * subscribed to the webhook
    */
   statuses?: WebhookStatus[]
 }

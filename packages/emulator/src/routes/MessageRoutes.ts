@@ -181,7 +181,8 @@ export class MessageRoutes {
             // Check if hostname is an IP address (IPv4 or IPv6)
             const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/
 
-            // Check for IPv6 by looking for colons (IPv6 addresses contain colons)
+            // Check for IPv6 by looking for colons (IPv6 addresses contain
+            // colons)
             const hasColons = urlObj.hostname.includes(':')
 
             if (ipv4Pattern.test(urlObj.hostname) || hasColons) {
@@ -416,7 +417,8 @@ export class MessageRoutes {
           }
 
           // Validate flow message version
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          /* eslint-disable-next-line
+             @typescript-eslint/no-unnecessary-condition */
           if (flowParams.flow_message_version !== WhatsAppFlowMessageVersion) {
             console.error(
               `❌ Flow message failed: Unsupported flow message version: ${flowParams.flow_message_version as string}`,

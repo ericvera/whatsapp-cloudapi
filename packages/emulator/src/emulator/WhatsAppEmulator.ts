@@ -194,7 +194,8 @@ export class WhatsAppEmulator {
       this.mediaRoutes?.listMedia(req, res)
     })
 
-    // Media expiration endpoints - order matters! Specific routes before parameterized ones
+    // Media expiration endpoints - order matters! Specific routes before
+    // parameterized ones
     this.app.post('/debug/media/expire/all', (req: Request, res: Response) => {
       this.mediaRoutes?.expireAllMedia(req, res)
     })
