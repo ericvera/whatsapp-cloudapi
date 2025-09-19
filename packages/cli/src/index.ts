@@ -30,20 +30,70 @@ export interface SimulateOptions {
   port: string
   host: string
   from?: string
-  name: string
+  name?: string
   message: string
+  areaCodes?: string
 }
 
 interface HealthCheckResponse {
   status: string
 }
 
-const generateRandomPhoneNumber = (): string => {
-  const randomDigits = Math.floor(Math.random() * 10000000)
-    .toString()
-    .padStart(7, '0')
+const generateRandomPhoneNumber = (areaCodes?: string[]): string => {
+  // Puerto Rico + one US area code
+  const defaultAreaCodes = ['787', '939', '610']
+  const availableAreaCodes = areaCodes ?? defaultAreaCodes
 
-  return `+1555${randomDigits}`
+  const randomIndex = Math.floor(Math.random() * availableAreaCodes.length)
+  const areaCode = availableAreaCodes[randomIndex] ?? '787'
+
+  // Generate valid exchange (avoid 555 and other reserved ranges)
+  let exchange: string
+  do {
+    exchange = (Math.floor(Math.random() * 900) + 100).toString()
+  } while (
+    exchange === '555' ||
+    exchange.startsWith('0') ||
+    exchange.startsWith('1')
+  )
+
+  const line = (Math.floor(Math.random() * 9000) + 1000).toString()
+  return `+1${areaCode}${exchange}${line}`
+}
+
+const generateRandomName = (): string => {
+  const normalNames = [
+    // Name only
+    'Ty',
+    'Andre S.',
+    'Marcus',
+    'L.J.',
+
+    // First + Last
+    'James Kim',
+    'Maria J. Santos',
+
+    // Two last names
+    'Maria Santos Lopez',
+    'David Johnson-Smith',
+    'Antonio J. Rodriguez Garcia',
+
+    // Single last name
+    'Vera',
+  ]
+
+  const invalidNames = [
+    // Too short, no vowel
+    'X',
+    // Just emojis/characters, no letters
+    '🦄✨',
+    // 3+ letters but no vowel
+    'Qwx',
+  ]
+
+  const allNames = [...normalNames, ...invalidNames]
+  const randomIndex = Math.floor(Math.random() * allNames.length)
+  return allNames[randomIndex] ?? 'Test User'
 }
 
 const validatePhoneNumber = (phoneNumber: string): string => {
@@ -213,8 +263,15 @@ program
     '-f, --from <phone>',
     'Phone number of sender in E.164 format (auto-generated if not provided)',
   )
-  .option('-n, --name <name>', 'Name of sender', 'Test User')
+  .option(
+    '-n, --name [name]',
+    'Name of sender (auto-generated if not provided)',
+  )
   .option('-m, --message <text>', 'Message text (required)')
+  .option(
+    '--area-codes <codes>',
+    'Comma-separated area codes for random phone generation (default: "787,939,610")',
+  )
   .action(async (type: string, options: SimulateOptions) => {
     if (type !== 'text') {
       console.error('Error: Only "text" is currently supported')
@@ -233,12 +290,18 @@ program
       if (options.from) {
         from = validatePhoneNumber(options.from)
       } else {
-        from = generateRandomPhoneNumber()
+        const areaCodes = options.areaCodes
+          ?.split(',')
+          .map((code) => code.trim())
+        from = generateRandomPhoneNumber(areaCodes)
       }
+
+      // Handle name - use provided or generate random
+      const name = options.name ?? generateRandomName()
 
       const requestBody: SimulateIncomingTextRequest = {
         from,
-        name: options.name,
+        name,
         message: options.message,
       }
 
@@ -255,13 +318,13 @@ program
         const error = await response.text()
 
         console.error(
-          `Failed to simulate message: ${String(response.status)} ${error}`,
+          `Failed to simulate message: ${response.status.toString()} ${error}`,
         )
         process.exit(1)
       }
 
       console.log(
-        `✓ Simulated incoming text from ${from} (${options.name}): "${options.message}"`,
+        `✓ Simulated incoming text from ${from} (${name}): "${options.message}"`,
       )
     } catch (error) {
       console.error(
