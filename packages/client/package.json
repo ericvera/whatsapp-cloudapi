@@ -24,11 +24,11 @@
     "@whatsapp-cloudapi/types": "workspace:*"
   },
   "devDependencies": {
-    "@tsconfig/strictest": "^2.0.5",
+    "@tsconfig/strictest": "^2.0.6",
     "@types/node": "^24.5.2",
     "eslint": "^9.36.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.0",
+    "typescript-eslint": "^8.44.1",
     "vitest": "^3.2.4"
   },
   "repository": {
