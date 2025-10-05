@@ -1,6 +1,15 @@
 export interface EmulatorConfig {
-  /** Business phone number ID to emulate */
+  /**
+   * Business phone number ID to emulate
+   * This is the ID used by the Cloud API (e.g., "50000000000001")
+   */
   businessPhoneNumberId: string
+  /**
+   * Display phone number (optional)
+   * The actual phone number shown to users (e.g., "17871231234")
+   * If not provided, will be derived from businessPhoneNumberId
+   */
+  displayPhoneNumber?: string
   /** Port to run the emulator server on */
   port?: number
   /** Host to bind to (defaults to localhost) */

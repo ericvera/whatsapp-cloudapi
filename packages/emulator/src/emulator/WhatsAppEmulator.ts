@@ -15,6 +15,7 @@ import {
 import { WebhookService } from '../services/WebhookService.js'
 import type { EmulatorOptions } from '../types/config.js'
 import type { SimulateIncomingMessageResponse } from '../types/simulation.js'
+import { normalizeWhatsAppId } from '../utils/phoneUtils.js'
 
 export class WhatsAppEmulator {
   private app: Express | null = null
@@ -112,22 +113,27 @@ export class WhatsAppEmulator {
         return
       }
 
+      // Normalize the sender ID (remove '+' prefix if present)
+      const normalizedFrom = normalizeWhatsAppId(body.from)
+
       console.log(
         `📥 Simulating incoming message from ${body.from}: "${body.message}"`,
       )
 
       if (this.webhookService) {
         void this.webhookService.sendIncomingMessage(
-          body.from,
+          normalizedFrom,
           body.name ?? 'Test User',
           body.message,
           this.config?.server.businessPhoneNumberId ?? '',
+          this.config?.server.displayPhoneNumber ?? '',
         )
       }
 
       const response: SimulateIncomingMessageResponse = {
         message: 'Incoming message simulated successfully',
-        from: body.from,
+        input: body.from,
+        from: normalizedFrom,
         text: body.message,
       }
 
@@ -244,6 +250,7 @@ export class WhatsAppEmulator {
       this.mediaRoutes = new MediaRoutes(initialMediaStorage)
       this.messageRoutes = new MessageRoutes(
         config.server.businessPhoneNumberId,
+        config.server.displayPhoneNumber,
         this.webhookService,
         this.mediaRoutes,
       )

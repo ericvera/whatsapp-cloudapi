@@ -16,6 +16,7 @@ export class WebhookService {
     contactName: string,
     messageText: string,
     businessPhoneNumberId: string,
+    displayPhoneNumber: string,
   ): Promise<void> {
     const messageId = `mock_incoming_${String(Date.now())}_${Math.random().toString(36).slice(2)}`
 
@@ -29,7 +30,7 @@ export class WebhookService {
               value: {
                 messaging_product: 'whatsapp',
                 metadata: {
-                  display_phone_number: businessPhoneNumberId,
+                  display_phone_number: displayPhoneNumber,
                   phone_number_id: businessPhoneNumberId,
                 },
                 contacts: [
@@ -43,7 +44,7 @@ export class WebhookService {
                 messages: [
                   {
                     id: messageId,
-                    from: from,
+                    from,
                     timestamp: String(Math.floor(Date.now() / 1000)),
                     type: 'text',
                     text: {
@@ -66,6 +67,7 @@ export class WebhookService {
     messageId: string,
     to: string,
     businessPhoneNumberId: string,
+    displayPhoneNumber: string,
   ): Promise<void> {
     const webhookPayload: WebhookPayload = {
       object: 'whatsapp_business_account',
@@ -77,7 +79,7 @@ export class WebhookService {
               value: {
                 messaging_product: 'whatsapp',
                 metadata: {
-                  display_phone_number: businessPhoneNumberId,
+                  display_phone_number: displayPhoneNumber,
                   phone_number_id: businessPhoneNumberId,
                 },
                 statuses: [

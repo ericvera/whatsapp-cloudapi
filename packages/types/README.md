@@ -165,7 +165,7 @@ import { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation
 
 // Type-safe simulation request
 const simulationRequest: SimulateIncomingTextRequest = {
-  from: '+1234567890',
+  from: '1234567890',
   name: 'John Doe',
   message: 'Hello, I need help!',
 }
@@ -178,14 +178,16 @@ const simulationRequest: SimulateIncomingTextRequest = {
 ```typescript
 interface SimulateIncomingTextRequest {
   /**
-   * Phone number of the sender in E.164 format
+   * Phone number of the sender (with or without + prefix)
+   * The + prefix will be stripped to match WhatsApp ID format
+   * Example: "+1234567890" or "1234567890"
    */
   from: string
 
   /**
    * Display name of the sender
    */
-  name: string
+  name?: string
 
   /**
    * Text content of the message
@@ -312,3 +314,116 @@ const ctaWithImage: CloudAPISendInteractiveCTAURLRequest = {
   }
 }
 ````
+
+## Phone Number vs Phone Number ID vs WhatsApp ID
+
+The usage of these terms can be confusing when reading through the documentation. As of October 5, 2025, this is a summary of my understanding of the different properties and the usage of these three identifiers.
+
+1. **Phone Number** - Always in E.164 format (continue reading about `+` usage). The documentation suggests that you should always include the `+` at the beginning when specifying a phone number as the receiver to ensure that there is no confusion or ambiguity. On the flip side, I have never seen the `+` included when the API returns a phone number. When you send a message, you can include the `+` prefix in the `to` field, but WhatsApp will strip it internally. All WhatsApp IDs in webhook payloads and API responses never include the `+` prefix.
+
+2. **Phone Number ID** - This is only used to identify Cloud API WhatsApp accounts. It is the ID that you use with the Cloud API to send messages. You will have one per phone number that you interact with, whether to send messages and/or to receive webhook notifications.
+
+3. **WhatsApp ID** - This is an ID that WhatsApp uses to identify a phone account. As I understand it, it is most of the time the same as the customer's phone number. I believe that in some cases, like when someone migrates a phone, they may differ. You can use this to send messages to customers. It is my understanding that this is preferred, and it is also what the webhook receives in the `from` property of a message.
+
+### In a Webhook Event
+
+Here is a sample webhook payload from a text message:
+
+```json
+{
+  "event": {
+    "entry": [
+      {
+        "changes": [
+          {
+            "field": "messages",
+            "value": {
+              "contacts": [
+                {
+                  "profile": {
+                    "name": "Name In WhatsApp"
+                  },
+                  "wa_id": "15553331111"
+                }
+              ],
+              "messages": [
+                {
+                  "from": "15553331111",
+                  "id": "wamid.H00000000000000000000000000000000000000000000000000000=",
+                  "text": {
+                    "body": "¡Hola mundo!"
+                  },
+                  "timestamp": "1111111111",
+                  "type": "text"
+                }
+              ],
+              "messaging_product": "whatsapp",
+              "metadata": {
+                "display_phone_number": "17871231234",
+                "phone_number_id": "50000000000001"
+              }
+            }
+          }
+        ],
+        "id": "222222222222222"
+      }
+    ],
+    "object": "whatsapp_business_account"
+  },
+  "message": "Handling WhatsApp event"
+}
+```
+
+According to the [documentation](https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/components):
+
+`from` (in the message)
+
+> The customer's WhatsApp ID. A business can respond to a customer using this ID. This ID may not match the customer's phone number, which is returned by the API as input when sending a message to the customer.
+
+So this would be the `to` that you want to respond to (it is always a WhatsApp ID).
+
+`metadata`:
+
+> A metadata object describing the business subscribed to the webhook. Metadata objects have the following properties:
+
+> display_phone_number — String. The phone number that is displayed for a business.
+
+> phone_number_id — String. ID for the phone number. A business can respond to a message using this ID.
+
+So `display_phone_number` is the phone number that the person who sent the message used to message this account. That display number matches internally to the `phone_number_id`, which is what the API uses to interact with Cloud API.
+
+`wa_id` (in contact)
+
+> wa_id — String. The customer's WhatsApp ID. A business can respond to a customer using this ID. This ID may not match the customer's phone number, which is returned by the API as input when sending a message to the customer.
+
+As I understand it, this is the same as `from` always.
+
+NOTE: The user's phone number is not received as part of the webhook explicitly. It may be the same as the WhatsApp ID received, but it may not. The phone number is only received back after you send a message to the `wa_id` and receive the response (more below).
+
+### In an API Response
+
+This is a response to sending a message to the `wa_id` above.
+
+```json
+{
+  "contacts": [
+    {
+      "input": "15553331111",
+      "wa_id": "15553331111"
+    }
+  ],
+  "message": "Sent WhatsApp response.",
+  "messages": [
+    {
+      "id": "wamid.H0000000000000000000000000000000000000000000111111111"
+    }
+  ],
+  "messaging_product": "whatsapp"
+}
+```
+
+According to the [messages send API documentation](https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages):
+
+> wa_id — String. The customer's WhatsApp ID. A business can respond to a customer using this ID. This ID may not match the customer's phone number, which is returned by the API as input when sending a message to the customer.
+
+So `wa_id` remains the WhatsApp ID, but we now have the phone number that maps to that WhatsApp ID in `input` (no `+`).

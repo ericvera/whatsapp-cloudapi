@@ -8,11 +8,13 @@ import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
 import { WhatsAppFlowMessageVersion } from '../constants.js'
 import type { WebhookService } from '../services/WebhookService.js'
+import { normalizeWhatsAppId } from '../utils/phoneUtils.js'
 import type { MediaRoutes } from './MediaRoutes.js'
 
 export class MessageRoutes {
   constructor(
     private readonly businessPhoneNumberId: string,
+    private readonly displayPhoneNumber: string,
     private readonly webhookService: WebhookService | undefined,
     private readonly mediaRoutes: MediaRoutes,
   ) {}
@@ -451,13 +453,16 @@ export class MessageRoutes {
         `📤 Outgoing message (ID: ${messageId}) to ${to}: "${messageContent}"`,
       )
 
+      // Normalize WhatsApp ID (remove '+' prefix if present)
+      const normalizedTo = normalizeWhatsAppId(to)
+
       // Simulate successful message send
       const response: CloudAPIResponse = {
         messaging_product: 'whatsapp',
         contacts: [
           {
-            input: to,
-            wa_id: to,
+            input: normalizedTo,
+            wa_id: normalizedTo,
           },
         ],
         messages: [
@@ -471,8 +476,9 @@ export class MessageRoutes {
       if (this.webhookService) {
         void this.webhookService.sendMessageStatus(
           messageId,
-          to,
+          normalizedTo,
           this.businessPhoneNumberId,
+          this.displayPhoneNumber,
         )
       }
 
