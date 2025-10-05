@@ -31,11 +31,11 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@tsconfig/strictest": "^2.0.5",
-    "@types/node": "^24.5.2",
-    "eslint": "^9.36.0",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.44.0",
+    "@tsconfig/strictest": "^2.0.6",
+    "@types/node": "^24.6.2",
+    "eslint": "^9.37.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.45.0",
     "vitest": "^3.2.4"
   },
   "repository": {
