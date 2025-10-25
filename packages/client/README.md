@@ -629,3 +629,169 @@ try {
 - **Screen Parameter**: Required when using 'navigate' flow action.
 - **Character Limits**: Strictly enforced for all text fields.
 - **Media Headers**: When using media headers, ensure media is uploaded first or use valid external links.
+
+## Interactive Reply Buttons
+
+Interactive reply button messages allow you to send up to 3 quick reply buttons that users can tap to respond. When a user taps a button, you receive a webhook notification with the button ID and title.
+
+### sendButtonsMessage
+
+Sends an interactive message with reply buttons to a WhatsApp user.
+
+```typescript
+function sendButtonsMessage(params: {
+  accessToken: string
+  from: string
+  to: string
+  bodyText: string
+  buttons: { id: string; title: string }[]
+  headerText?: string
+  headerImage?: { id?: string; link?: string }
+  headerVideo?: { id?: string; link?: string }
+  headerDocument?: { id?: string; link?: string; filename?: string }
+  footerText?: string
+  bizOpaqueCallbackData?: string
+  baseUrl?: string
+}): Promise<CloudAPIResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `bodyText` (string) - Main message text. Maximum 1024 characters
+- `buttons` (array) - Array of 1-3 button objects, each with:
+  - `id` (string) - Unique button identifier. Maximum 256 characters
+  - `title` (string) - Text displayed on the button. Maximum 20 characters
+- `headerText` (string, optional) - Header text. Maximum 60 characters. Cannot be used with other header types
+- `headerImage` (object, optional) - Image header using media ID or link. Cannot be used with other header types
+- `headerVideo` (object, optional) - Video header using media ID or link. Cannot be used with other header types
+- `headerDocument` (object, optional) - Document header using media ID or link. Cannot be used with other header types
+- `footerText` (string, optional) - Footer text. Maximum 60 characters
+- `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
+- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API)
+
+#### Examples
+
+##### Simple Yes/No Buttons
+
+```typescript
+import { sendButtonsMessage } from '@whatsapp-cloudapi/client'
+
+// Send a message with two buttons
+const response = await sendButtonsMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Would you like to receive our newsletter?',
+  buttons: [
+    { id: 'yes', title: 'Yes' },
+    { id: 'no', title: 'No' },
+  ],
+})
+
+console.log('Button message sent:', response.messages[0].id)
+```
+
+##### Three Options with Header and Footer
+
+```typescript
+// Send a message with three buttons, header, and footer
+const response = await sendButtonsMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  headerText: 'Delivery Options',
+  bodyText: 'When would you like your order delivered?',
+  buttons: [
+    { id: 'morning', title: 'Morning' },
+    { id: 'afternoon', title: 'Afternoon' },
+    { id: 'evening', title: 'Evening' },
+  ],
+  footerText: 'Select your preferred time',
+})
+```
+
+##### Buttons with Image Header
+
+```typescript
+// Send a message with image header
+const response = await sendButtonsMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Choose your subscription plan:',
+  buttons: [
+    { id: 'basic', title: 'Basic' },
+    { id: 'premium', title: 'Premium' },
+    { id: 'enterprise', title: 'Enterprise' },
+  ],
+  headerImage: { id: 'MEDIA_ID_FROM_UPLOAD' },
+})
+```
+
+#### Handling Button Responses
+
+When a user taps a button, you'll receive a webhook notification with the button ID and title. You can use the webhook types from `@whatsapp-cloudapi/types` to handle responses:
+
+```typescript
+import type { WebhookInteractiveMessage } from '@whatsapp-cloudapi/types/webhook'
+
+// In your webhook handler
+function handleWebhook(message: WebhookInteractiveMessage) {
+  if (message.interactive.type === 'button_reply') {
+    const buttonId = message.interactive.button_reply.id
+    const buttonTitle = message.interactive.button_reply.title
+
+    console.log(`User clicked: ${buttonTitle} (${buttonId})`)
+
+    // Handle the button response based on the ID
+    if (buttonId === 'yes') {
+      // User confirmed
+    } else if (buttonId === 'no') {
+      // User declined
+    }
+  }
+}
+```
+
+#### Error Handling
+
+The function validates all parameters and throws errors for various issues:
+
+```typescript
+try {
+  await sendButtonsMessage({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    to: '+16505551234',
+    bodyText: 'Choose an option:',
+    buttons: [
+      { id: 'option1', title: 'Option 1' },
+      { id: 'option1', title: 'Option 2' }, // Duplicate ID!
+    ],
+  })
+} catch (error) {
+  // Possible errors:
+  // - Duplicate button ID found
+  // - Invalid button count (must be 1-3)
+  // - Button ID too long (>256 characters)
+  // - Button title too long (>20 characters)
+  // - Body text too long (>1024 characters)
+  // - Header text too long (>60 characters)
+  // - Footer text too long (>60 characters)
+  // - Multiple header types specified
+  // - API authentication errors
+  console.error('Failed to send button message:', error.message)
+}
+```
+
+#### Important Notes
+
+- **Button Count**: Minimum 1 button, maximum 3 buttons per message.
+- **Unique IDs**: All button IDs must be unique within the same message.
+- **Webhook Response**: Unlike CTA URLs, button taps generate webhook notifications that you can process.
+- **Header Types**: Only one header type can be used per message (text, image, video, or document).
+- **Character Limits**: Strictly enforced for all text fields and button properties.
+- **Media Headers**: When using media headers, ensure media is uploaded first or use valid external links.

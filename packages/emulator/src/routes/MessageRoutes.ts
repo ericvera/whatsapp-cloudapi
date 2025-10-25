@@ -3,6 +3,7 @@ import type {
   CloudAPIResponse,
   CloudAPISendFlowMessageRequest,
   CloudAPISendInteractiveCTAURLRequest,
+  CloudAPISendInteractiveButtonsMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
@@ -40,6 +41,16 @@ export class MessageRoutes {
     )
   }
 
+  private isButtonsMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendInteractiveButtonsMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'button'
+    )
+  }
+
   private extractMessageContent(body: CloudAPIRequest): string {
     switch (body.type) {
       case 'text':
@@ -66,6 +77,15 @@ export class MessageRoutes {
             ? `, screen="${body.interactive.action.parameters.flow_action_payload.screen}"`
             : ''
           return `[flow: "${body.interactive.body.text}", flow_id="${body.interactive.action.parameters.flow_id}", action="${body.interactive.action.parameters.flow_action}", cta="${body.interactive.action.parameters.flow_cta}"${screenStr}${dataStr}]`
+        } else if (this.isButtonsMessage(body)) {
+          const header = body.interactive.header
+          const headerInfo = header ? `, header=${header.type}` : ''
+          const footer = body.interactive.footer
+          const footerInfo = footer ? `, footer="${footer.text}"` : ''
+          const buttonsList = body.interactive.action.buttons
+            .map((btn) => `\n  - [${btn.reply.id}] "${btn.reply.title}"`)
+            .join('')
+          return `[buttons: "${body.interactive.body.text}"${headerInfo}${footerInfo}, buttons:${buttonsList}]`
         }
         return '[unknown interactive type]'
       }
@@ -442,6 +462,156 @@ export class MessageRoutes {
             screen: flowParams.flow_action_payload?.screen,
             data: flowData ? JSON.stringify(flowData) : 'none',
           })
+        } else if (this.isButtonsMessage(body)) {
+          // Button message validation
+          const { interactive } = body
+          const buttons = interactive.action.buttons
+          const header = interactive.header
+          const bodyText = interactive.body.text
+          const footerText = interactive.footer?.text
+
+          // Validate button count
+          if (buttons.length < 1 || buttons.length > 3) {
+            console.error(
+              `❌ Button message failed: Invalid button count (${String(buttons.length)})`,
+            )
+            res.status(400).json({
+              error: {
+                message: 'Must provide between 1 and 3 buttons',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          // Validate button IDs are unique
+          const buttonIds = new Set<string>()
+          for (const button of buttons) {
+            if (buttonIds.has(button.reply.id)) {
+              console.error(
+                `❌ Button message failed: Duplicate button ID: ${button.reply.id}`,
+              )
+              res.status(400).json({
+                error: {
+                  message: `Duplicate button ID found: ${button.reply.id}`,
+                  type: 'WhatsAppBusinessAPIError',
+                  code: 400,
+                },
+              })
+              return
+            }
+            buttonIds.add(button.reply.id)
+
+            // Validate button ID length
+            if (button.reply.id.length > 256) {
+              console.error(
+                '❌ Button message failed: Button ID exceeds 256 characters',
+              )
+              res.status(400).json({
+                error: {
+                  message: 'Button ID cannot exceed 256 characters',
+                  type: 'WhatsAppBusinessAPIError',
+                  code: 400,
+                },
+              })
+              return
+            }
+
+            // Validate button title length
+            if (button.reply.title.length > 20) {
+              console.error(
+                '❌ Button message failed: Button title exceeds 20 characters',
+              )
+              res.status(400).json({
+                error: {
+                  message: 'Button title cannot exceed 20 characters',
+                  type: 'WhatsAppBusinessAPIError',
+                  code: 400,
+                },
+              })
+              return
+            }
+          }
+
+          // Validate character limits
+          if (bodyText.length > 1024) {
+            console.error(
+              '❌ Button message failed: Body text exceeds 1024 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Body text cannot exceed 1024 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          if (
+            header?.type === 'text' &&
+            header.text &&
+            header.text.length > 60
+          ) {
+            console.error(
+              '❌ Button message failed: Header text exceeds 60 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Header text cannot exceed 60 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          if (footerText && footerText.length > 60) {
+            console.error(
+              '❌ Button message failed: Footer text exceeds 60 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Footer text cannot exceed 60 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          // Validate media IDs in headers
+          if (header) {
+            let mediaId: string | undefined
+
+            if (header.type === 'image' && header.image.id) {
+              mediaId = header.image.id
+            } else if (header.type === 'video' && header.video.id) {
+              mediaId = header.video.id
+            } else if (header.type === 'document' && header.document.id) {
+              mediaId = header.document.id
+            }
+
+            if (mediaId) {
+              const mediaExists = this.mediaRoutes.isMediaValid(mediaId)
+
+              if (!mediaExists) {
+                console.error(
+                  `❌ Button message failed: Media ID ${mediaId} not found or expired`,
+                )
+                res.status(400).json({
+                  error: {
+                    message: 'Media not found',
+                    type: 'WhatsAppBusinessAPIError',
+                    code: 131052,
+                    error_subcode: 1404,
+                  },
+                })
+                return
+              }
+            }
+          }
         }
       }
 

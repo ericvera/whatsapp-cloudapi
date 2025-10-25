@@ -3,9 +3,9 @@
 // Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
 
 /**
- * Request body for sending an image message
+ * Base interface for common message request properties
  */
-export interface CloudAPISendImageMessageRequest {
+export interface CloudAPIMessageRequestBase {
   /**
    * Identifier for the messaging service
    * Always set to 'whatsapp'
@@ -20,6 +20,7 @@ export interface CloudAPISendImageMessageRequest {
 
   /**
    * An arbitrary string, useful for tracking.
+   * Maximum length: 512 characters
    */
   biz_opaque_callback_data?: string
 
@@ -29,7 +30,13 @@ export interface CloudAPISendImageMessageRequest {
    * @example "+16505551234"
    */
   to: string
+}
 
+/**
+ * Request body for sending an image message
+ */
+export interface CloudAPISendImageMessageRequest
+  extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'image' for image messages
@@ -57,31 +64,8 @@ export interface CloudAPISendImageMessageRequest {
 /**
  * Request body for sending a text message
  */
-export interface CloudAPISendTextMessageRequest {
-  /**
-   * Identifier for the messaging service
-   * Always set to 'whatsapp'
-   */
-  messaging_product: 'whatsapp'
-
-  /**
-   * Type of recipient
-   * Currently only supports individual recipients
-   */
-  recipient_type?: 'individual'
-
-  /**
-   * An arbitrary string, useful for tracking.
-   */
-  biz_opaque_callback_data?: string
-
-  /**
-   * WhatsApp ID or phone number of the recipient
-   * Phone numbers must include the country code
-   * @example "+16505551234"
-   */
-  to: string
-
+export interface CloudAPISendTextMessageRequest
+  extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'text' for text messages
@@ -330,21 +314,40 @@ export interface CloudAPITemplateComponent {
 }
 
 /**
- * Request body for sending a template message
+ * Reply button for interactive button messages
  */
-export interface CloudAPISendTemplateMessageRequest {
+export interface CloudAPIReplyButton {
   /**
-   * Identifier for the messaging service
-   * Always set to 'whatsapp'
+   * Button type
+   * Must be 'reply' for reply buttons
    */
-  messaging_product: 'whatsapp'
+  type: 'reply'
 
   /**
-   * Type of recipient
-   * Currently only supports individual recipients
+   * Button reply configuration
    */
-  recipient_type?: 'individual'
+  reply: {
+    /**
+     * Unique button identifier
+     * Maximum 256 characters
+     * Used to identify which button was clicked
+     */
+    id: string
 
+    /**
+     * Text displayed on the button
+     * Maximum 20 characters
+     */
+    title: string
+  }
+}
+
+/**
+ * Base interface for message requests that support context
+ * (replying to messages)
+ */
+export interface CloudAPIMessageRequestWithContext
+  extends CloudAPIMessageRequestBase {
   /**
    * The context of a previous message to reply to
    */
@@ -354,20 +357,13 @@ export interface CloudAPISendTemplateMessageRequest {
      */
     message_id: string
   }
+}
 
-  /**
-   * An arbitrary string, useful for tracking.
-   * Maximum length: 512 characters
-   */
-  biz_opaque_callback_data?: string
-
-  /**
-   * WhatsApp ID or phone number of the recipient
-   * Phone numbers must include the country code
-   * @example "+16505551234"
-   */
-  to: string
-
+/**
+ * Request body for sending a template message
+ */
+export interface CloudAPISendTemplateMessageRequest
+  extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'template' for template messages
@@ -415,42 +411,8 @@ export interface CloudAPISendTemplateMessageRequest {
 /**
  * Request body for sending an interactive CTA URL message
  */
-export interface CloudAPISendInteractiveCTAURLRequest {
-  /**
-   * Identifier for the messaging service
-   * Always set to 'whatsapp'
-   */
-  messaging_product: 'whatsapp'
-
-  /**
-   * Type of recipient
-   * Currently only supports individual recipients
-   */
-  recipient_type?: 'individual'
-
-  /**
-   * The context of a previous message to reply to
-   */
-  context?: {
-    /**
-     * The message ID of the message being replied to
-     */
-    message_id: string
-  }
-
-  /**
-   * An arbitrary string, useful for tracking.
-   * Maximum length: 512 characters
-   */
-  biz_opaque_callback_data?: string
-
-  /**
-   * WhatsApp ID or phone number of the recipient
-   * Phone numbers must include the country code
-   * @example "+16505551234"
-   */
-  to: string
-
+export interface CloudAPISendInteractiveCTAURLRequest
+  extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -550,32 +512,8 @@ export interface CloudAPISendInteractiveCTAURLRequest {
 /**
  * Request body for sending a WhatsApp Flow message (v23.0)
  */
-export interface CloudAPISendFlowMessageRequest {
-  /**
-   * Identifier for the messaging service
-   * Always set to 'whatsapp'
-   */
-  messaging_product: 'whatsapp'
-
-  /**
-   * Type of recipient
-   * Currently only supports individual recipients
-   */
-  recipient_type?: 'individual'
-
-  /**
-   * An arbitrary string, useful for tracking.
-   * Maximum length: 512 characters
-   */
-  biz_opaque_callback_data?: string
-
-  /**
-   * WhatsApp ID or phone number of the recipient
-   * Phone numbers must include the country code
-   * @example "+16505551234"
-   */
-  to: string
-
+export interface CloudAPISendFlowMessageRequest
+  extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for flow messages
@@ -685,28 +623,131 @@ export interface CloudAPISendFlowMessageRequest {
 }
 
 /**
+ * Request body for sending an interactive buttons message
+ */
+export interface CloudAPISendInteractiveButtonsMessageRequest
+  extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'button' for reply buttons messages
+     */
+    type: 'button'
+
+    /**
+     * Optional header content
+     * Only one header type can be used per message
+     */
+    header?:
+      | {
+          type: 'text'
+          /**
+           * Header text content
+           * Maximum 60 characters
+           */
+          text: string
+        }
+      | {
+          type: 'image'
+          image: {
+            /**
+             * Media ID of the uploaded image
+             * Only one of id or link should be provided
+             */
+            id?: string
+            /**
+             * Link to the image
+             * Only one of id or link should be provided
+             */
+            link?: string
+          }
+        }
+      | {
+          type: 'video'
+          video: {
+            /**
+             * Media ID of the uploaded video
+             * Only one of id or link should be provided
+             */
+            id?: string
+            /**
+             * Link to the video
+             * Only one of id or link should be provided
+             */
+            link?: string
+          }
+        }
+      | {
+          type: 'document'
+          document: {
+            /**
+             * Media ID of the uploaded document
+             * Only one of id or link should be provided
+             */
+            id?: string
+            /**
+             * Link to the document
+             * Only one of id or link should be provided
+             */
+            link?: string
+            /**
+             * Filename for the document
+             */
+            filename?: string
+          }
+        }
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Required action with reply buttons
+     */
+    action: {
+      /**
+       * Array of reply buttons
+       * Minimum 1 button, maximum 3 buttons
+       */
+      buttons: CloudAPIReplyButton[]
+    }
+  }
+}
+
+/**
  * Request body for sending a reaction message (v23.0)
  */
-export interface CloudAPISendReactionMessageRequest {
-  /**
-   * Identifier for the messaging service
-   * Always set to 'whatsapp'
-   */
-  messaging_product: 'whatsapp'
-
-  /**
-   * Type of recipient
-   * Currently only supports individual recipients
-   */
-  recipient_type?: 'individual'
-
-  /**
-   * WhatsApp ID or phone number of the recipient
-   * Phone numbers must include the country code
-   * @example "+16505551234"
-   */
-  to: string
-
+export interface CloudAPISendReactionMessageRequest
+  extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'reaction' for reaction messages
@@ -735,5 +776,6 @@ export type CloudAPIRequest =
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
   | CloudAPISendInteractiveCTAURLRequest
+  | CloudAPISendInteractiveButtonsMessageRequest
   | CloudAPISendFlowMessageRequest
   | CloudAPISendReactionMessageRequest
