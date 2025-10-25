@@ -1,9 +1,12 @@
 import type {
+  CloudAPIMarkMessageReadRequest,
+  CloudAPIMarkReadResponse,
   CloudAPIRequest,
   CloudAPIResponse,
   CloudAPISendFlowMessageRequest,
-  CloudAPISendInteractiveCTAURLRequest,
   CloudAPISendInteractiveButtonsMessageRequest,
+  CloudAPISendInteractiveCTAURLRequest,
+  CloudAPISendInteractiveListMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
@@ -51,6 +54,23 @@ export class MessageRoutes {
     )
   }
 
+  private isListMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendInteractiveListMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'list'
+    )
+  }
+
+  private isMarkAsReadRequest(
+    body: unknown,
+  ): body is CloudAPIMarkMessageReadRequest {
+    const req = body as Partial<CloudAPIMarkMessageReadRequest>
+    return req.status === 'read' && typeof req.message_id === 'string'
+  }
+
   private extractMessageContent(body: CloudAPIRequest): string {
     switch (body.type) {
       case 'text':
@@ -86,6 +106,30 @@ export class MessageRoutes {
             .map((btn) => `\n  - [${btn.reply.id}] "${btn.reply.title}"`)
             .join('')
           return `[buttons: "${body.interactive.body.text}"${headerInfo}${footerInfo}, buttons:${buttonsList}]`
+        } else if (this.isListMessage(body)) {
+          const header = body.interactive.header
+          const headerInfo = header ? `, header="${header.text}"` : ''
+          const footer = body.interactive.footer
+          const footerInfo = footer ? `, footer="${footer.text}"` : ''
+          const totalRows = body.interactive.action.sections.reduce(
+            (sum, section) => sum + section.rows.length,
+            0,
+          )
+          const sectionsList = body.interactive.action.sections
+            .map((section) => {
+              const sectionTitle = section.title
+                ? `"${section.title}"`
+                : 'untitled'
+              const rows = section.rows
+                .map(
+                  (row) =>
+                    `\n    - [${row.id}] "${row.title}"${row.description ? ` - ${row.description}` : ''}`,
+                )
+                .join('')
+              return `\n  ${sectionTitle}:${rows}`
+            })
+            .join('')
+          return `[list: "${body.interactive.body.text}", button="${body.interactive.action.button}", ${String(totalRows)} items${headerInfo}${footerInfo}, sections:${sectionsList}]`
         }
         return '[unknown interactive type]'
       }
@@ -100,6 +144,12 @@ export class MessageRoutes {
 
   public handleSendMessage(req: Request, res: Response): void {
     try {
+      // Check if this is a mark-as-read request
+      if (this.isMarkAsReadRequest(req.body)) {
+        this.handleMarkAsRead(req, res)
+        return
+      }
+
       const body = req.body as CloudAPIRequest
       const { to } = body
 
@@ -612,6 +662,193 @@ export class MessageRoutes {
               }
             }
           }
+        } else if (this.isListMessage(body)) {
+          // List message validation
+          const { interactive } = body
+          const sections = interactive.action.sections
+          const buttonText = interactive.action.button
+          const bodyText = interactive.body.text
+          const headerText = interactive.header?.text
+          const footerText = interactive.footer?.text
+
+          // Validate sections count
+          if (sections.length < 1) {
+            console.error('❌ List message failed: No sections provided')
+            res.status(400).json({
+              error: {
+                message: 'Must provide at least 1 section',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          // Validate character limits
+          if (bodyText.length > 1024) {
+            console.error(
+              '❌ List message failed: Body text exceeds 1024 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Body text cannot exceed 1024 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          if (buttonText.length > 20) {
+            console.error(
+              '❌ List message failed: Button text exceeds 20 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Button text cannot exceed 20 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          if (headerText && headerText.length > 60) {
+            console.error(
+              '❌ List message failed: Header text exceeds 60 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Header text cannot exceed 60 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          if (footerText && footerText.length > 60) {
+            console.error(
+              '❌ List message failed: Footer text exceeds 60 characters',
+            )
+            res.status(400).json({
+              error: {
+                message: 'Footer text cannot exceed 60 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
+
+          // Validate sections and rows
+          let totalRows = 0
+          const rowIds = new Set<string>()
+
+          for (const section of sections) {
+            if (section.title && section.title.length > 24) {
+              console.error(
+                '❌ List message failed: Section title exceeds 24 characters',
+              )
+              res.status(400).json({
+                error: {
+                  message: 'Section title cannot exceed 24 characters',
+                  type: 'WhatsAppBusinessAPIError',
+                  code: 400,
+                },
+              })
+              return
+            }
+
+            if (section.rows.length < 1) {
+              console.error('❌ List message failed: Section has no rows')
+              res.status(400).json({
+                error: {
+                  message: 'Each section must have at least 1 row',
+                  type: 'WhatsAppBusinessAPIError',
+                  code: 400,
+                },
+              })
+              return
+            }
+
+            totalRows += section.rows.length
+
+            for (const row of section.rows) {
+              if (row.id.length > 200) {
+                console.error(
+                  '❌ List message failed: Row ID exceeds 200 characters',
+                )
+                res.status(400).json({
+                  error: {
+                    message: 'Row ID cannot exceed 200 characters',
+                    type: 'WhatsAppBusinessAPIError',
+                    code: 400,
+                  },
+                })
+                return
+              }
+
+              if (row.title.length > 24) {
+                console.error(
+                  '❌ List message failed: Row title exceeds 24 characters',
+                )
+                res.status(400).json({
+                  error: {
+                    message: 'Row title cannot exceed 24 characters',
+                    type: 'WhatsAppBusinessAPIError',
+                    code: 400,
+                  },
+                })
+                return
+              }
+
+              if (row.description && row.description.length > 72) {
+                console.error(
+                  '❌ List message failed: Row description exceeds 72 characters',
+                )
+                res.status(400).json({
+                  error: {
+                    message: 'Row description cannot exceed 72 characters',
+                    type: 'WhatsAppBusinessAPIError',
+                    code: 400,
+                  },
+                })
+                return
+              }
+
+              if (rowIds.has(row.id)) {
+                console.error(
+                  `❌ List message failed: Duplicate row ID: ${row.id}`,
+                )
+                res.status(400).json({
+                  error: {
+                    message: `Duplicate row ID found: ${row.id}`,
+                    type: 'WhatsAppBusinessAPIError',
+                    code: 400,
+                  },
+                })
+                return
+              }
+
+              rowIds.add(row.id)
+            }
+          }
+
+          if (totalRows > 10) {
+            console.error(
+              `❌ List message failed: Total rows (${String(totalRows)}) exceed 10`,
+            )
+            res.status(400).json({
+              error: {
+                message:
+                  'Total number of rows across all sections cannot exceed 10',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+            return
+          }
         }
       }
 
@@ -658,6 +895,30 @@ export class MessageRoutes {
       res.status(500).json({
         error: {
           message: 'Internal server error during message send',
+          type: 'OAuthException',
+          code: 500,
+        },
+      })
+    }
+  }
+
+  private handleMarkAsRead(req: Request, res: Response): void {
+    try {
+      const body = req.body as CloudAPIMarkMessageReadRequest
+      const { message_id } = body
+
+      console.log(`✓ Message marked as read: ${message_id}`)
+
+      const response: CloudAPIMarkReadResponse = {
+        success: true,
+      }
+
+      res.status(200).json(response)
+    } catch (error) {
+      console.error('❌ Mark as read error:', error)
+      res.status(500).json({
+        error: {
+          message: 'Internal server error during mark as read',
           type: 'OAuthException',
           code: 500,
         },

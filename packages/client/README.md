@@ -795,3 +795,304 @@ try {
 - **Header Types**: Only one header type can be used per message (text, image, video, or document).
 - **Character Limits**: Strictly enforced for all text fields and button properties.
 - **Media Headers**: When using media headers, ensure media is uploaded first or use valid external links.
+
+## Interactive List Messages
+
+Interactive list messages allow you to send structured menus with up to 10 items organized into sections. Users tap a button to view the list and select an item, triggering a webhook notification with the selected item's ID and title.
+
+### sendListMessage
+
+Sends an interactive message with a list of options to a WhatsApp user.
+
+```typescript
+function sendListMessage(params: {
+  accessToken: string
+  from: string
+  to: string
+  bodyText: string
+  buttonText: string
+  sections: {
+    title?: string
+    rows: {
+      id: string
+      title: string
+      description?: string
+    }[]
+  }[]
+  headerText?: string
+  footerText?: string
+  bizOpaqueCallbackData?: string
+  baseUrl?: string
+}): Promise<CloudAPIResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `bodyText` (string) - Main message text. Maximum 1024 characters
+- `buttonText` (string) - Text for the button that opens the list. Maximum 20 characters
+- `sections` (array) - Array of sections containing list items. Maximum 10 rows total across all sections, each with:
+  - `title` (string, optional) - Section title. Maximum 24 characters
+  - `rows` (array) - Array of row objects, each with:
+    - `id` (string) - Unique row identifier. Maximum 200 characters
+    - `title` (string) - Row title. Maximum 24 characters
+    - `description` (string, optional) - Row description. Maximum 72 characters
+- `headerText` (string, optional) - Header text. Maximum 60 characters
+- `footerText` (string, optional) - Footer text. Maximum 60 characters
+- `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
+- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API)
+
+#### Examples
+
+##### Product Categories
+
+```typescript
+import { sendListMessage } from '@whatsapp-cloudapi/client'
+
+// Send a list with multiple sections
+const response = await sendListMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  headerText: 'Product Catalog',
+  bodyText: 'Browse our products by category. Tap to view options.',
+  buttonText: 'View Products',
+  sections: [
+    {
+      title: 'Electronics',
+      rows: [
+        {
+          id: 'phones',
+          title: 'Smartphones',
+          description: 'Latest models from top brands',
+        },
+        {
+          id: 'laptops',
+          title: 'Laptops',
+          description: 'High-performance computing',
+        },
+      ],
+    },
+    {
+      title: 'Accessories',
+      rows: [
+        { id: 'cases', title: 'Cases & Covers' },
+        { id: 'chargers', title: 'Chargers' },
+      ],
+    },
+  ],
+  footerText: 'Free shipping on orders over $50',
+})
+
+console.log('List message sent:', response.messages[0].id)
+```
+
+##### Simple Menu
+
+```typescript
+// Send a simple list without sections
+const response = await sendListMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  to: '+16505551234',
+  bodyText: 'Please select your preferred support option:',
+  buttonText: 'Select Option',
+  sections: [
+    {
+      rows: [
+        {
+          id: 'tech',
+          title: 'Technical Support',
+          description: 'Help with technical issues',
+        },
+        {
+          id: 'billing',
+          title: 'Billing Support',
+          description: 'Questions about your bill',
+        },
+        {
+          id: 'general',
+          title: 'General Inquiries',
+          description: 'Other questions',
+        },
+      ],
+    },
+  ],
+})
+```
+
+#### Handling List Responses
+
+When a user selects an item from the list, you'll receive a webhook notification with the item details. You can use the webhook types from `@whatsapp-cloudapi/types` to handle responses:
+
+```typescript
+import type { WebhookInteractiveMessage } from '@whatsapp-cloudapi/types/webhook'
+
+// In your webhook handler
+function handleWebhook(message: WebhookInteractiveMessage) {
+  if (message.interactive.type === 'list_reply') {
+    const listReply = message.interactive.list_reply
+    const selectedId = listReply.id
+    const selectedTitle = listReply.title
+    const selectedDescription = listReply.description
+
+    console.log(`User selected: ${selectedTitle} (${selectedId})`)
+
+    // Handle the selection based on the ID
+    if (selectedId === 'phones') {
+      // Show smartphone catalog
+    } else if (selectedId === 'laptops') {
+      // Show laptop catalog
+    }
+  }
+}
+```
+
+#### Error Handling
+
+The function validates all parameters and throws errors for various issues:
+
+```typescript
+try {
+  await sendListMessage({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    to: '+16505551234',
+    bodyText: 'Select an option:',
+    buttonText: 'Choose',
+    sections: [
+      {
+        rows: Array.from({ length: 11 }, (_, i) => ({
+          id: `item_${i}`,
+          title: `Item ${i}`,
+        })),
+      },
+    ],
+  })
+} catch (error) {
+  // Possible errors:
+  // - Total rows exceed 10
+  // - Duplicate row IDs
+  // - No sections provided
+  // - Section has no rows
+  // - Row ID too long (>200 characters)
+  // - Row title too long (>24 characters)
+  // - Row description too long (>72 characters)
+  // - Section title too long (>24 characters)
+  // - Body text too long (>1024 characters)
+  // - Button text too long (>20 characters)
+  // - Header text too long (>60 characters)
+  // - Footer text too long (>60 characters)
+  // - API authentication errors
+  console.error('Failed to send list message:', error.message)
+}
+```
+
+#### Important Notes
+
+- **Row Limit**: Maximum 10 rows total across all sections.
+- **Unique IDs**: All row IDs must be unique within the same message.
+- **Webhook Response**: List item selections generate webhook notifications with the selected item's ID, title, and description.
+- **Header Support**: Only text headers are supported for list messages (no image/video/document headers).
+- **Character Limits**: Strictly enforced for all text fields and list item properties.
+
+## Mark Message as Read
+
+Mark incoming messages as read to update their status in the WhatsApp conversation.
+
+### markMessageRead
+
+Marks a WhatsApp message as read.
+
+```typescript
+function markMessageRead(params: {
+  accessToken: string
+  from: string
+  messageId: string
+  baseUrl?: string
+}): Promise<CloudAPIMarkReadResponse>
+```
+
+#### Parameters
+
+- `accessToken` (string) - Your WhatsApp Cloud API access token
+- `from` (string) - Your WhatsApp Phone Number ID
+- `messageId` (string) - The message ID to mark as read (from webhook notifications)
+- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API, use http://localhost:4004 for emulator)
+
+#### Returns
+
+Returns a Promise that resolves to a `CloudAPIMarkReadResponse` object:
+
+```typescript
+interface CloudAPIMarkReadResponse {
+  success: boolean
+}
+```
+
+#### Example
+
+```typescript
+import { markMessageRead } from '@whatsapp-cloudapi/client'
+
+// Mark a message as read
+const response = await markMessageRead({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  messageId: 'wamid.HBgLMTY1MDU1NTEyMzQVAgARGBI5QTNDQTVCM0Q0Q0ZCQTRCOTkA',
+})
+
+console.log('Message marked as read:', response.success) // true
+```
+
+#### Using with Webhooks
+
+Typically, you'll use this function in response to incoming message webhooks:
+
+```typescript
+import type { WebhookTextMessage } from '@whatsapp-cloudapi/types/webhook'
+import { markMessageRead } from '@whatsapp-cloudapi/client'
+
+// In your webhook handler
+async function handleIncomingMessage(message: WebhookTextMessage) {
+  // Process the message
+  console.log(`Received message: ${message.text.body}`)
+
+  // Mark the message as read
+  await markMessageRead({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    messageId: message.id,
+  })
+
+  // Send a response or perform other actions...
+}
+```
+
+#### Error Handling
+
+The function throws errors for various issues:
+
+```typescript
+try {
+  await markMessageRead({
+    accessToken: 'YOUR_ACCESS_TOKEN',
+    from: 'YOUR_PHONE_NUMBER_ID',
+    messageId: 'wamid.invalid123',
+  })
+} catch (error) {
+  // Possible errors:
+  // - Invalid message ID
+  // - API authentication errors
+  // - Network/connectivity issues
+  console.error('Failed to mark message as read:', error.message)
+}
+```
+
+#### Important Notes
+
+- **Message IDs**: Use the message ID from incoming webhook notifications
+- **No Visual Confirmation**: The API returns success, but there's no visual confirmation in the WhatsApp UI for read receipts on business messages
+- **Idempotent**: Marking the same message as read multiple times is safe and won't cause errors

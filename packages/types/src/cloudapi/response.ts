@@ -123,6 +123,16 @@ export interface CloudAPIErrorResponse {
 }
 
 /**
+ * Response from marking a message as read
+ */
+export interface CloudAPIMarkReadResponse {
+  /**
+   * Indicates whether the operation was successful
+   */
+  success: boolean
+}
+
+/**
  * Supported WhatsApp Cloud API version
  */
 export type CloudAPIVersion = 'v23.0'

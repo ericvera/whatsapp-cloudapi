@@ -343,6 +343,47 @@ export interface CloudAPIReplyButton {
 }
 
 /**
+ * List item row for interactive list messages
+ */
+export interface CloudAPIListRow {
+  /**
+   * Unique row identifier
+   * Maximum 200 characters
+   * Used to identify which item was selected
+   */
+  id: string
+
+  /**
+   * Title text for the row
+   * Maximum 24 characters
+   */
+  title: string
+
+  /**
+   * Optional description for the row
+   * Maximum 72 characters
+   */
+  description?: string
+}
+
+/**
+ * Section for organizing list items
+ */
+export interface CloudAPIListSection {
+  /**
+   * Optional section title
+   * Maximum 24 characters
+   */
+  title?: string
+
+  /**
+   * Array of rows in this section
+   * Maximum 10 rows across all sections
+   */
+  rows: CloudAPIListRow[]
+}
+
+/**
  * Base interface for message requests that support context
  * (replying to messages)
  */
@@ -744,6 +785,82 @@ export interface CloudAPISendInteractiveButtonsMessageRequest
 }
 
 /**
+ * Request body for sending an interactive list message
+ */
+export interface CloudAPISendInteractiveListMessageRequest
+  extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'list' for list messages
+     */
+    type: 'list'
+
+    /**
+     * Optional header content
+     */
+    header?: {
+      type: 'text'
+      /**
+       * Header text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       * URLs are automatically hyperlinked
+       */
+      text: string
+    }
+
+    /**
+     * Required action with list configuration
+     */
+    action: {
+      /**
+       * Button text to open the list
+       * Maximum 20 characters
+       */
+      button: string
+
+      /**
+       * Array of sections containing list items
+       * Minimum 1 section, maximum 10 rows total across all sections
+       */
+      sections: CloudAPIListSection[]
+    }
+  }
+}
+
+/**
  * Request body for sending a reaction message (v23.0)
  */
 export interface CloudAPISendReactionMessageRequest
@@ -771,11 +888,34 @@ export interface CloudAPISendReactionMessageRequest
   }
 }
 
+/**
+ * Request body for marking a message as read
+ */
+export interface CloudAPIMarkMessageReadRequest {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Status to set
+   * Must be 'read' to mark message as read
+   */
+  status: 'read'
+
+  /**
+   * ID of the message to mark as read
+   */
+  message_id: string
+}
+
 export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
   | CloudAPISendInteractiveCTAURLRequest
   | CloudAPISendInteractiveButtonsMessageRequest
+  | CloudAPISendInteractiveListMessageRequest
   | CloudAPISendFlowMessageRequest
   | CloudAPISendReactionMessageRequest
