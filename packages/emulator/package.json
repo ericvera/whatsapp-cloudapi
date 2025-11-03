@@ -29,15 +29,15 @@
     "nanoid": "^5.1.6"
   },
   "devDependencies": {
-    "@tsconfig/strictest": "^2.0.6",
+    "@tsconfig/strictest": "^2.0.7",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.4",
+    "@types/express": "^5.0.5",
     "@types/multer": "^2.0.0",
-    "@types/node": "^24.9.1",
-    "eslint": "^9.38.0",
+    "@types/node": "^24.10.0",
+    "eslint": "^9.39.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.2",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.6"
   },
   "repository": {
     "type": "git",
