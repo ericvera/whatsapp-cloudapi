@@ -253,10 +253,13 @@ program
     }
   })
 
-program
+const simulateCommand = program
   .command('simulate')
   .description('Simulate incoming messages to trigger webhooks')
-  .argument('<type>', 'Type of message to simulate (currently only "text")')
+
+simulateCommand
+  .command('text')
+  .description('Simulate an incoming text message')
   .option('-p, --port <number>', 'Port where emulator is running', '4004')
   .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
   .option(
@@ -272,12 +275,7 @@ program
     '--area-codes <codes>',
     'Comma-separated area codes for random phone generation (default: "787,939,610")',
   )
-  .action(async (type: string, options: SimulateOptions) => {
-    if (type !== 'text') {
-      console.error('Error: Only "text" is currently supported')
-      process.exit(1)
-    }
-
+  .action(async (options: SimulateOptions) => {
     if (!options.message) {
       console.error('Error: --message is required')
       process.exit(1)
@@ -334,6 +332,140 @@ program
       process.exit(1)
     }
   })
+
+simulateCommand
+  .command('button-reply')
+  .description('Simulate a button click response')
+  .option('-p, --port <number>', 'Port where emulator is running', '4004')
+  .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
+  .requiredOption(
+    '-f, --from <phone>',
+    'Phone number of sender in E.164 format',
+  )
+  .requiredOption('--id <id>', 'Button ID that was clicked')
+  .option('--title <title>', 'Button title text (defaults to ID)')
+  .option('-n, --name <name>', 'Name of sender (defaults to "Test User")')
+  .action(
+    async (options: {
+      port: string
+      host: string
+      from: string
+      id: string
+      title?: string
+      name?: string
+    }) => {
+      try {
+        const from = validatePhoneNumber(options.from)
+        const buttonId = options.id
+        const buttonTitle = options.title ?? options.id
+        const name = options.name ?? 'Test User'
+
+        const requestBody = {
+          from,
+          name,
+          interactive_type: 'button_reply',
+          button_id: buttonId,
+          button_title: buttonTitle,
+        }
+
+        const response = await fetch(
+          `http://${options.host}:${options.port}/debug/messages/send-interactive`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          },
+        )
+
+        if (!response.ok) {
+          const error = await response.text()
+          console.error(
+            `Failed to simulate button reply: ${response.status.toString()} ${error}`,
+          )
+          process.exit(1)
+        }
+
+        console.log(
+          `✓ Simulated button reply from ${from} (${name}): id="${buttonId}", title="${buttonTitle}"`,
+        )
+      } catch (error) {
+        console.error(
+          'Error:',
+          error instanceof Error ? error.message : 'Unknown error',
+        )
+        process.exit(1)
+      }
+    },
+  )
+
+simulateCommand
+  .command('list-reply')
+  .description('Simulate a list item selection')
+  .option('-p, --port <number>', 'Port where emulator is running', '4004')
+  .option('-h, --host <string>', 'Host where emulator is running', 'localhost')
+  .requiredOption(
+    '-f, --from <phone>',
+    'Phone number of sender in E.164 format',
+  )
+  .requiredOption('--id <id>', 'List item ID that was selected')
+  .option('--title <title>', 'List item title text (defaults to ID)')
+  .option('--description <description>', 'List item description')
+  .option('-n, --name <name>', 'Name of sender (defaults to "Test User")')
+  .action(
+    async (options: {
+      port: string
+      host: string
+      from: string
+      id: string
+      title?: string
+      description?: string
+      name?: string
+    }) => {
+      try {
+        const from = validatePhoneNumber(options.from)
+        const listItemId = options.id
+        const listItemTitle = options.title ?? options.id
+        const listItemDescription = options.description ?? ''
+        const name = options.name ?? 'Test User'
+
+        const requestBody = {
+          from,
+          name,
+          interactive_type: 'list_reply',
+          list_item_id: listItemId,
+          list_item_title: listItemTitle,
+          list_item_description: listItemDescription,
+        }
+
+        const response = await fetch(
+          `http://${options.host}:${options.port}/debug/messages/send-interactive`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          },
+        )
+
+        if (!response.ok) {
+          const error = await response.text()
+          console.error(
+            `Failed to simulate list reply: ${response.status.toString()} ${error}`,
+          )
+          process.exit(1)
+        }
+
+        console.log(
+          `✓ Simulated list reply from ${from} (${name}): id="${listItemId}", title="${listItemTitle}"`,
+        )
+      } catch (error) {
+        console.error(
+          'Error:',
+          error instanceof Error ? error.message : 'Unknown error',
+        )
+        process.exit(1)
+      }
+    },
+  )
 
 const mediaCommand = program
   .command('media')

@@ -107,6 +107,122 @@ export class WebhookService {
     await this.sendWebhook(webhookPayload)
   }
 
+  public async sendIncomingButtonReply(
+    from: string,
+    contactName: string,
+    buttonId: string,
+    buttonTitle: string,
+    businessPhoneNumberId: string,
+    displayPhoneNumber: string,
+  ): Promise<void> {
+    const messageId = `mock_incoming_${String(Date.now())}_${Math.random().toString(36).slice(2)}`
+
+    const webhookPayload: WebhookPayload = {
+      object: 'whatsapp_business_account',
+      entry: [
+        {
+          id: businessPhoneNumberId,
+          changes: [
+            {
+              value: {
+                messaging_product: 'whatsapp',
+                metadata: {
+                  display_phone_number: displayPhoneNumber,
+                  phone_number_id: businessPhoneNumberId,
+                },
+                contacts: [
+                  {
+                    wa_id: from,
+                    profile: {
+                      name: contactName,
+                    },
+                  },
+                ],
+                messages: [
+                  {
+                    id: messageId,
+                    from,
+                    timestamp: String(Math.floor(Date.now() / 1000)),
+                    type: 'interactive',
+                    interactive: {
+                      type: 'button_reply',
+                      button_reply: {
+                        id: buttonId,
+                        title: buttonTitle,
+                      },
+                    },
+                  },
+                ],
+              },
+              field: 'messages',
+            },
+          ],
+        },
+      ],
+    }
+
+    await this.sendWebhook(webhookPayload)
+  }
+
+  public async sendIncomingListReply(
+    from: string,
+    contactName: string,
+    listItemId: string,
+    listItemTitle: string,
+    listItemDescription: string,
+    businessPhoneNumberId: string,
+    displayPhoneNumber: string,
+  ): Promise<void> {
+    const messageId = `mock_incoming_${String(Date.now())}_${Math.random().toString(36).slice(2)}`
+
+    const webhookPayload: WebhookPayload = {
+      object: 'whatsapp_business_account',
+      entry: [
+        {
+          id: businessPhoneNumberId,
+          changes: [
+            {
+              value: {
+                messaging_product: 'whatsapp',
+                metadata: {
+                  display_phone_number: displayPhoneNumber,
+                  phone_number_id: businessPhoneNumberId,
+                },
+                contacts: [
+                  {
+                    wa_id: from,
+                    profile: {
+                      name: contactName,
+                    },
+                  },
+                ],
+                messages: [
+                  {
+                    id: messageId,
+                    from,
+                    timestamp: String(Math.floor(Date.now() / 1000)),
+                    type: 'interactive',
+                    interactive: {
+                      type: 'list_reply',
+                      list_reply: {
+                        id: listItemId,
+                        title: listItemTitle,
+                        description: listItemDescription,
+                      },
+                    },
+                  },
+                ],
+              },
+              field: 'messages',
+            },
+          ],
+        },
+      ],
+    }
+
+    await this.sendWebhook(webhookPayload)
+  }
+
   private async sendWebhook(webhookPayload: WebhookPayload): Promise<void> {
     try {
       const headers: Record<string, string> = {

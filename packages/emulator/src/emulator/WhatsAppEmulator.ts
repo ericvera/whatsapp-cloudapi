@@ -1,4 +1,7 @@
-import type { SimulateIncomingTextRequest } from '@whatsapp-cloudapi/types/simulation'
+import type {
+  SimulateIncomingInteractiveRequest,
+  SimulateIncomingTextRequest,
+} from '@whatsapp-cloudapi/types/simulation'
 import bodyParser from 'body-parser'
 import cors from 'cors'
 import type { Express, NextFunction, Request, Response } from 'express'
@@ -14,7 +17,10 @@ import {
 } from '../services/MediaPersistenceService.js'
 import { WebhookService } from '../services/WebhookService.js'
 import type { EmulatorOptions } from '../types/config.js'
-import type { SimulateIncomingMessageResponse } from '../types/simulation.js'
+import type {
+  SimulateIncomingInteractiveResponse,
+  SimulateIncomingMessageResponse,
+} from '../types/simulation.js'
 import { normalizeWhatsAppId } from '../utils/phoneUtils.js'
 
 export class WhatsAppEmulator {
@@ -150,6 +156,163 @@ export class WhatsAppEmulator {
     }
   }
 
+  private handleSimulateIncomingInteractive(req: Request, res: Response): void {
+    try {
+      const body = req.body as Partial<SimulateIncomingInteractiveRequest>
+
+      if (!body.from || !body.interactive_type) {
+        console.error(
+          '❌ Simulate interactive message failed: Missing from or interactive_type in request body',
+        )
+        res.status(400).json({
+          error: {
+            message:
+              'Both "from" and "interactive_type" are required in request body',
+            type: 'ValidationError',
+            code: 400,
+          },
+        })
+        return
+      }
+
+      // Validate interactive_type
+      if (
+        body.interactive_type !== 'button_reply' &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        body.interactive_type !== 'list_reply'
+      ) {
+        console.error(
+          // eslint-disable-next-line max-len
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `❌ Simulate interactive message failed: Invalid interactive_type: ${body.interactive_type}`,
+        )
+        res.status(400).json({
+          error: {
+            message:
+              'interactive_type must be either "button_reply" or "list_reply"',
+            type: 'ValidationError',
+            code: 400,
+          },
+        })
+        return
+      }
+
+      // Validate button_reply fields
+      if (body.interactive_type === 'button_reply') {
+        if (!body.button_id) {
+          console.error(
+            '❌ Simulate interactive message failed: Missing button_id for button_reply',
+          )
+          res.status(400).json({
+            error: {
+              message:
+                '"button_id" is required when interactive_type is "button_reply"',
+              type: 'ValidationError',
+              code: 400,
+            },
+          })
+          return
+        }
+      }
+
+      // Validate list_reply fields
+      if (body.interactive_type === 'list_reply') {
+        if (!body.list_item_id) {
+          console.error(
+            '❌ Simulate interactive message failed: Missing list_item_id for list_reply',
+          )
+          res.status(400).json({
+            error: {
+              message:
+                '"list_item_id" is required when interactive_type is "list_reply"',
+              type: 'ValidationError',
+              code: 400,
+            },
+          })
+          return
+        }
+      }
+
+      // Normalize the sender ID (remove '+' prefix if present)
+      const normalizedFrom = normalizeWhatsAppId(body.from)
+
+      if (body.interactive_type === 'button_reply') {
+        const buttonId = body.button_id ?? ''
+        const buttonTitle = body.button_title ?? buttonId
+
+        console.log(
+          `📥 Simulating incoming button reply from ${body.from}: button_id="${buttonId}", button_title="${buttonTitle}"`,
+        )
+
+        if (this.webhookService) {
+          void this.webhookService.sendIncomingButtonReply(
+            normalizedFrom,
+            body.name ?? 'Test User',
+            buttonId,
+            buttonTitle,
+            this.config?.server.businessPhoneNumberId ?? '',
+            this.config?.server.displayPhoneNumber ?? '',
+          )
+        }
+
+        const response: SimulateIncomingInteractiveResponse = {
+          message: 'Interactive message simulated successfully',
+          from: normalizedFrom,
+          interactive_type: 'button_reply',
+          details: {
+            id: buttonId,
+            title: buttonTitle,
+          },
+        }
+
+        res.status(200).json(response)
+      } else {
+        // list_reply
+        const listItemId = body.list_item_id ?? ''
+        const listItemTitle = body.list_item_title ?? listItemId
+        const listItemDescription = body.list_item_description ?? ''
+
+        console.log(
+          `📥 Simulating incoming list reply from ${body.from}: list_item_id="${listItemId}", list_item_title="${listItemTitle}"`,
+        )
+
+        if (this.webhookService) {
+          void this.webhookService.sendIncomingListReply(
+            normalizedFrom,
+            body.name ?? 'Test User',
+            listItemId,
+            listItemTitle,
+            listItemDescription,
+            this.config?.server.businessPhoneNumberId ?? '',
+            this.config?.server.displayPhoneNumber ?? '',
+          )
+        }
+
+        const response: SimulateIncomingInteractiveResponse = {
+          message: 'Interactive message simulated successfully',
+          from: normalizedFrom,
+          interactive_type: 'list_reply',
+          details: {
+            id: listItemId,
+            title: listItemTitle,
+            description: listItemDescription,
+          },
+        }
+
+        res.status(200).json(response)
+      }
+    } catch (error) {
+      console.error('❌ Simulate interactive message error:', error)
+      res.status(500).json({
+        error: {
+          message: 'Internal server error during message simulation',
+          type: 'InternalServerError',
+          code: 500,
+        },
+      })
+    }
+  }
+
   private handleWebhookValidation(req: Request, res: Response): void {
     const mode = req.query['hub.mode']
     const token = req.query['hub.verify_token']
@@ -219,6 +382,12 @@ export class WhatsAppEmulator {
     this.app.post(
       '/debug/messages/send-text',
       this.handleSimulateIncomingMessage.bind(this),
+    )
+
+    // Debug simulate incoming interactive endpoint
+    this.app.post(
+      '/debug/messages/send-interactive',
+      this.handleSimulateIncomingInteractive.bind(this),
     )
 
     // Webhook validation endpoint

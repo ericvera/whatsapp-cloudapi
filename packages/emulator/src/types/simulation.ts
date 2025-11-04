@@ -10,3 +10,14 @@ export interface SimulateIncomingMessageResponse {
   from: string
   text: string
 }
+
+export interface SimulateIncomingInteractiveResponse {
+  message: string
+  from: string
+  interactive_type: 'button_reply' | 'list_reply'
+  details: {
+    id: string
+    title: string
+    description?: string
+  }
+}
