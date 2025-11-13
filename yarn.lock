@@ -546,10 +546,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/strictest@npm:2.0.6":
-  version: 2.0.6
-  resolution: "@tsconfig/strictest@npm:2.0.6"
-  checksum: 10c0/b8a0c89a8936e65d4b4ad1420a17abe51f9576eff68cea1755f003deb2f5436600708fe0f1e0d26f56aeec0584e91753007ff9a634c67e39cf915eef1b25fc7f
+"@tsconfig/strictest@npm:2.0.8":
+  version: 2.0.8
+  resolution: "@tsconfig/strictest@npm:2.0.8"
+  checksum: 10c0/96d7f1c6988c284886e7f2caea87415a6ebc779dc24c3f102cfa83b7d924da1363176b09c4600d11a1205bf2d819f35515c542a4bbcbe2fe13c1d7833376d203
   languageName: node
   linkType: hard
 
@@ -963,7 +963,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@whatsapp-cloudapi/cli@workspace:packages/cli"
   dependencies:
-    "@tsconfig/strictest": "npm:2.0.6"
+    "@tsconfig/strictest": "npm:2.0.8"
     "@types/node": "npm:^24.10.1"
     "@whatsapp-cloudapi/emulator": "workspace:*"
     "@whatsapp-cloudapi/types": "workspace:*"
@@ -982,7 +982,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@whatsapp-cloudapi/client@workspace:packages/client"
   dependencies:
-    "@tsconfig/strictest": "npm:2.0.6"
+    "@tsconfig/strictest": "npm:2.0.8"
     "@types/node": "npm:^24.10.1"
     "@whatsapp-cloudapi/types": "workspace:*"
     eslint: "npm:^9.39.1"
@@ -996,7 +996,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@whatsapp-cloudapi/emulator@workspace:packages/emulator"
   dependencies:
-    "@tsconfig/strictest": "npm:2.0.6"
+    "@tsconfig/strictest": "npm:2.0.8"
     "@types/cors": "npm:^2.8.19"
     "@types/express": "npm:^5.0.5"
     "@types/multer": "npm:^2.0.0"
@@ -1020,7 +1020,7 @@ __metadata:
   resolution: "@whatsapp-cloudapi/monorepo@workspace:."
   dependencies:
     "@eslint/js": "npm:^9.39.1"
-    "@tsconfig/strictest": "npm:2.0.6"
+    "@tsconfig/strictest": "npm:2.0.8"
     "@types/node": "npm:^24.10.1"
     eslint: "npm:^9.39.1"
     husky: "npm:^9.1.7"
@@ -1037,7 +1037,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@whatsapp-cloudapi/types@workspace:packages/types"
   dependencies:
-    "@tsconfig/strictest": "npm:2.0.6"
+    "@tsconfig/strictest": "npm:2.0.8"
     "@types/node": "npm:^24.10.1"
     eslint: "npm:^9.39.1"
     typescript: "npm:^5.9.3"
