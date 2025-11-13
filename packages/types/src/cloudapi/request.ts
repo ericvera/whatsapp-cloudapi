@@ -30,6 +30,13 @@ export interface CloudAPIMessageRequestBase {
    * @example "+16505551234"
    */
   to: string
+
+  /**
+   * Controls whether event activity is shared for each message (v24.0)
+   * This parameter will override the WhatsApp Business Account level setting
+   * for MM Lite API and the Business level setting for Cloud API
+   */
+  message_activity_sharing?: boolean
 }
 
 /**
@@ -248,13 +255,13 @@ export interface CloudAPITemplateParameter {
   payload?: string
 
   /**
-   * OTP code for authentication templates (v23.0)
+   * OTP code for authentication templates (v24.0)
    * Used when implementing one-tap or zero-tap authentication
    */
   code?: string
 
   /**
-   * Button configuration for authentication templates (v23.0)
+   * Button configuration for authentication templates (v24.0)
    */
   button?: {
     /** Button type for authentication */
@@ -551,7 +558,7 @@ export interface CloudAPISendInteractiveCTAURLRequest
 }
 
 /**
- * Request body for sending a WhatsApp Flow message (v23.0)
+ * Request body for sending a WhatsApp Flow message (v24.0)
  */
 export interface CloudAPISendFlowMessageRequest
   extends CloudAPIMessageRequestBase {
@@ -572,13 +579,15 @@ export interface CloudAPISendFlowMessageRequest
     type: 'flow'
 
     /**
-     * Optional header content
+     * Optional header content (v24.0)
      */
     header?: {
-      type: 'text' | 'image' | 'video' | 'document'
+      type: 'text' | 'image' | 'video' | 'gif' | 'document'
       text?: string
+      sub_text?: string
       image?: { id?: string; link?: string }
       video?: { id?: string; link?: string }
+      gif?: { id?: string; link?: string }
       document?: { id?: string; link?: string; filename?: string }
     }
 
@@ -625,36 +634,58 @@ export interface CloudAPISendFlowMessageRequest
         flow_message_version: '3'
 
         /**
-         * Token for flow session
+         * Token for flow session (v24.0)
+         * Optional - defaults to unused
          */
-        flow_token: string
+        flow_token?: string
 
         /**
-         * Unique ID of the flow
+         * Unique ID of the flow (v24.0)
+         * Required unless flow_name is set
+         * Cannot be used with flow_name parameter
          */
-        flow_id: string
+        flow_id?: string
+
+        /**
+         * The name of the Flow (v24.0)
+         * Required unless flow_id is set
+         * Cannot be used with flow_id parameter
+         * Note: Changing the Flow name will require updating this parameter
+         */
+        flow_name?: string
 
         /**
          * Call-to-action text on the button
+         * Maximum 30 characters recommended (no emoji)
          */
         flow_cta: string
 
         /**
-         * Type of flow action
+         * The current mode of the Flow (v24.0)
+         * Default: published
          */
-        flow_action: 'navigate' | 'data_exchange'
+        mode?: 'draft' | 'published'
 
         /**
-         * Payload for flow action
+         * Type of flow action (v24.0)
+         * Default: navigate
+         */
+        flow_action?: 'navigate' | 'data_exchange'
+
+        /**
+         * Payload for flow action (v24.0)
+         * Optional only if flow_action is navigate
          */
         flow_action_payload?: {
           /**
            * Screen to navigate to
+           * Default: FIRST_ENTRY_SCREEN
            */
           screen?: string
 
           /**
            * Additional data to pass to the flow
+           * Must be a non-empty object
            */
           data?: Record<string, unknown>
         }
@@ -696,6 +727,11 @@ export interface CloudAPISendInteractiveButtonsMessageRequest
            * Maximum 60 characters
            */
           text: string
+          /**
+           * Optional sub-text for the header (v24.0)
+           * Maximum 60 characters
+           */
+          sub_text?: string
         }
       | {
           type: 'image'
@@ -722,6 +758,21 @@ export interface CloudAPISendInteractiveButtonsMessageRequest
             id?: string
             /**
              * Link to the video
+             * Only one of id or link should be provided
+             */
+            link?: string
+          }
+        }
+      | {
+          type: 'gif'
+          gif: {
+            /**
+             * Media ID of the uploaded gif (v24.0)
+             * Only one of id or link should be provided
+             */
+            id?: string
+            /**
+             * Link to the gif (v24.0)
              * Only one of id or link should be provided
              */
             link?: string
@@ -861,7 +912,7 @@ export interface CloudAPISendInteractiveListMessageRequest
 }
 
 /**
- * Request body for sending a reaction message (v23.0)
+ * Request body for sending a reaction message (v24.0)
  */
 export interface CloudAPISendReactionMessageRequest
   extends CloudAPIMessageRequestBase {
@@ -885,6 +936,117 @@ export interface CloudAPISendReactionMessageRequest
      * Send empty string to remove reaction
      */
     emoji: string
+  }
+}
+
+/**
+ * Request body for sending a call permission request message (v24.0)
+ */
+export interface CloudAPISendCallPermissionRequestMessageRequest
+  extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'call_permission_request' to request call permissions
+     */
+    type: 'call_permission_request'
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content explaining why you want to call
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required action for call permission request
+     */
+    action: {
+      /**
+       * Action name
+       * Must be 'call_permission_request'
+       */
+      name: 'call_permission_request'
+    }
+  }
+}
+
+/**
+ * Request body for sending a catalog message (v24.0)
+ */
+export interface CloudAPISendCatalogMessageRequest
+  extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'catalog_message' for catalog messages
+     */
+    type: 'catalog_message'
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required action for catalog message
+     */
+    action: {
+      /**
+       * Action name
+       * Must be 'catalog_message'
+       */
+      name: 'catalog_message'
+
+      /**
+       * Action parameters
+       */
+      parameters: {
+        /**
+         * Product retailer ID to use as thumbnail
+         */
+        thumbnail_product_retailer_id: string
+      }
+    }
   }
 }
 
@@ -919,3 +1081,5 @@ export type CloudAPIRequest =
   | CloudAPISendInteractiveListMessageRequest
   | CloudAPISendFlowMessageRequest
   | CloudAPISendReactionMessageRequest
+  | CloudAPISendCallPermissionRequestMessageRequest
+  | CloudAPISendCatalogMessageRequest

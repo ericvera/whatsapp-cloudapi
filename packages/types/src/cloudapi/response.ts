@@ -12,17 +12,17 @@ export interface CloudAPIMediaUploadResponse {
   id: string
 
   /**
-   * File size in bytes (v23.0)
+   * File size in bytes (v24.0)
    */
   file_size?: number
 
   /**
-   * MIME type of the uploaded file (v23.0)
+   * MIME type of the uploaded file (v24.0)
    */
   mime_type?: string
 
   /**
-   * SHA256 hash of the file (v23.0)
+   * SHA256 hash of the file (v24.0)
    */
   sha256?: string
 }
@@ -77,13 +77,15 @@ export interface CloudAPIResponse {
      * This ID is used in webhooks for tracking message status
      */
     id: string
-  }[]
 
-  /**
-   * Status of message acceptance (v23.0)
-   * Only 'accepted' indicates successful queueing
-   */
-  message_status?: 'accepted'
+    /**
+     * Status of the individual message (v24.0)
+     * - 'accepted': Message was sent to the intended recipient
+     * - 'held_for_quality_assessment': Message send was delayed until quality
+     *   can be validated and it will either be sent or dropped
+     */
+    message_status?: 'accepted' | 'held_for_quality_assessment'
+  }[]
 }
 
 /**
@@ -100,13 +102,13 @@ export interface CloudAPIErrorResponse {
     code: number
     /** Additional error code for more specific error types */
     error_subcode?: number
-    /** Indicates if the error is transient and can be retried (v23.0) */
+    /** Indicates if the error is transient and can be retried (v24.0) */
     is_transient?: boolean
-    /** User-friendly error title (v23.0) */
+    /** User-friendly error title (v24.0) */
     error_user_title?: string
-    /** User-friendly error message (v23.0) */
+    /** User-friendly error message (v24.0) */
     error_user_msg?: string
-    /** Facebook trace ID for debugging (v23.0) */
+    /** Facebook trace ID for debugging (v24.0) */
     fbtrace_id?: string
     /** Additional error details */
     error_data?: {
@@ -114,9 +116,9 @@ export interface CloudAPIErrorResponse {
       messaging_product: string
       /** Detailed explanation of the error */
       details: string
-      /** Field that caused the error (v23.0) */
+      /** Field that caused the error (v24.0) */
       blame_field?: string
-      /** Specification of the field (v23.0) */
+      /** Specification of the field (v24.0) */
       blame_field_spec?: string
     }
   }
@@ -135,4 +137,4 @@ export interface CloudAPIMarkReadResponse {
 /**
  * Supported WhatsApp Cloud API version
  */
-export type CloudAPIVersion = 'v23.0'
+export type CloudAPIVersion = 'v24.0'
