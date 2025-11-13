@@ -1,14 +1,17 @@
 import type { WebhookPayload } from '@whatsapp-cloudapi/types/webhook'
 import type { EmulatorWebhookConfig } from '../types/index.js'
+import type { EmulatorLogger } from './Logger.js'
 
 export class WebhookService {
   private readonly config: Required<EmulatorWebhookConfig>
+  private readonly logger: EmulatorLogger
 
-  constructor(config: EmulatorWebhookConfig) {
+  constructor(config: EmulatorWebhookConfig, logger: EmulatorLogger) {
     this.config = {
       timeout: 5000,
       ...config,
     }
+    this.logger = logger
   }
 
   public async sendIncomingMessage(
@@ -224,6 +227,8 @@ export class WebhookService {
   }
 
   private async sendWebhook(webhookPayload: WebhookPayload): Promise<void> {
+    const startTime = Date.now()
+
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -236,16 +241,19 @@ export class WebhookService {
         signal: AbortSignal.timeout(this.config.timeout),
       })
 
+      const duration = Date.now() - startTime
+
       if (!response.ok) {
-        console.error(
-          `Failed to deliver webhook: ${response.status.toString()} ${response.statusText}`,
+        this.logger.webhookFailed(
+          this.config.url,
+          `${response.status.toString()} ${response.statusText}`,
         )
       } else {
-        console.log(`🔗 Webhook delivered successfully to ${this.config.url}`)
+        this.logger.webhookDelivered(this.config.url, response.status, duration)
       }
     } catch (error) {
-      console.error(
-        'Error sending webhook:',
+      this.logger.webhookFailed(
+        this.config.url,
         error instanceof Error ? error.message : 'Unknown error',
       )
     }

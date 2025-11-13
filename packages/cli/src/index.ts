@@ -19,6 +19,7 @@ export interface StartOptions {
   webhookTimeout?: string
   import?: string
   exportOnExit?: string | boolean
+  logLevel?: 'quiet' | 'normal' | 'verbose'
 }
 
 export interface StatusOptions {
@@ -159,6 +160,11 @@ program
     '--export-on-exit [path]',
     'Export media metadata on shutdown (uses import path if no path provided)',
   )
+  .option(
+    '--log-level <level>',
+    'Log level: quiet, normal, or verbose (default: quiet)',
+    'quiet',
+  )
   .action(async (options: StartOptions) => {
     if (!options.number) {
       console.error('Error: Business phone number ID is required (--number)')
@@ -169,6 +175,9 @@ program
       businessPhoneNumberId: options.number,
       port: parseInt(options.port, 10),
       host: options.host,
+      log: {
+        level: options.logLevel ?? 'quiet',
+      },
     }
 
     // Add webhook configuration if provided

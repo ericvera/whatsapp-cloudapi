@@ -11,6 +11,7 @@
 - 🛠️ Easy-to-use command-line interface
 - 🧪 Start and manage the WhatsApp Cloud API emulator
 - 📲 Simulate incoming messages to trigger webhooks
+- 📊 Configurable logging levels for debugging
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
 
@@ -57,6 +58,7 @@ Options:
 - `--webhook-timeout <ms>` - Timeout in milliseconds for webhook requests (default: 5000)
 - `--import <path>` - Directory to import media metadata from
 - `--export-on-exit [path]` - Export media metadata on shutdown (uses import path if no path provided)
+- `--log-level <level>` - Log level: quiet, normal, or verbose (default: quiet)
 
 Examples:
 
@@ -83,11 +85,28 @@ wa-emulator start --number 15550123456 --import ./old-data --export-on-exit ./ne
 
 # Export only (no import)
 wa-emulator start --number 15550123456 --export-on-exit ./emulator-data
+
+# With verbose logging for debugging
+wa-emulator start --number 15550123456 --log-level verbose
+
+# With normal logging (includes webhook events)
+wa-emulator start --number 15550123456 \
+  --webhook-url http://localhost:8080/webhook \
+  --webhook-secret my-secret \
+  --log-level normal
 ```
 
 **Note:** Webhook configuration (both `--webhook-url` and `--webhook-secret`) is required to use the `simulate` command for testing incoming messages.
 
 **Media Persistence:** Use `--import` to load previously saved media metadata and `--export-on-exit` to save media metadata on shutdown. This allows media state to persist across emulator restarts for long-term testing scenarios.
+
+**Logging Levels:**
+
+- `quiet` (default) - Shows only essential information: messages, system events, and errors
+- `normal` - Includes webhook delivery status in addition to quiet level logs
+- `verbose` - Includes HTTP requests, media operations, and validation errors for debugging
+
+See the [emulator package documentation](https://www.npmjs.com/package/@whatsapp-cloudapi/emulator#logging) for more details about logging.
 
 ### Check Status
 

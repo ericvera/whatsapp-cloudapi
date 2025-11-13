@@ -11,6 +11,7 @@ import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
 import { MediaRoutes } from '../routes/MediaRoutes.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
+import { EmulatorLogger } from '../services/Logger.js'
 import {
   exportMedia,
   importMedia,
@@ -31,14 +32,16 @@ export class WhatsAppEmulator {
   private messageRoutes: MessageRoutes | null = null
   private mediaRoutes: MediaRoutes | null = null
   private options: EmulatorOptions
+  private logger: EmulatorLogger
 
   constructor(options: EmulatorOptions) {
     this.options = options
+    this.logger = new EmulatorLogger(options.log)
     this.app = express()
     this.config = new EmulatorConfiguration(options)
 
     if (this.config.webhook) {
-      this.webhookService = new WebhookService(this.config.webhook)
+      this.webhookService = new WebhookService(this.config.webhook, this.logger)
     }
 
     // MediaRoutes will be initialized after potential import
@@ -48,15 +51,13 @@ export class WhatsAppEmulator {
     this.app.use(cors())
     this.app.use(bodyParser.json())
 
-    this.app.use((_req: Request, _res: Response, next: NextFunction) => {
-      console.log(
-        `📞 Emulated phone number: ${this.config?.server.businessPhoneNumberId ?? 'unknown'}`,
-      )
-      next()
-    })
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      const startTime = Date.now()
 
-    this.app.use((req: Request, _: Response, next: NextFunction) => {
-      console.log(`🌐 ${req.method} ${req.url}`)
+      res.on('finish', () => {
+        const duration = Date.now() - startTime
+        this.logger.httpRequest(req.method, req.url, res.statusCode, duration)
+      })
       next()
     })
   }
@@ -68,9 +69,11 @@ export class WhatsAppEmulator {
   ): void {
     const version = req.params['version']
     if (version !== SupportedVersion) {
-      console.error(
-        `❌ Unsupported API version: ${version ?? 'undefined'}. Supported version: ${SupportedVersion}`,
-      )
+      this.logger.validationError({
+        field: 'version',
+        value: version,
+        reason: `Unsupported API version. Supported version: ${SupportedVersion}`,
+      })
       res.status(400).json(UnsupportedVersionError)
       return
     }
@@ -86,9 +89,12 @@ export class WhatsAppEmulator {
     const phoneNumberId = req.params['phoneNumberId']
 
     if (phoneNumberId !== this.config?.server.businessPhoneNumberId) {
-      console.error(
-        `❌ Phone number ID mismatch: expected ${this.config?.server.businessPhoneNumberId ?? 'unknown'}, got ${phoneNumberId ?? 'undefined'}`,
-      )
+      this.logger.validationError({
+        field: 'phoneNumberId',
+        value: phoneNumberId,
+        reason: `Phone number ID mismatch: expected ${this.config?.server.businessPhoneNumberId ?? 'unknown'}`,
+      })
+
       res.status(400).json({
         error: {
           message: `Phone number ID ${phoneNumberId ?? 'undefined'} not found`,
@@ -106,9 +112,11 @@ export class WhatsAppEmulator {
       const body = req.body as Partial<SimulateIncomingTextRequest>
 
       if (!body.from || !body.message) {
-        console.error(
-          '❌ Simulate incoming message failed: Missing from or message in request body',
-        )
+        this.logger.validationError({
+          reason: 'Missing from or message in request body',
+          details: 'Both "from" and "message" are required in request body',
+        })
+
         res.status(400).json({
           error: {
             message: 'Both "from" and "message" are required in request body',
@@ -122,9 +130,11 @@ export class WhatsAppEmulator {
       // Normalize the sender ID (remove '+' prefix if present)
       const normalizedFrom = normalizeWhatsAppId(body.from)
 
-      console.log(
-        `📥 Simulating incoming message from ${body.from}: "${body.message}"`,
-      )
+      this.logger.textMessage(body.message, {
+        direction: 'received',
+        sender: normalizedFrom,
+        ...(body.name ? { senderName: body.name } : {}),
+      })
 
       if (this.webhookService) {
         void this.webhookService.sendIncomingMessage(
@@ -145,7 +155,10 @@ export class WhatsAppEmulator {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ Simulate incoming message error:', error)
+      this.logger.error('Simulate incoming message error', {
+        details: String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during message simulation',
@@ -161,9 +174,12 @@ export class WhatsAppEmulator {
       const body = req.body as Partial<SimulateIncomingInteractiveRequest>
 
       if (!body.from || !body.interactive_type) {
-        console.error(
-          '❌ Simulate interactive message failed: Missing from or interactive_type in request body',
-        )
+        this.logger.validationError({
+          reason: 'Missing from or interactive_type in request body',
+          details:
+            'Both "from" and "interactive_type" are required in request body',
+        })
+
         res.status(400).json({
           error: {
             message:
@@ -181,11 +197,13 @@ export class WhatsAppEmulator {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         body.interactive_type !== 'list_reply'
       ) {
-        console.error(
-          // eslint-disable-next-line max-len
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `❌ Simulate interactive message failed: Invalid interactive_type: ${body.interactive_type}`,
-        )
+        this.logger.validationError({
+          field: 'interactive_type',
+          value: body.interactive_type,
+          reason:
+            'interactive_type must be either "button_reply" or "list_reply"',
+        })
+
         res.status(400).json({
           error: {
             message:
@@ -200,9 +218,12 @@ export class WhatsAppEmulator {
       // Validate button_reply fields
       if (body.interactive_type === 'button_reply') {
         if (!body.button_id) {
-          console.error(
-            '❌ Simulate interactive message failed: Missing button_id for button_reply',
-          )
+          this.logger.validationError({
+            field: 'button_id',
+            reason:
+              'button_id is required when interactive_type is "button_reply"',
+          })
+
           res.status(400).json({
             error: {
               message:
@@ -218,9 +239,12 @@ export class WhatsAppEmulator {
       // Validate list_reply fields
       if (body.interactive_type === 'list_reply') {
         if (!body.list_item_id) {
-          console.error(
-            '❌ Simulate interactive message failed: Missing list_item_id for list_reply',
-          )
+          this.logger.validationError({
+            field: 'list_item_id',
+            reason:
+              'list_item_id is required when interactive_type is "list_reply"',
+          })
+
           res.status(400).json({
             error: {
               message:
@@ -240,9 +264,13 @@ export class WhatsAppEmulator {
         const buttonId = body.button_id ?? ''
         const buttonTitle = body.button_title ?? buttonId
 
-        console.log(
-          `📥 Simulating incoming button reply from ${body.from}: button_id="${buttonId}", button_title="${buttonTitle}"`,
-        )
+        // Note: We'll log button replies as text messages for now
+        // The logger could be extended with a specific button reply formatter
+        this.logger.textMessage(`Button: ${buttonTitle}`, {
+          direction: 'received',
+          sender: normalizedFrom,
+          ...(body.name ? { senderName: body.name } : {}),
+        })
 
         if (this.webhookService) {
           void this.webhookService.sendIncomingButtonReply(
@@ -272,9 +300,13 @@ export class WhatsAppEmulator {
         const listItemTitle = body.list_item_title ?? listItemId
         const listItemDescription = body.list_item_description ?? ''
 
-        console.log(
-          `📥 Simulating incoming list reply from ${body.from}: list_item_id="${listItemId}", list_item_title="${listItemTitle}"`,
-        )
+        // Note: We'll log list replies as text messages for now
+        // The logger could be extended with a specific list reply formatter
+        this.logger.textMessage(`List: ${listItemTitle}`, {
+          direction: 'received',
+          sender: normalizedFrom,
+          ...(body.name ? { senderName: body.name } : {}),
+        })
 
         if (this.webhookService) {
           void this.webhookService.sendIncomingListReply(
@@ -302,7 +334,10 @@ export class WhatsAppEmulator {
         res.status(200).json(response)
       }
     } catch (error) {
-      console.error('❌ Simulate interactive message error:', error)
+      this.logger.error('Simulate interactive message error', {
+        details: String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during message simulation',
@@ -323,10 +358,13 @@ export class WhatsAppEmulator {
       this.config?.webhook?.secret &&
       token === this.config.webhook.secret
     ) {
-      console.log('✅ Webhook endpoint validation successful')
       res.status(200).send(challenge)
     } else {
-      console.log('❌ Webhook endpoint validation failed')
+      this.logger.validationError({
+        reason: 'Webhook validation failed',
+        details: 'Invalid verification token or mode',
+      })
+
       res.status(403).json({
         error: {
           message: 'Webhook validation failed',
@@ -407,21 +445,20 @@ export class WhatsAppEmulator {
       let initialMediaStorage
 
       if (this.options.persistence?.importPath) {
-        console.log(
-          `📁 Importing media metadata from: ${this.options.persistence.importPath}`,
-        )
         initialMediaStorage = await importMedia(
           this.options.persistence.importPath,
+          this.logger,
         )
       }
 
       // Initialize routes with imported media storage
-      this.mediaRoutes = new MediaRoutes(initialMediaStorage)
+      this.mediaRoutes = new MediaRoutes(this.logger, initialMediaStorage)
       this.messageRoutes = new MessageRoutes(
         config.server.businessPhoneNumberId,
         config.server.displayPhoneNumber,
         this.webhookService,
         this.mediaRoutes,
+        this.logger,
       )
 
       // Setup routes after initialization
@@ -430,30 +467,26 @@ export class WhatsAppEmulator {
       const { host, port } = config.server
 
       this.server = this.app.listen(port, host, () => {
-        console.log(
-          `🚀 WhatsApp Cloud API Emulator running at http://${host}:${port.toString()}`,
-        )
-        console.log(
-          `📞 Emulating phone number: ${config.server.businessPhoneNumberId}`,
-        )
-
-        if (this.options.persistence?.importPath) {
-          console.log(
-            `📁 Media persistence: Import from ${this.options.persistence.importPath}`,
-          )
-        }
-
-        if (this.options.persistence?.shouldExport) {
-          const exportPath =
-            this.options.persistence.exportOnExit ??
-            this.options.persistence.importPath
-          console.log(
-            `💾 Media persistence: Export on exit to ${exportPath ?? 'unknown'}`,
-          )
-        }
+        this.logger.startup({
+          address: `http://${host}:${port.toString()}`,
+          phone: config.server.displayPhoneNumber,
+          phoneId: config.server.businessPhoneNumberId,
+          ...(this.options.webhook?.url
+            ? { webhook: this.options.webhook.url }
+            : {}),
+          ...(this.options.persistence?.shouldExport
+            ? {
+                mediaPersistence:
+                  this.options.persistence.exportOnExit ??
+                  this.options.persistence.importPath,
+              }
+            : {}),
+        })
       })
     } catch (error) {
-      console.error('❌ Failed to start emulator:', error)
+      this.logger.error('Failed to start emulator', {
+        details: String(error),
+      })
       throw error
     }
   }
@@ -470,8 +503,11 @@ export class WhatsAppEmulator {
           throw new Error('Export path is required when shouldExport is true')
         }
 
-        console.log(`💾 Exporting media metadata to: ${exportPath}`)
-        await exportMedia(exportPath, this.mediaRoutes.getMediaStorage())
+        await exportMedia(
+          exportPath,
+          this.mediaRoutes.getMediaStorage(),
+          this.logger,
+        )
       }
 
       if (this.server) {
@@ -486,10 +522,12 @@ export class WhatsAppEmulator {
         })
 
         this.server = null
-        console.log('🛑 Emulator stopped')
+        this.logger.shutdown()
       }
     } catch (error) {
-      console.error('❌ Error during emulator shutdown:', error)
+      this.logger.error('Error during emulator shutdown', {
+        details: String(error),
+      })
       throw error
     }
   }

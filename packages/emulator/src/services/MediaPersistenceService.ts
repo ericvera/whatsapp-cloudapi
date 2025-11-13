@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs'
 import { dirname } from 'path'
+import type { EmulatorLogger } from './Logger.js'
 import type { MockMediaEntry } from '../types/media.js'
 
 export interface MediaManifest {
@@ -16,6 +17,7 @@ const ManifestVersion = '1.0'
  */
 export async function importMedia(
   importPath: string,
+  logger: EmulatorLogger,
 ): Promise<Map<string, MockMediaEntry>> {
   const manifestPath = `${importPath}/${ManifestFilename}`
   const mediaStorage = new Map<string, MockMediaEntry>()
@@ -24,12 +26,6 @@ export async function importMedia(
     // Read and parse manifest
     const manifestContent = await fs.readFile(manifestPath, 'utf8')
     const manifest = JSON.parse(manifestContent) as MediaManifest
-
-    if (manifest.version !== ManifestVersion) {
-      console.warn(
-        `⚠️  Manifest version ${manifest.version} may be incompatible with current version ${ManifestVersion}`,
-      )
-    }
 
     const now = new Date()
     let validCount = 0
@@ -53,25 +49,28 @@ export async function importMedia(
       }
     }
 
-    console.log(
-      `📁 Imported ${validCount.toString()} valid media entries from ${manifestPath}`,
+    logger.mediaOperation(
+      'import',
+      `${validCount.toString()} valid`,
+      expiredCount > 0
+        ? `from ${manifestPath}, auto-cleaned ${expiredCount.toString()} expired`
+        : `from ${manifestPath}`,
     )
-    if (expiredCount > 0) {
-      console.log(
-        `🧹 Auto-cleaned ${expiredCount.toString()} expired media entries`,
-      )
-    }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      console.log(
-        `📁 No existing media manifest found at ${manifestPath}, starting fresh`,
+      logger.mediaOperation(
+        'import',
+        'none',
+        `No manifest found at ${manifestPath}, starting fresh`,
       )
     } else if (error instanceof SyntaxError) {
-      console.error(
-        `❌ Invalid JSON in media manifest at ${manifestPath}, starting fresh`,
-      )
+      logger.error('Invalid JSON in media manifest', {
+        details: `${manifestPath}, starting fresh`,
+      })
     } else {
-      console.error(`❌ Error importing media from ${manifestPath}:`, error)
+      logger.error('Error importing media', {
+        details: error instanceof Error ? error.message : String(error),
+      })
       throw error
     }
   }
@@ -85,6 +84,7 @@ export async function importMedia(
 export async function exportMedia(
   exportPath: string,
   mediaStorage: Map<string, MockMediaEntry>,
+  logger: EmulatorLogger,
 ): Promise<void> {
   const manifestPath = `${exportPath}/${ManifestFilename}`
 
@@ -106,12 +106,6 @@ export async function exportMedia(
       }
     }
 
-    if (expiredCount > 0) {
-      console.log(
-        `🧹 Auto-cleaned ${expiredCount.toString()} expired media entries before export`,
-      )
-    }
-
     // Create manifest
     const manifest: MediaManifest = {
       version: ManifestVersion,
@@ -122,11 +116,17 @@ export async function exportMedia(
     // Write manifest to file
     await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
 
-    console.log(
-      `💾 Exported ${validEntries.length.toString()} media entries to ${manifestPath}`,
+    logger.mediaOperation(
+      'export',
+      `${validEntries.length.toString()} entries`,
+      expiredCount > 0
+        ? `to ${manifestPath}, auto-cleaned ${expiredCount.toString()} expired`
+        : `to ${manifestPath}`,
     )
   } catch (error) {
-    console.error(`❌ Error exporting media to ${manifestPath}:`, error)
+    logger.error('Error exporting media', {
+      details: error instanceof Error ? error.message : String(error),
+    })
     throw error
   }
 }

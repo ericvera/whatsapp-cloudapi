@@ -50,4 +50,8 @@ export interface EmulatorOptions extends EmulatorConfig {
   webhook?: EmulatorWebhookConfig
   /** Media persistence configuration */
   persistence?: EmulatorPersistenceConfig
+  /** Logging configuration */
+  log?: {
+    level?: 'quiet' | 'normal' | 'verbose'
+  }
 }

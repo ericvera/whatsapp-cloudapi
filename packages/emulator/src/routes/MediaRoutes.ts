@@ -2,6 +2,7 @@ import type { CloudAPIMediaUploadResponse } from '@whatsapp-cloudapi/types/cloud
 import type { Request, Response } from 'express'
 import multer from 'multer'
 import { nanoid } from 'nanoid'
+import type { EmulatorLogger } from '../services/Logger.js'
 import type {
   MediaExpireResponse,
   MediaListResponse,
@@ -11,8 +12,14 @@ import type {
 export class MediaRoutes {
   private mediaStorage = new Map<string, MockMediaEntry>()
   private upload: multer.Multer
+  private logger: EmulatorLogger
 
-  constructor(initialMediaStorage?: Map<string, MockMediaEntry>) {
+  constructor(
+    logger: EmulatorLogger,
+    initialMediaStorage?: Map<string, MockMediaEntry>,
+  ) {
+    this.logger = logger
+
     // Initialize with imported media storage if provided
     if (initialMediaStorage) {
       this.mediaStorage = initialMediaStorage
@@ -63,9 +70,9 @@ export class MediaRoutes {
     }
 
     if (expiredIds.length > 0) {
-      console.log(
-        `🧹 Cleaned up ${expiredIds.length.toString()} expired media items: [${expiredIds.join(', ')}]`,
-      )
+      this.logger.mediaOperation('cleanup', expiredIds.join(', '), {
+        count: expiredIds.length,
+      })
     }
   }
 
@@ -92,7 +99,11 @@ export class MediaRoutes {
       if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === 'LIMIT_FILE_SIZE') {
-            console.error('❌ Media upload failed: File size exceeds 5MB limit')
+            this.logger.validationError({
+              field: 'file',
+              reason: 'File size exceeds 5MB limit',
+            })
+
             res.status(400).json({
               error: {
                 message: 'File size exceeds 5MB limit',
@@ -100,10 +111,16 @@ export class MediaRoutes {
                 code: 400,
               },
             })
+
             return
           }
+
           if (err.code === 'LIMIT_FILE_COUNT') {
-            console.error('❌ Media upload failed: Multiple files not allowed')
+            this.logger.validationError({
+              field: 'file',
+              reason: 'Multiple files not allowed',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Only one file allowed per upload',
@@ -111,13 +128,19 @@ export class MediaRoutes {
                 code: 400,
               },
             })
+
             return
           }
         }
 
         // Handle MIME type validation errors
         const errorMessage = err instanceof Error ? err.message : String(err)
-        console.error(`❌ Media upload failed: ${errorMessage}`)
+
+        this.logger.validationError({
+          field: 'file',
+          reason: errorMessage,
+        })
+
         res.status(400).json({
           error: {
             message: errorMessage,
@@ -125,13 +148,18 @@ export class MediaRoutes {
             code: 400,
           },
         })
+
         return
       }
 
       try {
         // Check if file was uploaded
         if (!req.file) {
-          console.error('❌ Media upload failed: No file provided')
+          this.logger.validationError({
+            field: 'file',
+            reason: 'No file provided',
+          })
+
           res.status(400).json({
             error: {
               message: 'File is required for media upload',
@@ -139,13 +167,19 @@ export class MediaRoutes {
               code: 400,
             },
           })
+
           return
         }
 
         // Validate messaging_product field
         const body = req.body as { messaging_product?: string }
         if (body.messaging_product !== 'whatsapp') {
-          console.error('❌ Media upload failed: Invalid messaging_product')
+          this.logger.validationError({
+            field: 'messaging_product',
+            value: body.messaging_product,
+            reason: 'Must be "whatsapp"',
+          })
+
           res.status(400).json({
             error: {
               message: 'messaging_product must be "whatsapp"',
@@ -153,6 +187,7 @@ export class MediaRoutes {
               code: 400,
             },
           })
+
           return
         }
 
@@ -174,9 +209,10 @@ export class MediaRoutes {
         this.mediaStorage.set(mediaId, mockEntry)
 
         // File is now discarded - we only keep metadata
-        console.log(
-          `📁 Media metadata stored: ${mediaId} (${req.file.size.toString()} bytes, expires: ${expiresAt.toISOString()})`,
-        )
+        this.logger.mediaOperation('upload', mediaId, {
+          size: req.file.size,
+          expiresAt: expiresAt.toISOString(),
+        })
 
         const response: CloudAPIMediaUploadResponse = {
           id: mediaId,
@@ -184,7 +220,10 @@ export class MediaRoutes {
 
         res.status(200).json(response)
       } catch (error) {
-        console.error('❌ Media upload error:', error)
+        this.logger.error('Media upload error', {
+          details: error instanceof Error ? error.message : String(error),
+        })
+
         res.status(500).json({
           error: {
             message: 'Internal server error during media upload',
@@ -209,7 +248,10 @@ export class MediaRoutes {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ List media error:', error)
+      this.logger.error('List media error', {
+        details: error instanceof Error ? error.message : String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during media listing',
@@ -228,7 +270,11 @@ export class MediaRoutes {
       const { id } = req.params
 
       if (!id) {
-        console.error('❌ Expire media failed: Missing media ID parameter')
+        this.logger.validationError({
+          field: 'id',
+          reason: 'Missing media ID parameter',
+        })
+
         res.status(400).json({
           error: {
             message: 'Media ID parameter is required',
@@ -241,7 +287,12 @@ export class MediaRoutes {
 
       const media = this.mediaStorage.get(id)
       if (!media) {
-        console.error(`❌ Expire media failed: Media ID ${id} not found`)
+        this.logger.validationError({
+          field: 'id',
+          value: id,
+          reason: 'Media ID not found',
+        })
+
         res.status(404).json({
           error: {
             message: 'Media not found',
@@ -256,7 +307,7 @@ export class MediaRoutes {
       media.expiresAt = new Date()
       this.mediaStorage.set(id, media)
 
-      console.log(`⏰ Media ${id} manually expired`)
+      this.logger.mediaOperation('expire', id)
 
       const response: MediaExpireResponse = {
         message: `Media ${id} has been expired`,
@@ -265,7 +316,10 @@ export class MediaRoutes {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ Expire media error:', error)
+      this.logger.error('Expire media error', {
+        details: error instanceof Error ? error.message : String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during media expiration',
@@ -290,7 +344,9 @@ export class MediaRoutes {
         this.mediaStorage.set(id, media)
       }
 
-      console.log(`⏰ All media expired manually: [${mediaIds.join(', ')}]`)
+      this.logger.mediaOperation('expire', mediaIds.join(', '), {
+        count: mediaIds.length,
+      })
 
       const response: MediaExpireResponse = {
         message: `${mediaIds.length.toString()} media items have been expired`,
@@ -300,7 +356,10 @@ export class MediaRoutes {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ Expire all media error:', error)
+      this.logger.error('Expire all media error', {
+        details: error instanceof Error ? error.message : String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during bulk media expiration',

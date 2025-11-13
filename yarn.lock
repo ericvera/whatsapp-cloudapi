@@ -987,6 +987,7 @@ __metadata:
     express: "npm:^5.1.0"
     multer: "npm:^2.0.2"
     nanoid: "npm:^5.1.6"
+    picocolors: "npm:^1.1.1"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.46.2"
     vitest: "npm:^4.0.3"

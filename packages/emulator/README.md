@@ -13,6 +13,7 @@
 - 🧪 Perfect for testing and development
 - 📲 Simulation endpoints for incoming messages
 - 💾 Media persistence across emulator restarts
+- 📊 Structured logging with configurable verbosity levels
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
 - 🔔 Webhook support for status updates
@@ -43,6 +44,9 @@ const emulator = new WhatsAppEmulator({
     importPath: './emulator-data', // Optional: Import media metadata on startup
     exportOnExit: './emulator-data', // Optional: Export media metadata on shutdown
     shouldExport: true, // Required when exportOnExit is specified
+  },
+  log: {
+    level: 'normal', // Optional: 'quiet' | 'normal' | 'verbose' (defaults to 'quiet')
   },
 })
 
@@ -119,6 +123,67 @@ Media metadata is stored in `media-manifest.json`:
 }
 ```
 
+## Logging
+
+The emulator provides a structured logging system with three verbosity levels to help you monitor and debug your WhatsApp integration.
+
+### Log Levels
+
+#### `quiet` (default)
+
+Shows only essential information:
+
+- Message bubbles (sent/received messages with WhatsApp-style formatting)
+- System events (startup/shutdown statistics)
+- Errors
+
+Perfect for production-like testing where you want to see message flow without noise.
+
+#### `normal`
+
+Includes everything from `quiet` plus:
+
+- Webhook delivery status (successful deliveries and failures)
+
+Ideal for development when you need to monitor webhook integration.
+
+#### `verbose`
+
+Includes everything from `normal` plus:
+
+- HTTP request logs (all API calls with method, path, status, duration)
+- Media operation details (upload, download, expiration)
+- Validation errors with detailed context
+- Additional metadata (media IDs, message IDs, etc.)
+
+Best for troubleshooting issues or understanding the emulator's internal behavior.
+
+### Configuration
+
+```typescript
+const emulator = new WhatsAppEmulator({
+  businessPhoneNumberId: '15550123456',
+  log: {
+    level: 'verbose', // 'quiet' | 'normal' | 'verbose'
+  },
+})
+```
+
+### Message Formatting
+
+Messages are displayed using WhatsApp-style bubble formatting:
+
+```
+╭─────────────────────────────────────────────────────╮
+│ To: +1234567890                                     │
+│                                                     │
+│ Hello! How can I help you today?                    │
+│                                                9:45 │
+╰─────────────────────────────────────────────────────╯
+```
+
+Sent messages are indented on the right, received messages are aligned to the left, with color-coded elements when terminal colors are supported.
+
 ## API Reference
 
 ### WhatsAppEmulator
@@ -158,6 +223,11 @@ interface EmulatorOptions {
     exportOnExit?: string
     /** Whether export was explicitly requested */
     shouldExport: boolean
+  }
+  /** Logging configuration */
+  log?: {
+    /** Controls the verbosity level of logging output (defaults to 'quiet') */
+    level?: 'quiet' | 'normal' | 'verbose'
   }
 }
 ```
@@ -421,11 +491,14 @@ When a CTA message is sent through the emulator, it generates delivery status we
 
 ### Request Logging
 
-The emulator provides comprehensive logging for troubleshooting:
+The emulator provides comprehensive logging for troubleshooting. Configure the log level to control verbosity (see [Logging](#logging) section for details):
 
-- **📤 Outgoing Messages** - Logs when API calls are made to send messages
-- **📲 Incoming Messages** - Logs when simulation endpoint receives messages
-- **🔗 Webhook Events** - Logs successful webhook deliveries and failures
+- **📤 Outgoing Messages** - Logs when API calls are made to send messages (all levels)
+- **📲 Incoming Messages** - Logs when simulation endpoint receives messages (all levels)
+- **🔗 Webhook Events** - Logs successful webhook deliveries and failures (`normal` and `verbose`)
+- **🌐 HTTP Requests** - Logs all HTTP requests with status and duration (`verbose` only)
+- **📁 Media Operations** - Logs media upload, download, and persistence operations (`verbose` only)
+- **⚠️ Validation Errors** - Logs request validation failures with context (`verbose` only)
 - **❌ Unhandled Requests** - Logs any requests to unsupported endpoints
 
 #### Unhandled Request Logging

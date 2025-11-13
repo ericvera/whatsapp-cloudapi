@@ -11,6 +11,7 @@ import type {
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
 import { WhatsAppFlowMessageVersion } from '../constants.js'
+import type { EmulatorLogger } from '../services/Logger.js'
 import type { WebhookService } from '../services/WebhookService.js'
 import { normalizeWhatsAppId } from '../utils/phoneUtils.js'
 import type { MediaRoutes } from './MediaRoutes.js'
@@ -21,6 +22,7 @@ export class MessageRoutes {
     private readonly displayPhoneNumber: string,
     private readonly webhookService: WebhookService | undefined,
     private readonly mediaRoutes: MediaRoutes,
+    private readonly logger: EmulatorLogger,
   ) {}
 
   // Type guards for interactive message types
@@ -71,74 +73,82 @@ export class MessageRoutes {
     return req.status === 'read' && typeof req.message_id === 'string'
   }
 
-  private extractMessageContent(body: CloudAPIRequest): string {
+  private logOutgoingMessage(
+    body: CloudAPIRequest,
+    recipient: string,
+    messageId: string,
+  ): void {
+    const context = {
+      direction: 'sent' as const,
+      recipient,
+      messageId,
+    }
+
+    const messageType = body.type
+
     switch (body.type) {
       case 'text':
-        return body.text.body
-      case 'template':
-        return `[template: ${body.template.name}, params: ${JSON.stringify(body.template.components)}]`
+        this.logger.textMessage(body.text.body, context)
+        break
       case 'image':
-        return `[image: media_id=${body.image.id}${body.image.caption ? `, caption="${body.image.caption}"` : ''}]`
-      case 'interactive': {
-        if (this.isCTAURLMessage(body)) {
-          const headerInfo = body.interactive.header
-            ? `, header=${body.interactive.header.type}`
-            : ''
-          const footerInfo = body.interactive.footer
-            ? `, footer="${body.interactive.footer.text}"`
-            : ''
-          return `[cta_url: "${body.interactive.body.text}", button="${body.interactive.action.parameters.display_text}", url="${body.interactive.action.parameters.url}"${headerInfo}${footerInfo}]`
-        } else if (this.isFlowMessage(body)) {
-          const flowData =
-            body.interactive.action.parameters.flow_action_payload?.data
-          const dataStr = flowData ? `, data=${JSON.stringify(flowData)}` : ''
-          const screenStr = body.interactive.action.parameters
-            .flow_action_payload?.screen
-            ? `, screen="${body.interactive.action.parameters.flow_action_payload.screen}"`
-            : ''
-          return `[flow: "${body.interactive.body.text}", flow_id="${body.interactive.action.parameters.flow_id}", action="${body.interactive.action.parameters.flow_action}", cta="${body.interactive.action.parameters.flow_cta}"${screenStr}${dataStr}]`
-        } else if (this.isButtonsMessage(body)) {
-          const header = body.interactive.header
-          const headerInfo = header ? `, header=${header.type}` : ''
-          const footer = body.interactive.footer
-          const footerInfo = footer ? `, footer="${footer.text}"` : ''
-          const buttonsList = body.interactive.action.buttons
-            .map((btn) => `\n  - [${btn.reply.id}] "${btn.reply.title}"`)
-            .join('')
-          return `[buttons: "${body.interactive.body.text}"${headerInfo}${footerInfo}, buttons:${buttonsList}]`
-        } else if (this.isListMessage(body)) {
-          const header = body.interactive.header
-          const headerInfo = header ? `, header="${header.text}"` : ''
-          const footer = body.interactive.footer
-          const footerInfo = footer ? `, footer="${footer.text}"` : ''
-          const totalRows = body.interactive.action.sections.reduce(
-            (sum, section) => sum + section.rows.length,
-            0,
-          )
-          const sectionsList = body.interactive.action.sections
-            .map((section) => {
-              const sectionTitle = section.title
-                ? `"${section.title}"`
-                : 'untitled'
-              const rows = section.rows
-                .map(
-                  (row) =>
-                    `\n    - [${row.id}] "${row.title}"${row.description ? ` - ${row.description}` : ''}`,
-                )
-                .join('')
-              return `\n  ${sectionTitle}:${rows}`
-            })
-            .join('')
-          return `[list: "${body.interactive.body.text}", button="${body.interactive.action.button}", ${String(totalRows)} items${headerInfo}${footerInfo}, sections:${sectionsList}]`
-        }
-        return '[unknown interactive type]'
-      }
+        this.logger.imageMessage(body.image.caption, body.image.id, context)
+        break
       case 'reaction':
-        return `[reaction: emoji="${body.reaction.emoji}" to message="${body.reaction.message_id}"]`
-      default: {
-        // Exhaustive check - this should never happen with current types
-        return '[unknown message type]'
-      }
+        this.logger.reactionMessage(
+          body.reaction.emoji,
+          body.reaction.message_id,
+          context,
+        )
+        break
+      case 'interactive':
+        if (this.isButtonsMessage(body)) {
+          const headerText =
+            body.interactive.header?.type === 'text'
+              ? body.interactive.header.text
+              : undefined
+
+          const buttons = body.interactive.action.buttons.map((btn) => ({
+            id: btn.reply.id,
+            title: btn.reply.title,
+          }))
+
+          this.logger.interactiveButtonMessage(
+            headerText,
+            body.interactive.body.text,
+            body.interactive.footer?.text,
+            buttons,
+            context,
+          )
+        } else if (this.isListMessage(body)) {
+          const sections = body.interactive.action.sections.map((section) => ({
+            ...(section.title ? { title: section.title } : {}),
+            rows: section.rows.map((row) => ({
+              id: row.id,
+              title: row.title,
+              ...(row.description ? { description: row.description } : {}),
+            })),
+          }))
+
+          this.logger.interactiveListMessage(
+            body.interactive.header?.text,
+            body.interactive.body.text,
+            body.interactive.footer?.text,
+            body.interactive.action.button,
+            sections,
+            context,
+          )
+        } else {
+          // For CTA URL and Flow messages, just log as text for now
+          this.logger.textMessage(body.interactive.body.text, context)
+        }
+        break
+      case 'template':
+        // Log template as text with template name
+        this.logger.textMessage(`Template: ${body.template.name}`, context)
+        break
+      default:
+        this.logger.unsupportedMessage(messageType, body, context)
+        break
     }
   }
 
@@ -154,7 +164,11 @@ export class MessageRoutes {
       const { to } = body
 
       if (!to) {
-        console.error('❌ Message send failed: Missing recipient phone number')
+        this.logger.validationError({
+          field: 'to',
+          reason: 'Missing recipient phone number',
+        })
+
         res.status(400).json({
           error: {
             message: 'Recipient phone number is required',
@@ -162,6 +176,7 @@ export class MessageRoutes {
             code: 400,
           },
         })
+
         return
       }
 
@@ -170,9 +185,12 @@ export class MessageRoutes {
         const mediaExists = this.mediaRoutes.isMediaValid(body.image.id)
 
         if (!mediaExists) {
-          console.error(
-            `❌ Image message failed: Media ID ${body.image.id} not found or expired`,
-          )
+          this.logger.validationError({
+            field: 'image.id',
+            value: body.image.id,
+            reason: 'Media ID not found or expired',
+          })
+
           res.status(400).json({
             error: {
               message: 'Media not found',
@@ -196,9 +214,13 @@ export class MessageRoutes {
             const headerType = header.type as string
 
             if (headerType !== 'text' && headerType !== 'image') {
-              console.error(
-                `❌ CTA message failed: Unsupported header type: ${headerType}`,
-              )
+              this.logger.validationError({
+                field: 'header.type',
+                value: headerType,
+                reason:
+                  'Only text and image headers are supported for CTA URL messages',
+              })
+
               res.status(400).json({
                 error: {
                   message:
@@ -215,9 +237,12 @@ export class MessageRoutes {
             const mediaId = header.image.id
             const mediaExists = this.mediaRoutes.isMediaValid(mediaId)
             if (!mediaExists) {
-              console.error(
-                `❌ CTA message failed: Media ID ${mediaId} not found or expired`,
-              )
+              this.logger.validationError({
+                field: 'header.image.id',
+                value: mediaId,
+                reason: 'Media ID not found or expired',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'Media not found',
@@ -239,7 +264,12 @@ export class MessageRoutes {
 
             // Check if protocol is HTTP or HTTPS
             if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-              console.error('❌ CTA message failed: Invalid URL protocol')
+              this.logger.validationError({
+                field: 'action.parameters.url',
+                value: url,
+                reason: 'URL must use http:// or https:// protocol',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'URL must use http:// or https:// protocol',
@@ -247,6 +277,7 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
 
@@ -258,9 +289,12 @@ export class MessageRoutes {
             const hasColons = urlObj.hostname.includes(':')
 
             if (ipv4Pattern.test(urlObj.hostname) || hasColons) {
-              console.error(
-                '❌ CTA message failed: URL hostname cannot be an IP address',
-              )
+              this.logger.validationError({
+                field: 'action.parameters.url',
+                value: url,
+                reason: 'URL hostname cannot be an IP address',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'URL hostname cannot be an IP address',
@@ -268,10 +302,16 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
           } catch {
-            console.error('❌ CTA message failed: Invalid URL format')
+            this.logger.validationError({
+              field: 'action.parameters.url',
+              value: url,
+              reason: 'Invalid URL format',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Invalid URL format',
@@ -292,9 +332,12 @@ export class MessageRoutes {
           const footerText = body.interactive.footer?.text
 
           if (bodyText.length > 1024) {
-            console.error(
-              '❌ CTA message failed: Body text exceeds 1024 characters',
-            )
+            this.logger.validationError({
+              field: 'body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Body text cannot exceed 1024 characters',
@@ -306,9 +349,12 @@ export class MessageRoutes {
           }
 
           if (buttonText.length > 20) {
-            console.error(
-              '❌ CTA message failed: Button text exceeds 20 characters',
-            )
+            this.logger.validationError({
+              field: 'action.parameters.display_text',
+              value: `${buttonText.length.toString()} characters`,
+              reason: 'Button text cannot exceed 20 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Button text cannot exceed 20 characters',
@@ -316,13 +362,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (headerText && headerText.length > 60) {
-            console.error(
-              '❌ CTA message failed: Header text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'header.text',
+              value: `${headerText.length.toString()} characters`,
+              reason: 'Header text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Header text cannot exceed 60 characters',
@@ -330,13 +380,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (footerText && footerText.length > 60) {
-            console.error(
-              '❌ CTA message failed: Footer text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'footer.text',
+              value: `${footerText.length.toString()} characters`,
+              reason: 'Footer text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Footer text cannot exceed 60 characters',
@@ -344,6 +398,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
         } else if (this.isFlowMessage(body)) {
@@ -355,7 +410,11 @@ export class MessageRoutes {
 
           // Validate required fields
           if (!flowParams.flow_token) {
-            console.error('❌ Flow message failed: Missing flow_token')
+            this.logger.validationError({
+              field: 'action.parameters.flow_token',
+              reason: 'Flow token is required',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Flow token is required',
@@ -363,11 +422,16 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (!flowParams.flow_id) {
-            console.error('❌ Flow message failed: Missing flow_id')
+            this.logger.validationError({
+              field: 'action.parameters.flow_id',
+              reason: 'Flow ID is required',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Flow ID is required',
@@ -375,11 +439,16 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (!flowParams.flow_cta) {
-            console.error('❌ Flow message failed: Missing flow_cta')
+            this.logger.validationError({
+              field: 'action.parameters.flow_cta',
+              reason: 'Flow CTA is required',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Flow CTA is required',
@@ -387,14 +456,18 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           // Validate character limits
           if (bodyText.length > 1024) {
-            console.error(
-              '❌ Flow message failed: Body text exceeds 1024 characters',
-            )
+            this.logger.validationError({
+              field: 'body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Body text cannot exceed 1024 characters',
@@ -402,6 +475,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -410,9 +484,12 @@ export class MessageRoutes {
             header.text &&
             header.text.length > 60
           ) {
-            console.error(
-              '❌ Flow message failed: Header text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'header.text',
+              value: `${header.text.length.toString()} characters`,
+              reason: 'Header text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Header text cannot exceed 60 characters',
@@ -420,13 +497,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (footerText && footerText.length > 60) {
-            console.error(
-              '❌ Flow message failed: Footer text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'footer.text',
+              value: `${footerText.length.toString()} characters`,
+              reason: 'Footer text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Footer text cannot exceed 60 characters',
@@ -434,6 +515,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -441,9 +523,11 @@ export class MessageRoutes {
           if (flowParams.flow_action === 'navigate') {
             const screen = flowParams.flow_action_payload?.screen
             if (!screen) {
-              console.error(
-                '❌ Flow message failed: Screen parameter required for navigate action',
-              )
+              this.logger.validationError({
+                field: 'action.parameters.flow_action_payload.screen',
+                reason: 'Screen parameter is required for navigate flow action',
+              })
+
               res.status(400).json({
                 error: {
                   message:
@@ -452,6 +536,7 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
           }
@@ -472,9 +557,12 @@ export class MessageRoutes {
               const mediaExists = this.mediaRoutes.isMediaValid(mediaId)
 
               if (!mediaExists) {
-                console.error(
-                  `❌ Flow message failed: Media ID ${mediaId} not found or expired`,
-                )
+                this.logger.validationError({
+                  field: `header.${header.type}.id`,
+                  value: mediaId,
+                  reason: 'Media ID not found or expired',
+                })
+
                 res.status(400).json({
                   error: {
                     message: 'Media not found',
@@ -483,6 +571,7 @@ export class MessageRoutes {
                     error_subcode: 1404,
                   },
                 })
+
                 return
               }
             }
@@ -492,9 +581,12 @@ export class MessageRoutes {
           /* eslint-disable-next-line
              @typescript-eslint/no-unnecessary-condition */
           if (flowParams.flow_message_version !== WhatsAppFlowMessageVersion) {
-            console.error(
-              `❌ Flow message failed: Unsupported flow message version: ${flowParams.flow_message_version as string}`,
-            )
+            this.logger.validationError({
+              field: 'action.parameters.flow_message_version',
+              value: String(flowParams.flow_message_version),
+              reason: 'Only flow message version 3 is supported',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Only flow message version 3 is supported',
@@ -502,16 +594,9 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
-
-          const flowData = flowParams.flow_action_payload?.data
-          console.log('📱 Flow message received:', {
-            flow_id: flowParams.flow_id,
-            flow_action: flowParams.flow_action,
-            screen: flowParams.flow_action_payload?.screen,
-            data: flowData ? JSON.stringify(flowData) : 'none',
-          })
         } else if (this.isButtonsMessage(body)) {
           // Button message validation
           const { interactive } = body
@@ -522,9 +607,12 @@ export class MessageRoutes {
 
           // Validate button count
           if (buttons.length < 1 || buttons.length > 3) {
-            console.error(
-              `❌ Button message failed: Invalid button count (${String(buttons.length)})`,
-            )
+            this.logger.validationError({
+              field: 'action.buttons',
+              value: `${buttons.length.toString()} buttons`,
+              reason: 'Must provide between 1 and 3 buttons',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Must provide between 1 and 3 buttons',
@@ -532,6 +620,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -539,9 +628,12 @@ export class MessageRoutes {
           const buttonIds = new Set<string>()
           for (const button of buttons) {
             if (buttonIds.has(button.reply.id)) {
-              console.error(
-                `❌ Button message failed: Duplicate button ID: ${button.reply.id}`,
-              )
+              this.logger.validationError({
+                field: 'action.buttons.reply.id',
+                value: button.reply.id,
+                reason: 'Duplicate button ID found',
+              })
+
               res.status(400).json({
                 error: {
                   message: `Duplicate button ID found: ${button.reply.id}`,
@@ -549,15 +641,19 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
             buttonIds.add(button.reply.id)
 
             // Validate button ID length
             if (button.reply.id.length > 256) {
-              console.error(
-                '❌ Button message failed: Button ID exceeds 256 characters',
-              )
+              this.logger.validationError({
+                field: 'action.buttons.reply.id',
+                value: `${button.reply.id.length.toString()} characters`,
+                reason: 'Button ID cannot exceed 256 characters',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'Button ID cannot exceed 256 characters',
@@ -565,14 +661,18 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
 
             // Validate button title length
             if (button.reply.title.length > 20) {
-              console.error(
-                '❌ Button message failed: Button title exceeds 20 characters',
-              )
+              this.logger.validationError({
+                field: 'action.buttons.reply.title',
+                value: `${button.reply.title.length.toString()} characters`,
+                reason: 'Button title cannot exceed 20 characters',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'Button title cannot exceed 20 characters',
@@ -580,15 +680,19 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
           }
 
           // Validate character limits
           if (bodyText.length > 1024) {
-            console.error(
-              '❌ Button message failed: Body text exceeds 1024 characters',
-            )
+            this.logger.validationError({
+              field: 'body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Body text cannot exceed 1024 characters',
@@ -596,6 +700,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -604,9 +709,12 @@ export class MessageRoutes {
             header.text &&
             header.text.length > 60
           ) {
-            console.error(
-              '❌ Button message failed: Header text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'header.text',
+              value: `${header.text.length.toString()} characters`,
+              reason: 'Header text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Header text cannot exceed 60 characters',
@@ -614,13 +722,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (footerText && footerText.length > 60) {
-            console.error(
-              '❌ Button message failed: Footer text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'footer.text',
+              value: `${footerText.length.toString()} characters`,
+              reason: 'Footer text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Footer text cannot exceed 60 characters',
@@ -628,6 +740,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -647,9 +760,12 @@ export class MessageRoutes {
               const mediaExists = this.mediaRoutes.isMediaValid(mediaId)
 
               if (!mediaExists) {
-                console.error(
-                  `❌ Button message failed: Media ID ${mediaId} not found or expired`,
-                )
+                this.logger.validationError({
+                  field: `header.${header.type}.id`,
+                  value: mediaId,
+                  reason: 'Media ID not found or expired',
+                })
+
                 res.status(400).json({
                   error: {
                     message: 'Media not found',
@@ -658,6 +774,7 @@ export class MessageRoutes {
                     error_subcode: 1404,
                   },
                 })
+
                 return
               }
             }
@@ -673,7 +790,12 @@ export class MessageRoutes {
 
           // Validate sections count
           if (sections.length < 1) {
-            console.error('❌ List message failed: No sections provided')
+            this.logger.validationError({
+              field: 'action.sections',
+              value: '0 sections',
+              reason: 'Must provide at least 1 section',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Must provide at least 1 section',
@@ -681,14 +803,18 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           // Validate character limits
           if (bodyText.length > 1024) {
-            console.error(
-              '❌ List message failed: Body text exceeds 1024 characters',
-            )
+            this.logger.validationError({
+              field: 'body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Body text cannot exceed 1024 characters',
@@ -696,13 +822,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (buttonText.length > 20) {
-            console.error(
-              '❌ List message failed: Button text exceeds 20 characters',
-            )
+            this.logger.validationError({
+              field: 'action.button',
+              value: `${buttonText.length.toString()} characters`,
+              reason: 'Button text cannot exceed 20 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Button text cannot exceed 20 characters',
@@ -710,13 +840,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (headerText && headerText.length > 60) {
-            console.error(
-              '❌ List message failed: Header text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'header.text',
+              value: `${headerText.length.toString()} characters`,
+              reason: 'Header text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Header text cannot exceed 60 characters',
@@ -724,13 +858,17 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
           if (footerText && footerText.length > 60) {
-            console.error(
-              '❌ List message failed: Footer text exceeds 60 characters',
-            )
+            this.logger.validationError({
+              field: 'footer.text',
+              value: `${footerText.length.toString()} characters`,
+              reason: 'Footer text cannot exceed 60 characters',
+            })
+
             res.status(400).json({
               error: {
                 message: 'Footer text cannot exceed 60 characters',
@@ -738,6 +876,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
 
@@ -747,9 +886,12 @@ export class MessageRoutes {
 
           for (const section of sections) {
             if (section.title && section.title.length > 24) {
-              console.error(
-                '❌ List message failed: Section title exceeds 24 characters',
-              )
+              this.logger.validationError({
+                field: 'action.sections.title',
+                value: `${section.title.length.toString()} characters`,
+                reason: 'Section title cannot exceed 24 characters',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'Section title cannot exceed 24 characters',
@@ -757,11 +899,17 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
 
             if (section.rows.length < 1) {
-              console.error('❌ List message failed: Section has no rows')
+              this.logger.validationError({
+                field: 'action.sections.rows',
+                value: '0 rows',
+                reason: 'Each section must have at least 1 row',
+              })
+
               res.status(400).json({
                 error: {
                   message: 'Each section must have at least 1 row',
@@ -769,6 +917,7 @@ export class MessageRoutes {
                   code: 400,
                 },
               })
+
               return
             }
 
@@ -776,9 +925,12 @@ export class MessageRoutes {
 
             for (const row of section.rows) {
               if (row.id.length > 200) {
-                console.error(
-                  '❌ List message failed: Row ID exceeds 200 characters',
-                )
+                this.logger.validationError({
+                  field: 'action.sections.rows.id',
+                  value: `${row.id.length.toString()} characters`,
+                  reason: 'Row ID cannot exceed 200 characters',
+                })
+
                 res.status(400).json({
                   error: {
                     message: 'Row ID cannot exceed 200 characters',
@@ -786,13 +938,17 @@ export class MessageRoutes {
                     code: 400,
                   },
                 })
+
                 return
               }
 
               if (row.title.length > 24) {
-                console.error(
-                  '❌ List message failed: Row title exceeds 24 characters',
-                )
+                this.logger.validationError({
+                  field: 'action.sections.rows.title',
+                  value: `${row.title.length.toString()} characters`,
+                  reason: 'Row title cannot exceed 24 characters',
+                })
+
                 res.status(400).json({
                   error: {
                     message: 'Row title cannot exceed 24 characters',
@@ -800,13 +956,17 @@ export class MessageRoutes {
                     code: 400,
                   },
                 })
+
                 return
               }
 
               if (row.description && row.description.length > 72) {
-                console.error(
-                  '❌ List message failed: Row description exceeds 72 characters',
-                )
+                this.logger.validationError({
+                  field: 'action.sections.rows.description',
+                  value: `${row.description.length.toString()} characters`,
+                  reason: 'Row description cannot exceed 72 characters',
+                })
+
                 res.status(400).json({
                   error: {
                     message: 'Row description cannot exceed 72 characters',
@@ -814,13 +974,17 @@ export class MessageRoutes {
                     code: 400,
                   },
                 })
+
                 return
               }
 
               if (rowIds.has(row.id)) {
-                console.error(
-                  `❌ List message failed: Duplicate row ID: ${row.id}`,
-                )
+                this.logger.validationError({
+                  field: 'action.sections.rows.id',
+                  value: row.id,
+                  reason: 'Duplicate row ID found',
+                })
+
                 res.status(400).json({
                   error: {
                     message: `Duplicate row ID found: ${row.id}`,
@@ -828,6 +992,7 @@ export class MessageRoutes {
                     code: 400,
                   },
                 })
+
                 return
               }
 
@@ -836,9 +1001,13 @@ export class MessageRoutes {
           }
 
           if (totalRows > 10) {
-            console.error(
-              `❌ List message failed: Total rows (${String(totalRows)}) exceed 10`,
-            )
+            this.logger.validationError({
+              field: 'action.sections.rows',
+              value: `${totalRows.toString()} rows`,
+              reason:
+                'Total number of rows across all sections cannot exceed 10',
+            })
+
             res.status(400).json({
               error: {
                 message:
@@ -847,6 +1016,7 @@ export class MessageRoutes {
                 code: 400,
               },
             })
+
             return
           }
         }
@@ -854,14 +1024,11 @@ export class MessageRoutes {
 
       const messageId = `message_${nanoid(6)}`
 
-      const messageContent = this.extractMessageContent(body)
-
-      console.log(
-        `📤 Outgoing message (ID: ${messageId}) to ${to}: "${messageContent}"`,
-      )
-
       // Normalize WhatsApp ID (remove '+' prefix if present)
       const normalizedTo = normalizeWhatsAppId(to)
+
+      // Log the message based on type
+      this.logOutgoingMessage(body, normalizedTo, messageId)
 
       // Simulate successful message send
       const response: CloudAPIResponse = {
@@ -891,7 +1058,10 @@ export class MessageRoutes {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ Message send error:', error)
+      this.logger.error('Message send error', {
+        details: error instanceof Error ? error.message : String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during message send',
@@ -907,7 +1077,10 @@ export class MessageRoutes {
       const body = req.body as CloudAPIMarkMessageReadRequest
       const { message_id } = body
 
-      console.log(`✓ Message marked as read: ${message_id}`)
+      this.logger.markAsRead(message_id, {
+        direction: 'sent',
+        recipient: this.businessPhoneNumberId,
+      })
 
       const response: CloudAPIMarkReadResponse = {
         success: true,
@@ -915,7 +1088,10 @@ export class MessageRoutes {
 
       res.status(200).json(response)
     } catch (error) {
-      console.error('❌ Mark as read error:', error)
+      this.logger.error('Mark as read error', {
+        details: error instanceof Error ? error.message : String(error),
+      })
+
       res.status(500).json({
         error: {
           message: 'Internal server error during mark as read',
