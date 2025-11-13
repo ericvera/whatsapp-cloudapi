@@ -20,17 +20,17 @@
     "postpublish": "pinst --enable"
   },
   "devDependencies": {
-    "@eslint/js": "^9.38.0",
-    "@tsconfig/strictest": "^2.0.6",
-    "@types/node": "^24.9.1",
-    "eslint": "^9.38.0",
+    "@eslint/js": "^9.39.1",
+    "@tsconfig/strictest": "2.0.6",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "pinst": "^3.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.2",
-    "vitest": "^4.0.3"
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^4.0.8"
   },
   "prettier": {
     "tabWidth": 2,
@@ -42,5 +42,5 @@
     "*.{ts,tsx,mjs}": "eslint --cache",
     "*": "prettier --ignore-unknown --write"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.11.0"
 }
