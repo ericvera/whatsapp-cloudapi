@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest'
-import { sendTextMessage } from './sentTextMessage.js'
+import { sendTextMessage } from './sendTextMessage.js'
 
 // Mock the sendRequest function
 vi.mock('./internal/sendRequest.js', () => ({
