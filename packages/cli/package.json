@@ -26,12 +26,12 @@
     "e164num": "^2.0.0"
   },
   "devDependencies": {
-    "@tsconfig/strictest": "2.0.6",
+    "@tsconfig/strictest": "2.0.8",
     "@types/node": "^24.10.1",
     "eslint": "^9.39.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vitest": "^4.0.8"
+    "vitest": "^4.0.9"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": ["@tsconfig/strictest/tsconfig.json"],
+  "compilerOptions": {
+    "checkJs": true
+  },
   "include": [
     "eslint.config.mjs",
     "vite.config.ts",

@@ -1,7 +1,14 @@
+name: Package publishing
+
 on:
   push:
     branches:
       - main
+
+# Cancel if there is a build for the same branch running
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish:
@@ -23,7 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install Dependencies
         run: yarn

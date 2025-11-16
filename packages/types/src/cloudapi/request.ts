@@ -1051,6 +1051,31 @@ export interface CloudAPISendCatalogMessageRequest
 }
 
 /**
+ * Request body for sending a typing indicator
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/typing-indicators/
+ */
+export interface CloudAPISendTypingIndicatorRequest
+  extends CloudAPIMessageRequestBase {
+  /**
+   * Type of message
+   * Set to 'typing_indicator' for typing indicators
+   */
+  type: 'typing_indicator'
+
+  /**
+   * The typing indicator content
+   */
+  typing_indicator: {
+    /**
+     * Typing action
+     * - 'typing': Show typing indicator (displays for up to 25 seconds)
+     * - 'stopped': Stop showing typing indicator
+     */
+    action: 'typing' | 'stopped'
+  }
+}
+
+/**
  * Request body for marking a message as read
  */
 export interface CloudAPIMarkMessageReadRequest {
@@ -1083,3 +1108,4 @@ export type CloudAPIRequest =
   | CloudAPISendReactionMessageRequest
   | CloudAPISendCallPermissionRequestMessageRequest
   | CloudAPISendCatalogMessageRequest
+  | CloudAPISendTypingIndicatorRequest

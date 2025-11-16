@@ -496,6 +496,24 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
+  typingIndicator(action: 'typing' | 'stopped', context: MessageContext): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+
+    if (action === 'typing') {
+      lines.push(this.colorize('💬 Typing...', 'cyan'))
+    } else {
+      lines.push(this.colorize('⏸️  Stopped typing', 'gray'))
+    }
+
+    this.renderMessage(lines, context)
+  }
+
   unsupportedMessage(
     messageType: string,
     body: unknown,
