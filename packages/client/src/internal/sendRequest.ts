@@ -3,8 +3,6 @@ import {
   CloudAPIRequest,
   CloudAPIMarkReadResponse,
   CloudAPIResponse,
-  CloudAPISendTypingIndicatorRequest,
-  CloudAPITypingIndicatorResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import {
   WhatsAppCloudAPIBaseUrl,
@@ -22,10 +20,7 @@ export const createHeaders = (accessToken: string): Record<string, string> => ({
 /**
  * Union type for all possible request types
  */
-type CloudAPIRequestUnion =
-  | CloudAPIRequest
-  | CloudAPIMarkMessageReadRequest
-  | CloudAPISendTypingIndicatorRequest
+type CloudAPIRequestUnion = CloudAPIRequest | CloudAPIMarkMessageReadRequest
 
 /**
  * Conditional type that maps request type to response type
@@ -33,9 +28,7 @@ type CloudAPIRequestUnion =
 type CloudAPIResponseType<T extends CloudAPIRequestUnion> =
   T extends CloudAPIMarkMessageReadRequest
     ? CloudAPIMarkReadResponse
-    : T extends CloudAPISendTypingIndicatorRequest
-      ? CloudAPITypingIndicatorResponse
-      : CloudAPIResponse
+    : CloudAPIResponse
 
 /**
  * Sends a request to the WhatsApp Cloud API

@@ -1091,106 +1091,28 @@ try {
 }
 ```
 
-#### Important Notes
+#### Typing Indicators
 
-- **Message IDs**: Use the message ID from incoming webhook notifications
-- **No Visual Confirmation**: The API returns success, but there's no visual confirmation in the WhatsApp UI for read receipts on business messages
-- **Idempotent**: Marking the same message as read multiple times is safe and won't cause errors
-
-## Typing Indicators
-
-Show a "typing..." indicator to let users know you're preparing a response. The typing indicator enhances the conversation experience by providing real-time feedback.
-
-### sendTypingIndicator
-
-Sends a typing indicator to a WhatsApp user.
-
-```typescript
-function sendTypingIndicator(params: {
-  accessToken: string
-  from: string
-  to: string
-  action: 'typing' | 'stopped'
-  baseUrl?: string
-}): Promise<CloudAPITypingIndicatorResponse>
-```
-
-#### Parameters
-
-- `accessToken` (string) - Your WhatsApp Cloud API access token
-- `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
-- `action` (string) - The typing action to perform:
-  - `'typing'` - Show typing indicator (displays for up to 25 seconds)
-  - `'stopped'` - Stop showing typing indicator
-- `baseUrl` (string, optional) - Optional base URL for the API (defaults to Facebook Graph API, use `http://localhost:4004` for emulator)
-
-#### Returns
-
-Returns a Promise that resolves to a `CloudAPITypingIndicatorResponse` object:
-
-```typescript
-interface CloudAPITypingIndicatorResponse {
-  success: boolean
-}
-```
-
-#### Example
-
-```typescript
-import { sendTypingIndicator } from '@whatsapp-cloudapi/client'
-
-// Show typing indicator while processing
-await sendTypingIndicator({
-  accessToken: 'YOUR_ACCESS_TOKEN',
-  from: 'YOUR_PHONE_NUMBER_ID',
-  to: '+16505551234',
-  action: 'typing',
-})
-
-// Process your response...
-// (e.g., query database, call AI API, etc.)
-
-// Send your actual message
-await sendTextMessage({
-  accessToken: 'YOUR_ACCESS_TOKEN',
-  from: 'YOUR_PHONE_NUMBER_ID',
-  to: '+16505551234',
-  text: 'Here is your response!',
-})
-
-// Note: The typing indicator will automatically stop when the message is sent
-// But you can also manually stop it if needed
-await sendTypingIndicator({
-  accessToken: 'YOUR_ACCESS_TOKEN',
-  from: 'YOUR_PHONE_NUMBER_ID',
-  to: '+16505551234',
-  action: 'stopped',
-})
-```
-
-#### Using with Webhooks
-
-Typically, you'll use this function when processing incoming messages to show activity:
+You can optionally show a typing indicator when marking a message as read. This indicates to the user that you're preparing a response.
 
 ```typescript
 import type { WebhookTextMessage } from '@whatsapp-cloudapi/types/webhook'
-import { sendTypingIndicator, sendTextMessage } from '@whatsapp-cloudapi/client'
+import { markMessageRead, sendTextMessage } from '@whatsapp-cloudapi/client'
 
 // In your webhook handler
 async function handleIncomingMessage(message: WebhookTextMessage) {
-  // Show typing indicator immediately
-  await sendTypingIndicator({
+  // Mark as read and show typing indicator
+  await markMessageRead({
     accessToken: 'YOUR_ACCESS_TOKEN',
     from: 'YOUR_PHONE_NUMBER_ID',
-    to: message.from,
-    action: 'typing',
+    messageId: message.id,
+    showTypingIndicator: true, // Show "typing..." for up to 25 seconds
   })
 
   // Process the message and prepare response
   const response = await processMessage(message.text.body)
 
-  // Send the response (typing indicator will auto-dismiss)
+  // Send your actual message (typing indicator auto-dismisses)
   await sendTextMessage({
     accessToken: 'YOUR_ACCESS_TOKEN',
     from: 'YOUR_PHONE_NUMBER_ID',
@@ -1200,30 +1122,14 @@ async function handleIncomingMessage(message: WebhookTextMessage) {
 }
 ```
 
-#### Error Handling
+**Typing Indicator Behavior:**
 
-The function throws errors for various issues:
-
-```typescript
-try {
-  await sendTypingIndicator({
-    accessToken: 'YOUR_ACCESS_TOKEN',
-    from: 'YOUR_PHONE_NUMBER_ID',
-    to: '+16505551234',
-    action: 'typing',
-  })
-} catch (error) {
-  // Possible errors:
-  // - Invalid phone number
-  // - API authentication errors
-  // - Network/connectivity issues
-  console.error('Failed to send typing indicator:', error.message)
-}
-```
+- Automatically disappears after **25 seconds** or when you send a message, whichever comes first
+- Only display if you're going to respond (showing it without responding creates poor UX)
+- Does not generate webhook notifications
 
 #### Important Notes
 
-- **Auto-Dismiss**: The typing indicator automatically disappears after 25 seconds or when you send a message, whichever comes first
-- **Best Practice**: Only show the typing indicator when you're actually going to send a response. Showing it without following up creates a poor user experience
-- **No Webhook**: Typing indicators do not generate webhook notifications
-- **Idempotent**: Sending multiple typing indicators is safe but unnecessary - one indicator is sufficient until it auto-dismisses or a message is sent
+- **Message IDs**: Use the message ID from incoming webhook notifications
+- **No Visual Confirmation**: The API returns success, but there's no visual confirmation in the WhatsApp UI for read receipts on business messages
+- **Idempotent**: Marking the same message as read multiple times is safe and won't cause errors

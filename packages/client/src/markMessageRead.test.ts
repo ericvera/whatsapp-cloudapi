@@ -87,3 +87,64 @@ it('handles network errors', async () => {
     }),
   ).rejects.toThrow('Network error: Failed to fetch')
 })
+
+it('marks a message as read with typing indicator', async () => {
+  const mockResponse = {
+    success: true,
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  const result = await markMessageRead({
+    accessToken: 'test_token',
+    from: '123456789',
+    messageId: 'wamid.test123',
+    showTypingIndicator: true,
+  })
+
+  expect(result).toEqual(mockResponse)
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: 'wamid.test123',
+      typing_indicator: {
+        type: 'text',
+      },
+    },
+    undefined,
+  )
+})
+
+it('marks a message as read with typing indicator and custom baseUrl', async () => {
+  const mockResponse = {
+    success: true,
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  const result = await markMessageRead({
+    accessToken: 'test_token',
+    from: '123456789',
+    messageId: 'wamid.test456',
+    showTypingIndicator: true,
+    baseUrl: 'http://localhost:4004',
+  })
+
+  expect(result).toEqual(mockResponse)
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      status: 'read',
+      message_id: 'wamid.test456',
+      typing_indicator: {
+        type: 'text',
+      },
+    },
+    'http://localhost:4004',
+  )
+})

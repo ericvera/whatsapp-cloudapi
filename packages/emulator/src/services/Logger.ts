@@ -478,7 +478,11 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
-  markAsRead(messageId: string, context: MessageContext): void {
+  markAsRead(
+    messageId: string,
+    context: MessageContext,
+    showTypingIndicator?: boolean,
+  ): void {
     if (!this.shouldLog('message')) {
       return
     }
@@ -488,6 +492,10 @@ export class EmulatorLogger {
     lines.push('')
     lines.push(this.colorize('✓✓ Marked as read', 'cyan'))
 
+    if (showTypingIndicator) {
+      lines.push(this.colorize('💬 Typing...', 'cyan'))
+    }
+
     if (this.config.level === 'verbose') {
       lines.push('')
       lines.push(this.colorize(`Message ID: ${messageId}`, 'gray'))
@@ -496,7 +504,7 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
-  typingIndicator(action: 'typing' | 'stopped', context: MessageContext): void {
+  typingIndicator(context: MessageContext): void {
     if (!this.shouldLog('message')) {
       return
     }
@@ -504,12 +512,7 @@ export class EmulatorLogger {
     const lines: string[] = []
     this.addHeaderLine(lines, context)
     lines.push('')
-
-    if (action === 'typing') {
-      lines.push(this.colorize('💬 Typing...', 'cyan'))
-    } else {
-      lines.push(this.colorize('⏸️  Stopped typing', 'gray'))
-    }
+    lines.push(this.colorize('💬 Typing...', 'cyan'))
 
     this.renderMessage(lines, context)
   }

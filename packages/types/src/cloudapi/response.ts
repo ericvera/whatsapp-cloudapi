@@ -135,16 +135,6 @@ export interface CloudAPIMarkReadResponse {
 }
 
 /**
- * Response from sending a typing indicator
- */
-export interface CloudAPITypingIndicatorResponse {
-  /**
-   * Indicates whether the operation was successful
-   */
-  success: boolean
-}
-
-/**
  * Supported WhatsApp Cloud API version
  */
 export type CloudAPIVersion = 'v24.0'

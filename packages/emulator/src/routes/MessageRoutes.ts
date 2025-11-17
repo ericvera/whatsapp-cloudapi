@@ -7,8 +7,6 @@ import type {
   CloudAPISendInteractiveButtonsMessageRequest,
   CloudAPISendInteractiveCTAURLRequest,
   CloudAPISendInteractiveListMessageRequest,
-  CloudAPISendTypingIndicatorRequest,
-  CloudAPITypingIndicatorResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
@@ -73,15 +71,6 @@ export class MessageRoutes {
   ): body is CloudAPIMarkMessageReadRequest {
     const req = body as Partial<CloudAPIMarkMessageReadRequest>
     return req.status === 'read' && typeof req.message_id === 'string'
-  }
-
-  private isTypingIndicatorRequest(
-    body: unknown,
-  ): body is CloudAPISendTypingIndicatorRequest {
-    const req = body as Partial<CloudAPISendTypingIndicatorRequest>
-    return (
-      req.type === 'typing_indicator' && 'typing_indicator' in (body as object)
-    )
   }
 
   private logOutgoingMessage(
@@ -168,12 +157,6 @@ export class MessageRoutes {
       // Check if this is a mark-as-read request
       if (this.isMarkAsReadRequest(req.body)) {
         this.handleMarkAsRead(req, res)
-        return
-      }
-
-      // Check if this is a typing indicator request
-      if (this.isTypingIndicatorRequest(req.body)) {
-        this.handleTypingIndicator(req, res)
         return
       }
 
@@ -1092,12 +1075,17 @@ export class MessageRoutes {
   private handleMarkAsRead(req: Request, res: Response): void {
     try {
       const body = req.body as CloudAPIMarkMessageReadRequest
-      const { message_id } = body
+      const { message_id, typing_indicator } = body
 
-      this.logger.markAsRead(message_id, {
-        direction: 'sent',
-        recipient: this.businessPhoneNumberId,
-      })
+      // Log mark as read (with typing indicator if present)
+      this.logger.markAsRead(
+        message_id,
+        {
+          direction: 'sent',
+          recipient: this.businessPhoneNumberId,
+        },
+        !!typing_indicator,
+      )
 
       const response: CloudAPIMarkReadResponse = {
         success: true,
@@ -1112,39 +1100,6 @@ export class MessageRoutes {
       res.status(500).json({
         error: {
           message: 'Internal server error during mark as read',
-          type: 'OAuthException',
-          code: 500,
-        },
-      })
-    }
-  }
-
-  private handleTypingIndicator(req: Request, res: Response): void {
-    try {
-      const body = req.body as CloudAPISendTypingIndicatorRequest
-      const { to, typing_indicator } = body
-
-      // Normalize WhatsApp ID (remove '+' prefix if present)
-      const normalizedTo = normalizeWhatsAppId(to)
-
-      this.logger.typingIndicator(typing_indicator.action, {
-        direction: 'sent',
-        recipient: normalizedTo,
-      })
-
-      const response: CloudAPITypingIndicatorResponse = {
-        success: true,
-      }
-
-      res.status(200).json(response)
-    } catch (error) {
-      this.logger.error('Typing indicator error', {
-        details: error instanceof Error ? error.message : String(error),
-      })
-
-      res.status(500).json({
-        error: {
-          message: 'Internal server error during typing indicator',
           type: 'OAuthException',
           code: 500,
         },
