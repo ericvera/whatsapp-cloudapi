@@ -360,6 +360,65 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
+  ctaUrlMessage(
+    header:
+      | { type: 'text'; text: string }
+      | { type: 'image'; mediaId: string }
+      | undefined,
+    body: string,
+    footer: string | undefined,
+    buttonText: string,
+    url: string,
+    context: MessageContext,
+  ): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+
+    // Header (text or image indicator)
+    if (header) {
+      if (header.type === 'text') {
+        const headerLines = this.wrapText(header.text, BubbleWidth - 4)
+        for (const line of headerLines) {
+          lines.push(this.colorize(line, 'bold'))
+        }
+      } else {
+        lines.push(this.colorize('📷 [Image]', 'cyan'))
+        if (this.config.level === 'verbose') {
+          lines.push(this.colorize(`Media ID: ${header.mediaId}`, 'gray'))
+        }
+      }
+      lines.push('')
+    }
+
+    // Body
+    const bodyLines = this.wrapText(body, BubbleWidth - 4)
+    lines.push(...bodyLines)
+
+    // Footer
+    if (footer) {
+      lines.push('')
+      const footerLines = this.wrapText(footer, BubbleWidth - 4)
+      for (const line of footerLines) {
+        lines.push(this.colorize(line, 'gray'))
+      }
+    }
+
+    // CTA Button
+    lines.push('')
+    lines.push('─'.repeat(BubbleWidth - 4))
+    lines.push(this.colorize(`🔗 ${buttonText}`, 'cyan'))
+    lines.push(this.colorize(`   ${url}`, 'gray'))
+
+    this.renderMessage(lines, context)
+  }
+
   interactiveListMessage(
     header: string | undefined,
     body: string,

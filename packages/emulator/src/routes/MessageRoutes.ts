@@ -137,8 +137,29 @@ export class MessageRoutes {
             sections,
             context,
           )
+        } else if (this.isCTAURLMessage(body)) {
+          const header = body.interactive.header
+          let headerData:
+            | { type: 'text'; text: string }
+            | { type: 'image'; mediaId: string }
+            | undefined
+
+          if (header?.type === 'text') {
+            headerData = { type: 'text', text: header.text }
+          } else if (header?.type === 'image') {
+            headerData = { type: 'image', mediaId: header.image.id }
+          }
+
+          this.logger.ctaUrlMessage(
+            headerData,
+            body.interactive.body.text,
+            body.interactive.footer?.text,
+            body.interactive.action.parameters.display_text,
+            body.interactive.action.parameters.url,
+            context,
+          )
         } else {
-          // For CTA URL and Flow messages, just log as text for now
+          // For Flow messages, just log as text for now
           this.logger.textMessage(body.interactive.body.text, context)
         }
         break
