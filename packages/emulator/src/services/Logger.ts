@@ -80,23 +80,26 @@ export class EmulatorLogger {
   }
 
   private wrapText(text: string, maxWidth: number): string[] {
-    const words = text.split(' ')
+    const paragraphs = text.split('\n')
     const lines: string[] = []
-    let currentLine = ''
 
-    for (const word of words) {
-      if (currentLine.length + word.length + 1 <= maxWidth) {
-        currentLine += (currentLine ? ' ' : '') + word
-      } else {
-        if (currentLine) {
-          lines.push(currentLine)
+    for (const paragraph of paragraphs) {
+      const words = paragraph.split(' ')
+      let currentLine = ''
+
+      for (const word of words) {
+        if (currentLine.length + word.length + 1 <= maxWidth) {
+          currentLine += (currentLine ? ' ' : '') + word
+        } else {
+          if (currentLine) {
+            lines.push(currentLine)
+          }
+
+          currentLine = word
         }
-
-        currentLine = word
       }
-    }
 
-    if (currentLine) {
+      // Push even if empty to preserve blank lines
       lines.push(currentLine)
     }
 
