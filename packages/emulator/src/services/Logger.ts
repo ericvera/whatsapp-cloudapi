@@ -79,6 +79,17 @@ export class EmulatorLogger {
     return text
   }
 
+  private colorizeAndPad(text: string, color: keyof typeof pc): string {
+    return this.colorize(text.padEnd(BubbleWidth - 4), color)
+  }
+
+  private truncate(text: string, maxLength: number): string {
+    if (text.length <= maxLength) {
+      return text
+    }
+    return text.slice(0, maxLength - 1) + '…'
+  }
+
   private wrapText(text: string, maxWidth: number): string[] {
     const paragraphs = text.split('\n')
     const lines: string[] = []
@@ -201,7 +212,7 @@ export class EmulatorLogger {
       const headerLines = this.wrapText(header, BubbleWidth - 4)
 
       for (const line of headerLines) {
-        lines.push(this.colorize(line, 'bold'))
+        lines.push(this.colorizeAndPad(line, 'bold'))
       }
 
       lines.push('')
@@ -218,7 +229,7 @@ export class EmulatorLogger {
       const footerLines = this.wrapText(footer, BubbleWidth - 4)
 
       for (const line of footerLines) {
-        lines.push(this.colorize(line, 'gray'))
+        lines.push(this.colorizeAndPad(line, 'gray'))
       }
     }
   }
@@ -389,12 +400,12 @@ export class EmulatorLogger {
       if (header.type === 'text') {
         const headerLines = this.wrapText(header.text, BubbleWidth - 4)
         for (const line of headerLines) {
-          lines.push(this.colorize(line, 'bold'))
+          lines.push(this.colorizeAndPad(line, 'bold'))
         }
       } else {
-        lines.push(this.colorize('📷 [Image]', 'cyan'))
+        lines.push(this.colorizeAndPad('[Image]', 'cyan'))
         if (this.config.level === 'verbose') {
-          lines.push(this.colorize(`Media ID: ${header.mediaId}`, 'gray'))
+          lines.push(this.colorizeAndPad(`Media ID: ${header.mediaId}`, 'gray'))
         }
       }
       lines.push('')
@@ -409,15 +420,18 @@ export class EmulatorLogger {
       lines.push('')
       const footerLines = this.wrapText(footer, BubbleWidth - 4)
       for (const line of footerLines) {
-        lines.push(this.colorize(line, 'gray'))
+        lines.push(this.colorizeAndPad(line, 'gray'))
       }
     }
 
     // CTA Button
     lines.push('')
     lines.push('─'.repeat(BubbleWidth - 4))
-    lines.push(this.colorize(`🔗 ${buttonText}`, 'cyan'))
-    lines.push(this.colorize(`   ${url}`, 'gray'))
+    lines.push(this.colorizeAndPad(buttonText, 'cyan'))
+    const urlLines = this.wrapText(url, BubbleWidth - 4)
+    for (const urlLine of urlLines) {
+      lines.push(this.colorizeAndPad(urlLine, 'gray'))
+    }
 
     this.renderMessage(lines, context)
   }
@@ -448,7 +462,7 @@ export class EmulatorLogger {
     // List button
     lines.push('')
     lines.push('─'.repeat(BubbleWidth - 4))
-    lines.push(this.colorize(`▼ ${buttonText}`, 'cyan'))
+    lines.push(this.colorizeAndPad(`▼ ${buttonText}`, 'cyan'))
     lines.push('─'.repeat(BubbleWidth - 4))
 
     // List sections
@@ -460,7 +474,7 @@ export class EmulatorLogger {
 
       if (section.title) {
         lines.push('')
-        lines.push(this.colorize(section.title.toUpperCase(), 'gray'))
+        lines.push(this.colorizeAndPad(section.title.toUpperCase(), 'gray'))
       }
 
       for (const row of section.rows) {
@@ -470,11 +484,12 @@ export class EmulatorLogger {
         if (row.description) {
           const descLines = this.wrapText(row.description, BubbleWidth - 6)
           for (const descLine of descLines) {
-            lines.push(this.colorize(`  ${descLine}`, 'gray'))
+            lines.push(this.colorizeAndPad(`  ${descLine}`, 'gray'))
           }
         }
 
-        lines.push(this.colorize(`  [${row.id}]`, 'gray'))
+        const truncatedId = this.truncate(row.id, BubbleWidth - 8)
+        lines.push(this.colorizeAndPad(`  [${truncatedId}]`, 'gray'))
       }
 
       if (i < sections.length - 1) {
@@ -500,7 +515,7 @@ export class EmulatorLogger {
     const lines: string[] = []
     this.addHeaderLine(lines, context)
     lines.push('')
-    lines.push(this.colorize('📷 [Image]', 'cyan'))
+    lines.push(this.colorizeAndPad('[Image]', 'cyan'))
 
     if (caption) {
       lines.push('')
@@ -510,7 +525,7 @@ export class EmulatorLogger {
 
     if (this.config.level === 'verbose') {
       lines.push('')
-      lines.push(this.colorize(`Media ID: ${mediaId}`, 'gray'))
+      lines.push(this.colorizeAndPad(`Media ID: ${mediaId}`, 'gray'))
     }
 
     this.renderMessage(lines, context)
@@ -534,7 +549,7 @@ export class EmulatorLogger {
 
     if (this.config.level === 'verbose') {
       lines.push('')
-      lines.push(this.colorize(`Message ID: ${messageId}`, 'gray'))
+      lines.push(this.colorizeAndPad(`Message ID: ${messageId}`, 'gray'))
     }
 
     this.renderMessage(lines, context)
@@ -552,15 +567,15 @@ export class EmulatorLogger {
     const lines: string[] = []
     this.addHeaderLine(lines, context)
     lines.push('')
-    lines.push(this.colorize('✓✓ Marked as read', 'cyan'))
+    lines.push(this.colorizeAndPad('✓✓ Marked as read', 'cyan'))
 
     if (showTypingIndicator) {
-      lines.push(this.colorize('💬 Typing...', 'cyan'))
+      lines.push(this.colorizeAndPad('💬 Typing...', 'cyan'))
     }
 
     if (this.config.level === 'verbose') {
       lines.push('')
-      lines.push(this.colorize(`Message ID: ${messageId}`, 'gray'))
+      lines.push(this.colorizeAndPad(`Message ID: ${messageId}`, 'gray'))
     }
 
     this.renderMessage(lines, context)
@@ -574,7 +589,7 @@ export class EmulatorLogger {
     const lines: string[] = []
     this.addHeaderLine(lines, context)
     lines.push('')
-    lines.push(this.colorize('💬 Typing...', 'cyan'))
+    lines.push(this.colorizeAndPad('💬 Typing...', 'cyan'))
 
     this.renderMessage(lines, context)
   }
@@ -594,16 +609,19 @@ export class EmulatorLogger {
     this.addHeaderLine(lines, context)
     lines.push('')
     lines.push(
-      this.colorize(`⚠️  Unsupported message type: ${messageType}`, 'yellow'),
+      this.colorizeAndPad(
+        `⚠️  Unsupported message type: ${messageType}`,
+        'yellow',
+      ),
     )
 
     if (this.config.level === 'verbose') {
       lines.push('')
-      lines.push(this.colorize('Raw message:', 'gray'))
+      lines.push(this.colorizeAndPad('Raw message:', 'gray'))
 
       const jsonLines = JSON.stringify(body, null, 2).split('\n')
       for (const jsonLine of jsonLines) {
-        lines.push(this.colorize(jsonLine, 'gray'))
+        lines.push(this.colorizeAndPad(jsonLine, 'gray'))
       }
     }
 
