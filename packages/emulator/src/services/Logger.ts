@@ -22,6 +22,21 @@ const visualPadEnd = (str: string, targetWidth: number): string => {
 
   return str + ' '.repeat(paddingNeeded)
 }
+
+// Insert zero-width space after emojis with variation selectors to prevent
+// terminal rendering issues where emoji visually overlaps adjacent characters
+const ZeroWidthSpace = '\u200B'
+const VariationSelector = '\uFE0F'
+
+const fixEmojiSpacing = (text: string): string => {
+  // Insert zero-width space after variation selector followed by a regular
+  // character. This helps terminals properly separate emoji from following text
+  return text.replace(
+    new RegExp(`${VariationSelector}(?=[^${VariationSelector}])`, 'g'),
+    `${VariationSelector}${ZeroWidthSpace}`,
+  )
+}
+
 const SentIndent = 8
 
 interface MessageContext {
@@ -116,7 +131,8 @@ export class EmulatorLogger {
   }
 
   private wrapText(text: string, maxWidth: number): string[] {
-    const paragraphs = text.split('\n')
+    const fixedText = fixEmojiSpacing(text)
+    const paragraphs = fixedText.split('\n')
     const lines: string[] = []
 
     for (const paragraph of paragraphs) {
