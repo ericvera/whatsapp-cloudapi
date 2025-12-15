@@ -1,6 +1,6 @@
 {
   "name": "@whatsapp-cloudapi/client",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
