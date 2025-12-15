@@ -969,6 +969,7 @@ __metadata:
     multer: "npm:^2.0.2"
     nanoid: "npm:^5.1.6"
     picocolors: "npm:^1.1.1"
+    string-width: "npm:^8.1.0"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.49.0"
     vitest: "npm:^4.0.15"
@@ -3389,7 +3390,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string-width@npm:^8.0.0":
+"string-width@npm:^8.0.0, string-width@npm:^8.1.0":
   version: 8.1.0
   resolution: "string-width@npm:8.1.0"
   dependencies:

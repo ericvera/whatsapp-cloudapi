@@ -1,5 +1,6 @@
 import pc from 'picocolors'
 import { Formatter } from 'picocolors/types.js'
+import stringWidth from 'string-width'
 import type {
   EmulatorLogConfig,
   ErrorDetails,
@@ -9,6 +10,18 @@ import type {
 } from '../types/logging.js'
 
 const BubbleWidth = 55
+
+// Pad string to target visual width (accounts for emojis and wide characters)
+const visualPadEnd = (str: string, targetWidth: number): string => {
+  const currentWidth = stringWidth(str)
+  const paddingNeeded = targetWidth - currentWidth
+
+  if (paddingNeeded <= 0) {
+    return str
+  }
+
+  return str + ' '.repeat(paddingNeeded)
+}
 const SentIndent = 8
 
 interface MessageContext {
@@ -80,14 +93,26 @@ export class EmulatorLogger {
   }
 
   private colorizeAndPad(text: string, color: keyof typeof pc): string {
-    return this.colorize(text.padEnd(BubbleWidth - 4), color)
+    return this.colorize(visualPadEnd(text, BubbleWidth - 4), color)
   }
 
-  private truncate(text: string, maxLength: number): string {
-    if (text.length <= maxLength) {
+  private truncate(text: string, maxWidth: number): string {
+    if (stringWidth(text) <= maxWidth) {
       return text
     }
-    return text.slice(0, maxLength - 1) + '…'
+
+    // Truncate character by character until we fit
+    let truncated = ''
+
+    for (const char of text) {
+      if (stringWidth(truncated + char + '…') > maxWidth) {
+        break
+      }
+
+      truncated += char
+    }
+
+    return truncated + '…'
   }
 
   private wrapText(text: string, maxWidth: number): string[] {
@@ -99,7 +124,11 @@ export class EmulatorLogger {
       let currentLine = ''
 
       for (const word of words) {
-        if (currentLine.length + word.length + 1 <= maxWidth) {
+        const currentLineWidth = stringWidth(currentLine)
+        const wordWidth = stringWidth(word)
+        const separatorWidth = currentLine ? 1 : 0
+
+        if (currentLineWidth + wordWidth + separatorWidth <= maxWidth) {
           currentLine += (currentLine ? ' ' : '') + word
         } else {
           if (currentLine) {
@@ -134,27 +163,34 @@ export class EmulatorLogger {
       const line = lines[i] ?? ''
 
       if (isLast && timestamp) {
-        const timeStr = this.colorize(timestamp, 'gray')
-        const padding = BubbleWidth - 4 - line.length - timestamp.length
+        const lineWidth = stringWidth(line)
+        const padding = BubbleWidth - 4 - lineWidth - timestamp.length
 
         if (padding >= 2) {
           // Timestamp fits on same line
           output.push(
-            indent + '│ ' + line + ' '.repeat(padding) + timeStr + ' │',
+            indent +
+              '│ ' +
+              line +
+              ' '.repeat(padding) +
+              this.colorize(timestamp, 'gray') +
+              ' │',
           )
         } else {
           // Not enough space, put timestamp on next line
-          output.push(indent + '│ ' + line.padEnd(BubbleWidth - 4) + ' │')
+          output.push(
+            indent + '│ ' + visualPadEnd(line, BubbleWidth - 4) + ' │',
+          )
           output.push(
             indent +
               '│ ' +
               ' '.repeat(BubbleWidth - 4 - timestamp.length) +
-              timeStr +
+              this.colorize(timestamp, 'gray') +
               ' │',
           )
         }
       } else {
-        output.push(indent + '│ ' + line.padEnd(BubbleWidth - 4) + ' │')
+        output.push(indent + '│ ' + visualPadEnd(line, BubbleWidth - 4) + ' │')
       }
     }
 
@@ -164,22 +200,17 @@ export class EmulatorLogger {
     return output.join('\n')
   }
 
-  private renderButton(text: string, id: string): string {
+  private renderButton(text: string, id: string): string[] {
     const content = `${text} [${id}]`
-    const padding = BubbleWidth - 8 - content.length
+    const contentWidth = stringWidth(content)
+    const padding = BubbleWidth - 8 - contentWidth
     const paddedContent = content + ' '.repeat(Math.max(0, padding))
 
-    return (
-      '  ╔' +
-      '═'.repeat(BubbleWidth - 6) +
-      '╗\n' +
-      '  ║ ' +
-      paddedContent +
-      ' ║\n' +
-      '  ╚' +
-      '═'.repeat(BubbleWidth - 6) +
-      '╝'
-    )
+    return [
+      '  ╔' + '═'.repeat(BubbleWidth - 6) + '╗',
+      '  ║ ' + paddedContent + ' ║',
+      '  ╚' + '═'.repeat(BubbleWidth - 6) + '╝',
+    ]
   }
 
   private addHeaderLine(lines: string[], context: MessageContext): void {
@@ -367,8 +398,8 @@ export class EmulatorLogger {
 
     // Buttons
     for (const button of buttons) {
-      const buttonStr = this.renderButton(button.title, button.id)
-      lines.push(buttonStr)
+      const buttonLines = this.renderButton(button.title, button.id)
+      lines.push(...buttonLines)
     }
 
     this.renderMessage(lines, context)
