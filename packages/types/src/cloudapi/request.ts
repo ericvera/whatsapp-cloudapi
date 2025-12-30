@@ -14,9 +14,10 @@ export interface CloudAPIMessageRequestBase {
 
   /**
    * Type of recipient
-   * Currently only supports individual recipients
+   * - 'individual': Message to a single recipient
+   * - 'group': Message to a group
    */
-  recipient_type?: 'individual'
+  recipient_type?: 'individual' | 'group'
 
   /**
    * An arbitrary string, useful for tracking.
@@ -42,8 +43,7 @@ export interface CloudAPIMessageRequestBase {
 /**
  * Request body for sending an image message
  */
-export interface CloudAPISendImageMessageRequest
-  extends CloudAPIMessageRequestBase {
+export interface CloudAPISendImageMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'image' for image messages
@@ -69,10 +69,375 @@ export interface CloudAPISendImageMessageRequest
 }
 
 /**
+ * Request body for sending an audio message
+ */
+export interface CloudAPISendAudioMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'audio' for audio messages
+   */
+  type: 'audio'
+
+  /**
+   * The audio message content
+   */
+  audio: {
+    /**
+     * Media ID of the uploaded audio
+     * Only one of id or link should be provided
+     */
+    id?: string
+
+    /**
+     * URL of the audio file
+     * Only one of id or link should be provided
+     */
+    link?: string
+  }
+}
+
+/**
+ * Request body for sending a video message
+ */
+export interface CloudAPISendVideoMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'video' for video messages
+   */
+  type: 'video'
+
+  /**
+   * The video message content
+   */
+  video: {
+    /**
+     * Media ID of the uploaded video
+     * Only one of id or link should be provided
+     */
+    id?: string
+
+    /**
+     * URL of the video file
+     * Only one of id or link should be provided
+     */
+    link?: string
+
+    /**
+     * Optional caption for the video
+     * Maximum length: 1024 characters
+     */
+    caption?: string
+  }
+}
+
+/**
+ * Request body for sending a document message
+ */
+export interface CloudAPISendDocumentMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'document' for document messages
+   */
+  type: 'document'
+
+  /**
+   * The document message content
+   */
+  document: {
+    /**
+     * Media ID of the uploaded document
+     * Only one of id or link should be provided
+     */
+    id?: string
+
+    /**
+     * URL of the document file
+     * Only one of id or link should be provided
+     */
+    link?: string
+
+    /**
+     * Optional caption for the document
+     * Maximum length: 1024 characters
+     */
+    caption?: string
+
+    /**
+     * Filename to be used for the document
+     */
+    filename?: string
+  }
+}
+
+/**
+ * Request body for sending a sticker message
+ */
+export interface CloudAPISendStickerMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'sticker' for sticker messages
+   */
+  type: 'sticker'
+
+  /**
+   * The sticker message content
+   */
+  sticker: {
+    /**
+     * Media ID of the uploaded sticker
+     * Only one of id or link should be provided
+     */
+    id?: string
+
+    /**
+     * URL of the sticker file
+     * Only one of id or link should be provided
+     */
+    link?: string
+  }
+}
+
+/**
+ * Request body for sending a location message
+ */
+export interface CloudAPISendLocationMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'location' for location messages
+   */
+  type: 'location'
+
+  /**
+   * The location message content
+   */
+  location: {
+    /**
+     * Latitude of the location
+     */
+    latitude: number
+
+    /**
+     * Longitude of the location
+     */
+    longitude: number
+
+    /**
+     * Name of the location
+     */
+    name?: string
+
+    /**
+     * Address of the location
+     */
+    address?: string
+  }
+}
+
+/**
+ * Contact name object for contacts message
+ */
+export interface CloudAPIContactName {
+  /**
+   * Formatted full name
+   */
+  formatted_name: string
+
+  /**
+   * First name
+   */
+  first_name?: string
+
+  /**
+   * Last name
+   */
+  last_name?: string
+
+  /**
+   * Middle name
+   */
+  middle_name?: string
+
+  /**
+   * Name prefix
+   */
+  prefix?: string
+
+  /**
+   * Name suffix
+   */
+  suffix?: string
+}
+
+/**
+ * Contact phone object for contacts message
+ */
+export interface CloudAPIContactPhone {
+  /**
+   * Phone number
+   */
+  phone: string
+
+  /**
+   * Phone type
+   */
+  type?: 'HOME' | 'WORK'
+
+  /**
+   * WhatsApp ID
+   */
+  wa_id?: string
+}
+
+/**
+ * Contact email object for contacts message
+ */
+export interface CloudAPIContactEmail {
+  /**
+   * Email address
+   */
+  email: string
+
+  /**
+   * Email type
+   */
+  type?: 'HOME' | 'WORK'
+}
+
+/**
+ * Contact address object for contacts message
+ */
+export interface CloudAPIContactAddress {
+  /**
+   * Street address
+   */
+  street?: string
+
+  /**
+   * City name
+   */
+  city?: string
+
+  /**
+   * State abbreviation
+   */
+  state?: string
+
+  /**
+   * ZIP code
+   */
+  zip?: string
+
+  /**
+   * Full country name
+   */
+  country?: string
+
+  /**
+   * Two-letter ISO country code
+   */
+  country_code?: string
+
+  /**
+   * Address type
+   */
+  type?: 'HOME' | 'WORK'
+}
+
+/**
+ * Contact URL object for contacts message
+ */
+export interface CloudAPIContactUrl {
+  /**
+   * URL
+   */
+  url: string
+
+  /**
+   * URL type
+   */
+  type?: 'HOME' | 'WORK'
+}
+
+/**
+ * Contact organization object for contacts message
+ */
+export interface CloudAPIContactOrg {
+  /**
+   * Company name
+   */
+  company?: string
+
+  /**
+   * Department name
+   */
+  department?: string
+
+  /**
+   * Job title
+   */
+  title?: string
+}
+
+/**
+ * Contact object for contacts message
+ */
+export interface CloudAPIContact {
+  /**
+   * Contact name (required)
+   */
+  name: CloudAPIContactName
+
+  /**
+   * Contact phone numbers
+   */
+  phones?: CloudAPIContactPhone[]
+
+  /**
+   * Contact email addresses
+   */
+  emails?: CloudAPIContactEmail[]
+
+  /**
+   * Contact addresses
+   */
+  addresses?: CloudAPIContactAddress[]
+
+  /**
+   * Contact URLs
+   */
+  urls?: CloudAPIContactUrl[]
+
+  /**
+   * Contact organization
+   */
+  org?: CloudAPIContactOrg
+
+  /**
+   * Contact birthday (YYYY-MM-DD format)
+   */
+  birthday?: string
+}
+
+/**
+ * Request body for sending a contacts message
+ */
+export interface CloudAPISendContactsMessageRequest extends CloudAPIMessageRequestWithContext {
+  /**
+   * Type of message
+   * Set to 'contacts' for contacts messages
+   */
+  type: 'contacts'
+
+  /**
+   * Array of contact objects
+   */
+  contacts: CloudAPIContact[]
+}
+
+/**
  * Request body for sending a text message
  */
-export interface CloudAPISendTextMessageRequest
-  extends CloudAPIMessageRequestBase {
+export interface CloudAPISendTextMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'text' for text messages
@@ -394,8 +759,7 @@ export interface CloudAPIListSection {
  * Base interface for message requests that support context
  * (replying to messages)
  */
-export interface CloudAPIMessageRequestWithContext
-  extends CloudAPIMessageRequestBase {
+export interface CloudAPIMessageRequestWithContext extends CloudAPIMessageRequestBase {
   /**
    * The context of a previous message to reply to
    */
@@ -410,8 +774,7 @@ export interface CloudAPIMessageRequestWithContext
 /**
  * Request body for sending a template message
  */
-export interface CloudAPISendTemplateMessageRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'template' for template messages
@@ -459,8 +822,7 @@ export interface CloudAPISendTemplateMessageRequest
 /**
  * Request body for sending an interactive CTA URL message
  */
-export interface CloudAPISendInteractiveCTAURLRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveCTAURLRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -560,8 +922,7 @@ export interface CloudAPISendInteractiveCTAURLRequest
 /**
  * Request body for sending a WhatsApp Flow message (v24.0)
  */
-export interface CloudAPISendFlowMessageRequest
-  extends CloudAPIMessageRequestBase {
+export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for flow messages
@@ -697,8 +1058,7 @@ export interface CloudAPISendFlowMessageRequest
 /**
  * Request body for sending an interactive buttons message
  */
-export interface CloudAPISendInteractiveButtonsMessageRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -838,8 +1198,7 @@ export interface CloudAPISendInteractiveButtonsMessageRequest
 /**
  * Request body for sending an interactive list message
  */
-export interface CloudAPISendInteractiveListMessageRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveListMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -914,8 +1273,7 @@ export interface CloudAPISendInteractiveListMessageRequest
 /**
  * Request body for sending a reaction message (v24.0)
  */
-export interface CloudAPISendReactionMessageRequest
-  extends CloudAPIMessageRequestBase {
+export interface CloudAPISendReactionMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'reaction' for reaction messages
@@ -942,8 +1300,7 @@ export interface CloudAPISendReactionMessageRequest
 /**
  * Request body for sending a call permission request message (v24.0)
  */
-export interface CloudAPISendCallPermissionRequestMessageRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -987,8 +1344,7 @@ export interface CloudAPISendCallPermissionRequestMessageRequest
 /**
  * Request body for sending a catalog message (v24.0)
  */
-export interface CloudAPISendCatalogMessageRequest
-  extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1090,6 +1446,12 @@ export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
+  | CloudAPISendAudioMessageRequest
+  | CloudAPISendVideoMessageRequest
+  | CloudAPISendDocumentMessageRequest
+  | CloudAPISendStickerMessageRequest
+  | CloudAPISendLocationMessageRequest
+  | CloudAPISendContactsMessageRequest
   | CloudAPISendInteractiveCTAURLRequest
   | CloudAPISendInteractiveButtonsMessageRequest
   | CloudAPISendInteractiveListMessageRequest

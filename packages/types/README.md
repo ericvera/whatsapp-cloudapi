@@ -27,7 +27,30 @@ The types are split into three main categories:
 
 ### Cloud API Types
 
-For request/response types when sending messages:
+For request/response types when sending messages.
+
+#### Available Message Request Types
+
+| Type                                              | Description                          |
+| ------------------------------------------------- | ------------------------------------ |
+| `CloudAPISendTextMessageRequest`                  | Plain text messages                  |
+| `CloudAPISendImageMessageRequest`                 | Image messages with optional caption |
+| `CloudAPISendAudioMessageRequest`                 | Audio/voice messages                 |
+| `CloudAPISendVideoMessageRequest`                 | Video messages with optional caption |
+| `CloudAPISendDocumentMessageRequest`              | Document/file messages               |
+| `CloudAPISendStickerMessageRequest`               | Sticker messages                     |
+| `CloudAPISendLocationMessageRequest`              | Location sharing                     |
+| `CloudAPISendContactsMessageRequest`              | Contact card sharing                 |
+| `CloudAPISendTemplateMessageRequest`              | Pre-approved template messages       |
+| `CloudAPISendReactionMessageRequest`              | Emoji reactions to messages          |
+| `CloudAPISendInteractiveButtonsMessageRequest`    | Messages with reply buttons          |
+| `CloudAPISendInteractiveListMessageRequest`       | Messages with list selection         |
+| `CloudAPISendInteractiveCTAURLRequest`            | Call-to-action URL buttons           |
+| `CloudAPISendFlowMessageRequest`                  | WhatsApp Flow messages               |
+| `CloudAPISendCatalogMessageRequest`               | Product catalog messages             |
+| `CloudAPISendCallPermissionRequestMessageRequest` | Request call permissions             |
+
+#### Example
 
 ```typescript
 import { CloudAPISendTextMessageRequest } from '@whatsapp-cloudapi/types/cloudapi'

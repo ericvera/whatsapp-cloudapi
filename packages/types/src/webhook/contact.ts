@@ -16,8 +16,10 @@ export interface WebhookContact {
 
   /**
    * Profile information
+   * May be absent for certain message types
+   * (e.g., system messages, Meta security codes)
    */
-  profile: {
+  profile?: {
     /**
      * Contact's name
      */

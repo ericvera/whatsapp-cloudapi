@@ -83,8 +83,9 @@ export interface CloudAPIResponse {
      * - 'accepted': Message was sent to the intended recipient
      * - 'held_for_quality_assessment': Message send was delayed until quality
      *   can be validated and it will either be sent or dropped
+     * - 'paused': Message delivery has been paused
      */
-    message_status?: 'accepted' | 'held_for_quality_assessment'
+    message_status?: 'accepted' | 'held_for_quality_assessment' | 'paused'
   }[]
 }
 
