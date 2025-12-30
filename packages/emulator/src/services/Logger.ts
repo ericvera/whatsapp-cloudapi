@@ -217,15 +217,20 @@ export class EmulatorLogger {
   }
 
   private renderButton(text: string, id: string): string[] {
+    // Button must fit within bubble content area (BubbleWidth - 4)
+    // Button structure: 2 spaces + ╔/║/╚ + content + ╗/║/╝ = BubbleWidth - 4
+    // 2 spaces + 2 border chars on each side
+    const buttonContentWidth = BubbleWidth - 8
     const content = `${text} [${id}]`
     const contentWidth = stringWidth(content)
-    const padding = BubbleWidth - 8 - contentWidth
+    // -2 for spaces inside ║
+    const padding = buttonContentWidth - 2 - contentWidth
     const paddedContent = content + ' '.repeat(Math.max(0, padding))
 
     return [
-      '  ╔' + '═'.repeat(BubbleWidth - 6) + '╗',
+      '  ╔' + '═'.repeat(buttonContentWidth) + '╗',
       '  ║ ' + paddedContent + ' ║',
-      '  ╚' + '═'.repeat(BubbleWidth - 6) + '╝',
+      '  ╚' + '═'.repeat(buttonContentWidth) + '╝',
     ]
   }
 
