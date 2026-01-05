@@ -30,8 +30,8 @@
     "@types/node": "^24.10.3",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0",
-    "vitest": "^4.0.15"
+    "typescript-eslint": "^8.51.0",
+    "vitest": "^4.0.16"
   },
   "repository": {
     "type": "git",
