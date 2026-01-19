@@ -27,10 +27,10 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "pinst": "^3.0.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0",
-    "vitest": "^4.0.15"
+    "typescript-eslint": "^8.53.1",
+    "vitest": "^4.0.17"
   },
   "prettier": {
     "tabWidth": 2,
