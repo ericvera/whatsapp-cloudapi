@@ -15,8 +15,9 @@ export interface StartOptions {
   host: string
   number: string
   webhookUrl?: string
-  webhookSecret?: string
+  webhookVerifyToken?: string
   webhookTimeout?: string
+  appSecret?: string
   import?: string
   exportOnExit?: string | boolean
   logLevel?: 'quiet' | 'normal' | 'verbose'
@@ -149,7 +150,14 @@ program
   .option('-h, --host <string>', 'Host to bind to', 'localhost')
   .option('-n, --number <string>', 'Business phone number ID')
   .option('--webhook-url <url>', 'URL to send webhook events to')
-  .option('--webhook-secret <secret>', 'Secret token for webhook verification')
+  .option(
+    '--webhook-verify-token <token>',
+    'Verify token for webhook subscription validation',
+  )
+  .option(
+    '--app-secret <secret>',
+    'App secret for X-Hub-Signature-256 header generation',
+  )
   .option(
     '--webhook-timeout <ms>',
     'Timeout in milliseconds for webhook requests',
@@ -181,15 +189,16 @@ program
     }
 
     // Add webhook configuration if provided
-    if (options.webhookUrl && options.webhookSecret) {
+    if (options.webhookUrl && options.webhookVerifyToken) {
       emulatorConfig.webhook = {
         url: options.webhookUrl,
-        secret: options.webhookSecret,
+        verifyToken: options.webhookVerifyToken,
         timeout: parseInt(options.webhookTimeout ?? '5000', 10),
+        ...(options.appSecret && { appSecret: options.appSecret }),
       }
-    } else if (options.webhookUrl || options.webhookSecret) {
+    } else if (options.webhookUrl || options.webhookVerifyToken) {
       console.error(
-        'Error: Both --webhook-url and --webhook-secret are required for webhook configuration',
+        'Error: Both --webhook-url and --webhook-verify-token are required for webhook configuration',
       )
       process.exit(1)
     }

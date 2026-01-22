@@ -355,8 +355,8 @@ export class WhatsAppEmulator {
 
     if (
       mode === 'subscribe' &&
-      this.config?.webhook?.secret &&
-      token === this.config.webhook.secret
+      this.config?.webhook?.verifyToken &&
+      token === this.config.webhook.verifyToken
     ) {
       res.status(200).send(challenge)
     } else {

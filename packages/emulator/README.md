@@ -37,7 +37,8 @@ const emulator = new WhatsAppEmulator({
   port: 3000, // Optional, defaults to 4004
   webhook: {
     url: 'https://your-webhook-endpoint.com/webhook', // URL to receive webhook events
-    secret: 'your-webhook-secret', // Required secret for webhook verification
+    verifyToken: 'your-verify-token', // Token for webhook subscription verification
+    appSecret: 'your-app-secret', // Optional: Enables X-Hub-Signature-256 header
     timeout: 5000, // Optional timeout in milliseconds (defaults to 5000)
   },
   persistence: {
@@ -210,8 +211,10 @@ interface EmulatorOptions {
   webhook?: {
     /** URL to send webhook events to */
     url: string
-    /** Secret token for webhook endpoint validation (used for GET /webhook verification) */
-    secret: string
+    /** Verify token for webhook subscription validation (GET /webhook verification) */
+    verifyToken: string
+    /** App secret for X-Hub-Signature-256 header generation (optional) */
+    appSecret?: string
     /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
     timeout?: number
   }
@@ -263,10 +266,47 @@ The emulator provides a webhook validation endpoint at `/webhook` that supports 
 
 - **GET /webhook**: Handles webhook endpoint validation
   - Expects `hub.mode=subscribe`, `hub.verify_token`, and `hub.challenge` query parameters
-  - Returns the `hub.challenge` value if the `hub.verify_token` matches the configured secret
+  - Returns the `hub.challenge` value if the `hub.verify_token` matches the configured `verifyToken`
   - Used during initial webhook setup to verify endpoint ownership
 
-The configured secret is only used for this endpoint validation process, not for generating request signatures.
+#### X-Hub-Signature-256 Header
+
+When `appSecret` is configured, the emulator will include an `X-Hub-Signature-256` header with each webhook request. This header contains an HMAC-SHA256 signature of the request body, allowing your webhook endpoint to verify that requests are authentic.
+
+The signature format is `sha256=<hex-encoded-hmac>`, matching the real WhatsApp Cloud API behavior.
+
+Example signature verification in your webhook handler:
+
+```typescript
+import { createHmac, timingSafeEqual } from 'crypto'
+
+function verifySignature(
+  body: string,
+  signature: string,
+  appSecret: string,
+): boolean {
+  const expectedSignature =
+    'sha256=' +
+    createHmac('sha256', appSecret).update(body, 'utf8').digest('hex')
+
+  return (
+    signature.length === expectedSignature.length &&
+    timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+  )
+}
+
+// In your Express handler:
+app.post('/webhook', (req, res) => {
+  const signature = req.headers['x-hub-signature-256'] as string
+  const body = JSON.stringify(req.body)
+
+  if (!verifySignature(body, signature, process.env.APP_SECRET!)) {
+    return res.status(401).send('Invalid signature')
+  }
+
+  // Process the webhook...
+})
+```
 
 Example webhook payload:
 

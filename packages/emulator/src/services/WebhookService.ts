@@ -1,16 +1,14 @@
 import type { WebhookPayload } from '@whatsapp-cloudapi/types/webhook'
+import { createHmac } from 'crypto'
 import type { EmulatorWebhookConfig } from '../types/index.js'
 import type { EmulatorLogger } from './Logger.js'
 
 export class WebhookService {
-  private readonly config: Required<EmulatorWebhookConfig>
+  private readonly config: EmulatorWebhookConfig
   private readonly logger: EmulatorLogger
 
   constructor(config: EmulatorWebhookConfig, logger: EmulatorLogger) {
-    this.config = {
-      timeout: 5000,
-      ...config,
-    }
+    this.config = config
     this.logger = logger
   }
 
@@ -226,19 +224,34 @@ export class WebhookService {
     await this.sendWebhook(webhookPayload)
   }
 
+  private generateSignature(payload: string, secret: string): string {
+    const hmac = createHmac('sha256', secret)
+    hmac.update(payload, 'utf8')
+
+    return `sha256=${hmac.digest('hex')}`
+  }
+
   private async sendWebhook(webhookPayload: WebhookPayload): Promise<void> {
     const startTime = Date.now()
 
     try {
+      const body = JSON.stringify(webhookPayload)
+
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+      }
+
+      const { appSecret } = this.config
+
+      if (appSecret) {
+        headers['X-Hub-Signature-256'] = this.generateSignature(body, appSecret)
       }
 
       const response = await fetch(this.config.url, {
         method: 'POST',
         headers,
-        body: JSON.stringify(webhookPayload),
-        signal: AbortSignal.timeout(this.config.timeout),
+        body,
+        signal: AbortSignal.timeout(this.config.timeout ?? 5000),
       })
 
       const duration = Date.now() - startTime

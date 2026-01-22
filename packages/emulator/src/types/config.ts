@@ -22,10 +22,17 @@ export interface EmulatorWebhookConfig {
   /** URL to send webhook events to */
   url: string
   /**
-   * Secret token for webhook endpoint validation (used for GET /webhook
-   * verification)
+   * Verify token for webhook endpoint validation (used for GET /webhook
+   * subscription verification). This is the token you configure in the Meta
+   * App Dashboard.
    */
-  secret: string
+  verifyToken: string
+  /**
+   * App secret used to generate X-Hub-Signature-256 header for webhook
+   * requests. When provided, outgoing webhook requests will include a signature
+   * that recipients can use to verify the request authenticity.
+   */
+  appSecret?: string
   /**
    * Optional timeout in milliseconds for webhook requests (defaults to
    * 5000)

@@ -7,7 +7,7 @@ import { normalizeWhatsAppId } from '../utils/phoneUtils.js'
 
 export class EmulatorConfiguration {
   public readonly server: Required<EmulatorConfig>
-  public readonly webhook: Required<EmulatorWebhookConfig> | undefined
+  public readonly webhook: EmulatorWebhookConfig | undefined
 
   constructor(options: EmulatorOptions) {
     const { webhook, ...serverOptions } = options
@@ -35,11 +35,6 @@ export class EmulatorConfiguration {
     }
 
     this.webhook = webhook
-      ? {
-          timeout: 5000,
-          ...webhook,
-        }
-      : undefined
   }
 
   public getServerUrl(): URL {

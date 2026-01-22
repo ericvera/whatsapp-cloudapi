@@ -29,7 +29,7 @@ yarn global add @whatsapp-cloudapi/cli
 # Start the emulator with webhook configuration (required for simulation)
 wa-emulator start --number 15550123456 \
   --webhook-url http://localhost:8080/webhook \
-  --webhook-secret my-secret-key
+  --webhook-verify-token my-verify-token
 
 # Check if the emulator is running
 wa-emulator status
@@ -54,7 +54,8 @@ Options:
 - `-h, --host <string>` - Host to bind to (default: localhost)
 - `-n, --number <string>` - Business phone number ID (required)
 - `--webhook-url <url>` - URL to send webhook events to
-- `--webhook-secret <secret>` - Secret token for webhook verification
+- `--webhook-verify-token <token>` - Verify token for webhook subscription validation
+- `--app-secret <secret>` - App secret for X-Hub-Signature-256 header generation (optional)
 - `--webhook-timeout <ms>` - Timeout in milliseconds for webhook requests (default: 5000)
 - `--import <path>` - Directory to import media metadata from
 - `--export-on-exit [path]` - Export media metadata on shutdown (uses import path if no path provided)
@@ -72,7 +73,7 @@ wa-emulator start --port 3000 --host 0.0.0.0 --number 15550123456
 # With webhook configuration (required for simulation)
 wa-emulator start --number 15550123456 \
   --webhook-url http://localhost:8080/webhook \
-  --webhook-secret my-secret-key
+  --webhook-verify-token my-verify-token
 
 # With media persistence - import only
 wa-emulator start --number 15550123456 --import ./emulator-data
@@ -92,11 +93,17 @@ wa-emulator start --number 15550123456 --log-level verbose
 # With normal logging (includes webhook events)
 wa-emulator start --number 15550123456 \
   --webhook-url http://localhost:8080/webhook \
-  --webhook-secret my-secret \
+  --webhook-verify-token my-verify-token \
   --log-level normal
+
+# With X-Hub-Signature-256 header support
+wa-emulator start --number 15550123456 \
+  --webhook-url http://localhost:8080/webhook \
+  --webhook-verify-token my-verify-token \
+  --app-secret my-app-secret
 ```
 
-**Note:** Webhook configuration (both `--webhook-url` and `--webhook-secret`) is required to use the `simulate` command for testing incoming messages.
+**Note:** Webhook configuration (both `--webhook-url` and `--webhook-verify-token`) is required to use the `simulate` command for testing incoming messages.
 
 **Media Persistence:** Use `--import` to load previously saved media metadata and `--export-on-exit` to save media metadata on shutdown. This allows media state to persist across emulator restarts for long-term testing scenarios.
 
