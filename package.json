@@ -22,15 +22,15 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@tsconfig/strictest": "2.0.8",
-    "@types/node": "^24.10.3",
+    "@types/node": "^24.10.9",
     "eslint": "^9.39.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "pinst": "^3.0.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.49.0",
-    "vitest": "^4.0.15"
+    "typescript-eslint": "^8.53.1",
+    "vitest": "^4.0.18"
   },
   "prettier": {
     "tabWidth": 2,
