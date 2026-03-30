@@ -30,6 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install Dependencies
         run: yarn
@@ -73,31 +74,23 @@ jobs:
 
       - name: Publish Types Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/types
-        run: yarn npm publish --access public
+        run: yarn npm publish --access public --provenance
 
       - name: Publish Client Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/client
-        run: yarn npm publish --access public
+        run: yarn npm publish --access public --provenance
 
       - name: Publish CLI Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/cli
-        run: yarn npm publish --access public
+        run: yarn npm publish --access public --provenance
 
       - name: Publish Emulator Package
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         working-directory: packages/emulator
-        run: yarn npm publish --access public
+        run: yarn npm publish --access public --provenance
 
       - name: Create Release
         uses: ncipollo/release-action@v1
