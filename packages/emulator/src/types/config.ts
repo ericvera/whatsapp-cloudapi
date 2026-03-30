@@ -38,6 +38,12 @@ export interface EmulatorWebhookConfig {
    * 5000)
    */
   timeout?: number
+  /**
+   * Number of additional duplicate deliveries per webhook (defaults to 0).
+   * Total sends = 1 + duplicates. Simulates WhatsApp's at-least-once
+   * delivery so consumers can test deduplication logic.
+   */
+  duplicates?: number
 }
 
 export interface EmulatorPersistenceConfig {

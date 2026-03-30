@@ -232,43 +232,60 @@ export class WebhookService {
   }
 
   private async sendWebhook(webhookPayload: WebhookPayload): Promise<void> {
-    const startTime = Date.now()
+    const totalSends =
+      this.config.duplicates !== undefined ? 1 + this.config.duplicates : 1
 
-    try {
-      const body = JSON.stringify(webhookPayload)
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+    for (let i = 0; i < totalSends; i++) {
+      if (i > 0) {
+        const delay = Math.floor(Math.random() * 4800) + 200
+        await new Promise((resolve) => setTimeout(resolve, delay))
       }
 
-      const { appSecret } = this.config
+      const startTime = Date.now()
 
-      if (appSecret) {
-        headers['X-Hub-Signature-256'] = this.generateSignature(body, appSecret)
-      }
+      try {
+        const body = JSON.stringify(webhookPayload)
 
-      const response = await fetch(this.config.url, {
-        method: 'POST',
-        headers,
-        body,
-        signal: AbortSignal.timeout(this.config.timeout ?? 5000),
-      })
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        }
 
-      const duration = Date.now() - startTime
+        const { appSecret } = this.config
 
-      if (!response.ok) {
+        if (appSecret) {
+          headers['X-Hub-Signature-256'] = this.generateSignature(
+            body,
+            appSecret,
+          )
+        }
+
+        const response = await fetch(this.config.url, {
+          method: 'POST',
+          headers,
+          body,
+          signal: AbortSignal.timeout(this.config.timeout ?? 5000),
+        })
+
+        const duration = Date.now() - startTime
+
+        if (!response.ok) {
+          this.logger.webhookFailed(
+            this.config.url,
+            `${response.status.toString()} ${response.statusText}`,
+          )
+        } else {
+          this.logger.webhookDelivered(
+            this.config.url,
+            response.status,
+            duration,
+          )
+        }
+      } catch (error) {
         this.logger.webhookFailed(
           this.config.url,
-          `${response.status.toString()} ${response.statusText}`,
+          error instanceof Error ? error.message : 'Unknown error',
         )
-      } else {
-        this.logger.webhookDelivered(this.config.url, response.status, duration)
       }
-    } catch (error) {
-      this.logger.webhookFailed(
-        this.config.url,
-        error instanceof Error ? error.message : 'Unknown error',
-      )
     }
   }
 }

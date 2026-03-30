@@ -17,6 +17,7 @@ export interface StartOptions {
   webhookUrl?: string
   webhookVerifyToken?: string
   webhookTimeout?: string
+  webhookDuplicates?: string
   appSecret?: string
   import?: string
   exportOnExit?: string | boolean
@@ -163,6 +164,11 @@ program
     'Timeout in milliseconds for webhook requests',
     '5000',
   )
+  .option(
+    '--webhook-duplicates <n>',
+    'Number of duplicate webhook deliveries per message (default: 0)',
+    '0',
+  )
   .option('--import <path>', 'Directory to import media metadata from')
   .option(
     '--export-on-exit [path]',
@@ -194,6 +200,7 @@ program
         url: options.webhookUrl,
         verifyToken: options.webhookVerifyToken,
         timeout: parseInt(options.webhookTimeout ?? '5000', 10),
+        duplicates: parseInt(options.webhookDuplicates ?? '0', 10),
         ...(options.appSecret && { appSecret: options.appSecret }),
       }
     } else if (options.webhookUrl || options.webhookVerifyToken) {

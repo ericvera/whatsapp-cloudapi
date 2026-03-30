@@ -217,6 +217,8 @@ interface EmulatorOptions {
     appSecret?: string
     /** Optional timeout in milliseconds for webhook requests (defaults to 5000) */
     timeout?: number
+    /** Number of duplicate webhook deliveries per message for deduplication testing (defaults to 0) */
+    duplicates?: number
   }
   /** Media persistence configuration */
   persistence?: {

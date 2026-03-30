@@ -57,6 +57,7 @@ Options:
 - `--webhook-verify-token <token>` - Verify token for webhook subscription validation
 - `--app-secret <secret>` - App secret for X-Hub-Signature-256 header generation (optional)
 - `--webhook-timeout <ms>` - Timeout in milliseconds for webhook requests (default: 5000)
+- `--webhook-duplicates <n>` - Number of duplicate webhook deliveries per message for deduplication testing (default: 0)
 - `--import <path>` - Directory to import media metadata from
 - `--export-on-exit [path]` - Export media metadata on shutdown (uses import path if no path provided)
 - `--log-level <level>` - Log level: quiet, normal, or verbose (default: quiet)
