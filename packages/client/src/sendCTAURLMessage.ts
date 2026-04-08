@@ -2,6 +2,12 @@ import {
   CloudAPIResponse,
   CloudAPISendInteractiveCTAURLRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import {
+  ButtonTextMaxLength,
+  InteractiveBodyMaxLength,
+  InteractiveFooterMaxLength,
+  InteractiveHeaderTextMaxLength,
+} from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendCTAURLMessageParams {
@@ -67,17 +73,25 @@ export const sendCTAURLMessage = async ({
   }
 
   // Validate character limits
-  if (bodyText.length > 1024) {
-    throw new Error('Body text cannot exceed 1024 characters')
+  if (bodyText.length > InteractiveBodyMaxLength) {
+    throw new Error(
+      `Body text cannot exceed ${InteractiveBodyMaxLength.toString()} characters`,
+    )
   }
-  if (buttonText.length > 20) {
-    throw new Error('Button text cannot exceed 20 characters')
+  if (buttonText.length > ButtonTextMaxLength) {
+    throw new Error(
+      `Button text cannot exceed ${ButtonTextMaxLength.toString()} characters`,
+    )
   }
-  if (headerText && headerText.length > 60) {
-    throw new Error('Header text cannot exceed 60 characters')
+  if (headerText && headerText.length > InteractiveHeaderTextMaxLength) {
+    throw new Error(
+      `Header text cannot exceed ${InteractiveHeaderTextMaxLength.toString()} characters`,
+    )
   }
-  if (footerText && footerText.length > 60) {
-    throw new Error('Footer text cannot exceed 60 characters')
+  if (footerText && footerText.length > InteractiveFooterMaxLength) {
+    throw new Error(
+      `Footer text cannot exceed ${InteractiveFooterMaxLength.toString()} characters`,
+    )
   }
 
   // Validate URL format and ensure it's not an IP address

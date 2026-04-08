@@ -28,21 +28,6 @@ export interface CloudAPIMediaUploadResponse {
 }
 
 /**
- * Image media constraints and supported formats
- */
-export const ImageMediaConstraints = {
-  /**
-   * Supported MIME types for images
-   */
-  SupportedMimeTypes: ['image/jpeg', 'image/png'],
-
-  /**
-   * Maximum file size for images (5MB)
-   */
-  MaxFileSize: 5 * 1024 * 1024,
-}
-
-/**
  * Main response type for WhatsApp Cloud API requests
  */
 export interface CloudAPIResponse {

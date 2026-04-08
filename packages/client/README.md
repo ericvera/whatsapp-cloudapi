@@ -121,6 +121,43 @@ const response = await sendTextMessage({
 await emulator.stop()
 ```
 
+## Constants
+
+All WhatsApp Cloud API limits are exported as named constants so you can validate inputs before calling the API.
+
+```typescript
+import {
+  TextBodyMaxLength,
+  InteractiveBodyMaxLength,
+  InteractiveHeaderTextMaxLength,
+  InteractiveFooterMaxLength,
+  // ...
+} from '@whatsapp-cloudapi/client'
+```
+
+| Constant                         | Value                         | Description                                          |
+| -------------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `TextBodyMaxLength`              | 4096                          | Maximum characters for text message body             |
+| `InteractiveBodyMaxLength`       | 1024                          | Maximum characters for interactive message body      |
+| `InteractiveHeaderTextMaxLength` | 60                            | Maximum characters for interactive message header    |
+| `InteractiveFooterMaxLength`     | 60                            | Maximum characters for interactive message footer    |
+| `MediaCaptionMaxLength`          | 1024                          | Maximum characters for image/video/document captions |
+| `ImageMaxFileSize`               | 5242880                       | Maximum image file size in bytes (5MB)               |
+| `ImageSupportedMimeTypes`        | `['image/jpeg', 'image/png']` | Supported image MIME types                           |
+| `ButtonTextMaxLength`            | 20                            | Maximum characters for button title                  |
+| `ButtonIdMaxLength`              | 256                           | Maximum characters for button ID                     |
+| `ButtonsMinCount`                | 1                             | Minimum number of reply buttons                      |
+| `ButtonsMaxCount`                | 3                             | Maximum number of reply buttons                      |
+| `ListButtonTextMaxLength`        | 20                            | Maximum characters for list button text              |
+| `ListSectionTitleMaxLength`      | 24                            | Maximum characters for list section title            |
+| `ListSectionsMinCount`           | 1                             | Minimum number of list sections                      |
+| `ListRowIdMaxLength`             | 200                           | Maximum characters for list row ID                   |
+| `ListRowTitleMaxLength`          | 24                            | Maximum characters for list row title                |
+| `ListRowDescriptionMaxLength`    | 72                            | Maximum characters for list row description          |
+| `ListRowsMaxCount`               | 10                            | Maximum total rows across all sections               |
+| `ListRowsPerSectionMinCount`     | 1                             | Minimum rows per section                             |
+| `CallbackDataMaxLength`          | 512                           | Maximum characters for biz_opaque_callback_data      |
+
 ## API Reference
 
 ### sendTextMessage

@@ -2,7 +2,12 @@ import {
   CloudAPIResponse,
   CloudAPISendFlowMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
-import { WhatsAppFlowMessageVersion } from './constants.js'
+import {
+  InteractiveBodyMaxLength,
+  InteractiveFooterMaxLength,
+  InteractiveHeaderTextMaxLength,
+  WhatsAppFlowMessageVersion,
+} from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendFlowMessageParams {
@@ -96,16 +101,22 @@ export const sendFlowMessage = async ({
   }
 
   // Validate character limits
-  if (bodyText.length > 1024) {
-    throw new Error('Body text cannot exceed 1024 characters')
+  if (bodyText.length > InteractiveBodyMaxLength) {
+    throw new Error(
+      `Body text cannot exceed ${InteractiveBodyMaxLength.toString()} characters`,
+    )
   }
 
-  if (headerText && headerText.length > 60) {
-    throw new Error('Header text cannot exceed 60 characters')
+  if (headerText && headerText.length > InteractiveHeaderTextMaxLength) {
+    throw new Error(
+      `Header text cannot exceed ${InteractiveHeaderTextMaxLength.toString()} characters`,
+    )
   }
 
-  if (footerText && footerText.length > 60) {
-    throw new Error('Footer text cannot exceed 60 characters')
+  if (footerText && footerText.length > InteractiveFooterMaxLength) {
+    throw new Error(
+      `Footer text cannot exceed ${InteractiveFooterMaxLength.toString()} characters`,
+    )
   }
 
   // Validate required screen parameter for navigate action

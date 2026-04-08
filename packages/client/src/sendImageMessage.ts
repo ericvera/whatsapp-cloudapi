@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendImageMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { MediaCaptionMaxLength } from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendImageMessageParams {
@@ -47,9 +48,9 @@ export const sendImageMessage = async (
   } = params
 
   // Validate caption length
-  if (caption && caption.length > 1024) {
+  if (caption && caption.length > MediaCaptionMaxLength) {
     throw new Error(
-      `Caption too long: ${caption.length.toString()} characters. Maximum allowed: 1024 characters`,
+      `Caption too long: ${caption.length.toString()} characters. Maximum allowed: ${MediaCaptionMaxLength.toString()} characters`,
     )
   }
 

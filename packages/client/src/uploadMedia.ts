@@ -1,8 +1,7 @@
+import { CloudAPIMediaUploadResponse } from '@whatsapp-cloudapi/types/cloudapi'
 import {
-  CloudAPIMediaUploadResponse,
-  ImageMediaConstraints,
-} from '@whatsapp-cloudapi/types/cloudapi'
-import {
+  ImageMaxFileSize,
+  ImageSupportedMimeTypes,
   WhatsAppCloudAPIBaseUrl,
   WhatsAppCloudAPIVersion,
 } from './constants.js'
@@ -33,18 +32,18 @@ export const uploadMedia = async (
   const apiUrl = baseUrl ?? WhatsAppCloudAPIBaseUrl
 
   // Validate file size
-  if (file.size > ImageMediaConstraints.MaxFileSize) {
+  if (file.size > ImageMaxFileSize) {
     throw new Error(
-      `File size too large: ${file.size.toString()} bytes. Maximum allowed: ${ImageMediaConstraints.MaxFileSize.toString()} bytes (5MB)`,
+      `File size too large: ${file.size.toString()} bytes. Maximum allowed: ${ImageMaxFileSize.toString()} bytes (5MB)`,
     )
   }
 
   // Validate MIME type
-  const supportedTypes = ImageMediaConstraints.SupportedMimeTypes
+  const supportedTypes: readonly string[] = ImageSupportedMimeTypes
 
   if (!supportedTypes.includes(file.type)) {
     throw new Error(
-      `Unsupported MIME type: ${file.type}. Supported types: ${ImageMediaConstraints.SupportedMimeTypes.join(', ')}`,
+      `Unsupported MIME type: ${file.type}. Supported types: ${ImageSupportedMimeTypes.join(', ')}`,
     )
   }
 

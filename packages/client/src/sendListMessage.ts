@@ -1,8 +1,21 @@
 import {
+  CloudAPIListSection,
   CloudAPIResponse,
   CloudAPISendInteractiveListMessageRequest,
-  CloudAPIListSection,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import {
+  InteractiveBodyMaxLength,
+  InteractiveFooterMaxLength,
+  InteractiveHeaderTextMaxLength,
+  ListButtonTextMaxLength,
+  ListRowDescriptionMaxLength,
+  ListRowIdMaxLength,
+  ListRowsMaxCount,
+  ListRowsPerSectionMinCount,
+  ListRowTitleMaxLength,
+  ListSectionsMinCount,
+  ListSectionTitleMaxLength,
+} from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendListMessageParams {
@@ -62,25 +75,35 @@ export const sendListMessage = async ({
   baseUrl,
 }: SendListMessageParams): Promise<CloudAPIResponse> => {
   // Validate sections count
-  if (sections.length < 1) {
-    throw new Error('Must provide at least 1 section')
+  if (sections.length < ListSectionsMinCount) {
+    throw new Error(
+      `Must provide at least ${ListSectionsMinCount.toString()} section`,
+    )
   }
 
   // Validate character limits
-  if (bodyText.length > 1024) {
-    throw new Error('Body text cannot exceed 1024 characters')
+  if (bodyText.length > InteractiveBodyMaxLength) {
+    throw new Error(
+      `Body text cannot exceed ${InteractiveBodyMaxLength.toString()} characters`,
+    )
   }
 
-  if (buttonText.length > 20) {
-    throw new Error('Button text cannot exceed 20 characters')
+  if (buttonText.length > ListButtonTextMaxLength) {
+    throw new Error(
+      `Button text cannot exceed ${ListButtonTextMaxLength.toString()} characters`,
+    )
   }
 
-  if (headerText && headerText.length > 60) {
-    throw new Error('Header text cannot exceed 60 characters')
+  if (headerText && headerText.length > InteractiveHeaderTextMaxLength) {
+    throw new Error(
+      `Header text cannot exceed ${InteractiveHeaderTextMaxLength.toString()} characters`,
+    )
   }
 
-  if (footerText && footerText.length > 60) {
-    throw new Error('Footer text cannot exceed 60 characters')
+  if (footerText && footerText.length > InteractiveFooterMaxLength) {
+    throw new Error(
+      `Footer text cannot exceed ${InteractiveFooterMaxLength.toString()} characters`,
+    )
   }
 
   // Validate sections and rows
@@ -88,27 +111,40 @@ export const sendListMessage = async ({
   const rowIds = new Set<string>()
 
   for (const section of sections) {
-    if (section.title && section.title.length > 24) {
-      throw new Error('Section title cannot exceed 24 characters')
+    if (section.title && section.title.length > ListSectionTitleMaxLength) {
+      throw new Error(
+        `Section title cannot exceed ${ListSectionTitleMaxLength.toString()} characters`,
+      )
     }
 
-    if (section.rows.length < 1) {
-      throw new Error('Each section must have at least 1 row')
+    if (section.rows.length < ListRowsPerSectionMinCount) {
+      throw new Error(
+        `Each section must have at least ${ListRowsPerSectionMinCount.toString()} row`,
+      )
     }
 
     totalRows += section.rows.length
 
     for (const row of section.rows) {
-      if (row.id.length > 200) {
-        throw new Error('Row ID cannot exceed 200 characters')
+      if (row.id.length > ListRowIdMaxLength) {
+        throw new Error(
+          `Row ID cannot exceed ${ListRowIdMaxLength.toString()} characters`,
+        )
       }
 
-      if (row.title.length > 24) {
-        throw new Error('Row title cannot exceed 24 characters')
+      if (row.title.length > ListRowTitleMaxLength) {
+        throw new Error(
+          `Row title cannot exceed ${ListRowTitleMaxLength.toString()} characters`,
+        )
       }
 
-      if (row.description && row.description.length > 72) {
-        throw new Error('Row description cannot exceed 72 characters')
+      if (
+        row.description &&
+        row.description.length > ListRowDescriptionMaxLength
+      ) {
+        throw new Error(
+          `Row description cannot exceed ${ListRowDescriptionMaxLength.toString()} characters`,
+        )
       }
 
       if (rowIds.has(row.id)) {
@@ -119,8 +155,10 @@ export const sendListMessage = async ({
     }
   }
 
-  if (totalRows > 10) {
-    throw new Error('Total number of rows across all sections cannot exceed 10')
+  if (totalRows > ListRowsMaxCount) {
+    throw new Error(
+      `Total number of rows across all sections cannot exceed ${ListRowsMaxCount.toString()}`,
+    )
   }
 
   const message: CloudAPISendInteractiveListMessageRequest = {

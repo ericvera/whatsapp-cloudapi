@@ -2,6 +2,15 @@ import {
   CloudAPIResponse,
   CloudAPISendInteractiveButtonsMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import {
+  ButtonIdMaxLength,
+  ButtonsMaxCount,
+  ButtonsMinCount,
+  ButtonTextMaxLength,
+  InteractiveBodyMaxLength,
+  InteractiveFooterMaxLength,
+  InteractiveHeaderTextMaxLength,
+} from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface Button {
@@ -102,33 +111,45 @@ export const sendButtonsMessage = async ({
   }
 
   // Validate button count
-  if (buttons.length < 1 || buttons.length > 3) {
-    throw new Error('Must provide between 1 and 3 buttons')
+  if (buttons.length < ButtonsMinCount || buttons.length > ButtonsMaxCount) {
+    throw new Error(
+      `Must provide between ${ButtonsMinCount.toString()} and ${ButtonsMaxCount.toString()} buttons`,
+    )
   }
 
   // Validate character limits
-  if (bodyText.length > 1024) {
-    throw new Error('Body text cannot exceed 1024 characters')
+  if (bodyText.length > InteractiveBodyMaxLength) {
+    throw new Error(
+      `Body text cannot exceed ${InteractiveBodyMaxLength.toString()} characters`,
+    )
   }
 
-  if (headerText && headerText.length > 60) {
-    throw new Error('Header text cannot exceed 60 characters')
+  if (headerText && headerText.length > InteractiveHeaderTextMaxLength) {
+    throw new Error(
+      `Header text cannot exceed ${InteractiveHeaderTextMaxLength.toString()} characters`,
+    )
   }
 
-  if (footerText && footerText.length > 60) {
-    throw new Error('Footer text cannot exceed 60 characters')
+  if (footerText && footerText.length > InteractiveFooterMaxLength) {
+    throw new Error(
+      `Footer text cannot exceed ${InteractiveFooterMaxLength.toString()} characters`,
+    )
   }
 
   // Validate button properties
   const buttonIds = new Set<string>()
 
   for (const button of buttons) {
-    if (button.id.length > 256) {
-      throw new Error('Button ID cannot exceed 256 characters')
+    if (button.id.length > ButtonIdMaxLength) {
+      throw new Error(
+        `Button ID cannot exceed ${ButtonIdMaxLength.toString()} characters`,
+      )
     }
 
-    if (button.title.length > 20) {
-      throw new Error('Button title cannot exceed 20 characters')
+    if (button.title.length > ButtonTextMaxLength) {
+      throw new Error(
+        `Button title cannot exceed ${ButtonTextMaxLength.toString()} characters`,
+      )
     }
 
     if (buttonIds.has(button.id)) {
