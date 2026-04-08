@@ -945,7 +945,7 @@ __metadata:
     "@types/node": "npm:^24.10.9"
     "@whatsapp-cloudapi/emulator": "workspace:*"
     "@whatsapp-cloudapi/types": "workspace:*"
-    commander: "npm:^14.0.2"
+    commander: "npm:^14.0.3"
     e164num: "npm:^2.0.0"
     eslint: "npm:^9.39.2"
     typescript: "npm:^5.9.3"
@@ -987,7 +987,7 @@ __metadata:
     multer: "npm:^2.0.2"
     nanoid: "npm:^5.1.6"
     picocolors: "npm:^1.1.1"
-    string-width: "npm:^8.1.0"
+    string-width: "npm:^8.1.1"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.53.1"
     vitest: "npm:^4.0.18"
@@ -1341,6 +1341,13 @@ __metadata:
   version: 14.0.2
   resolution: "commander@npm:14.0.2"
   checksum: 10c0/245abd1349dbad5414cb6517b7b5c584895c02c4f7836ff5395f301192b8566f9796c82d7bd6c92d07eba8775fe4df86602fca5d86d8d10bcc2aded1e21c2aeb
+  languageName: node
+  linkType: hard
+
+"commander@npm:^14.0.3":
+  version: 14.0.3
+  resolution: "commander@npm:14.0.3"
+  checksum: 10c0/755652564bbf56ff2ff083313912b326450d3f8d8c85f4b71416539c9a05c3c67dbd206821ca72635bf6b160e2afdefcb458e86b317827d5cb333b69ce7f1a24
   languageName: node
   linkType: hard
 
@@ -3443,13 +3450,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string-width@npm:^8.0.0, string-width@npm:^8.1.0":
+"string-width@npm:^8.0.0":
   version: 8.1.0
   resolution: "string-width@npm:8.1.0"
   dependencies:
     get-east-asian-width: "npm:^1.3.0"
     strip-ansi: "npm:^7.1.0"
   checksum: 10c0/749b5d0dab2532b4b6b801064230f4da850f57b3891287023117ab63a464ad79dd208f42f793458f48f3ad121fe2e1f01dd525ff27ead957ed9f205e27406593
+  languageName: node
+  linkType: hard
+
+"string-width@npm:^8.1.1":
+  version: 8.1.1
+  resolution: "string-width@npm:8.1.1"
+  dependencies:
+    get-east-asian-width: "npm:^1.3.0"
+    strip-ansi: "npm:^7.1.0"
+  checksum: 10c0/479841b1f7a816d04ca39c486f4c130512c1a9363b445b3424dfca88ec3e71689908e3c62a3e130c2f7037d78a65880b16655f2ba1324638b4956fcd14f28f29
   languageName: node
   linkType: hard
 
