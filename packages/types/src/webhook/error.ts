@@ -33,4 +33,10 @@ export interface WebhookError {
      */
     details: string
   }
+
+  /**
+   * Link to the WhatsApp Cloud API error-code documentation for this error
+   * @example "/documentation/business-messaging/whatsapp/support/error-codes"
+   */
+  href?: string
 }

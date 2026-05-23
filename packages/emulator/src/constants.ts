@@ -3,7 +3,7 @@ import type {
   CloudAPIVersion,
 } from '@whatsapp-cloudapi/types/cloudapi'
 
-export const SupportedVersion: CloudAPIVersion = 'v24.0'
+export const SupportedVersion: CloudAPIVersion = 'v25.0'
 
 /**
  * WhatsApp Flow message version

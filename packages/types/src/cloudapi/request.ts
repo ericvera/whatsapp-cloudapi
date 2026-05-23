@@ -28,12 +28,24 @@ export interface CloudAPIMessageRequestBase {
   /**
    * WhatsApp ID or phone number of the recipient
    * Phone numbers must include the country code
+   * Optional only when `recipient` (a business-scoped user ID) is provided
+   * instead. If both are set, `to` takes precedence.
    * @example "+16505551234"
    */
-  to: string
+  to?: string
 
   /**
-   * Controls whether event activity is shared for each message (v24.0)
+   * Business-scoped user ID (BSUID) of the recipient
+   * Use this to send to a user who has hidden their phone number behind a
+   * WhatsApp username. May be combined with `to`, in which case `to` takes
+   * precedence. Not supported for one-tap/zero-tap/copy-code authentication
+   * templates.
+   * @example "US.13491208655302741918"
+   */
+  recipient?: string
+
+  /**
+   * Controls whether event activity is shared for each message (v25.0)
    * This parameter will override the WhatsApp Business Account level setting
    * for MM Lite API and the Business level setting for Cloud API
    */
@@ -620,13 +632,13 @@ export interface CloudAPITemplateParameter {
   payload?: string
 
   /**
-   * OTP code for authentication templates (v24.0)
+   * OTP code for authentication templates (v25.0)
    * Used when implementing one-tap or zero-tap authentication
    */
   code?: string
 
   /**
-   * Button configuration for authentication templates (v24.0)
+   * Button configuration for authentication templates (v25.0)
    */
   button?: {
     /** Button type for authentication */
@@ -920,7 +932,7 @@ export interface CloudAPISendInteractiveCTAURLRequest extends CloudAPIMessageReq
 }
 
 /**
- * Request body for sending a WhatsApp Flow message (v24.0)
+ * Request body for sending a WhatsApp Flow message (v25.0)
  */
 export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBase {
   /**
@@ -940,7 +952,7 @@ export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBa
     type: 'flow'
 
     /**
-     * Optional header content (v24.0)
+     * Optional header content (v25.0)
      */
     header?: {
       type: 'text' | 'image' | 'video' | 'gif' | 'document'
@@ -995,20 +1007,20 @@ export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBa
         flow_message_version: '3'
 
         /**
-         * Token for flow session (v24.0)
+         * Token for flow session (v25.0)
          * Optional - defaults to unused
          */
         flow_token?: string
 
         /**
-         * Unique ID of the flow (v24.0)
+         * Unique ID of the flow (v25.0)
          * Required unless flow_name is set
          * Cannot be used with flow_name parameter
          */
         flow_id?: string
 
         /**
-         * The name of the Flow (v24.0)
+         * The name of the Flow (v25.0)
          * Required unless flow_id is set
          * Cannot be used with flow_id parameter
          * Note: Changing the Flow name will require updating this parameter
@@ -1022,19 +1034,19 @@ export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBa
         flow_cta: string
 
         /**
-         * The current mode of the Flow (v24.0)
+         * The current mode of the Flow (v25.0)
          * Default: published
          */
         mode?: 'draft' | 'published'
 
         /**
-         * Type of flow action (v24.0)
+         * Type of flow action (v25.0)
          * Default: navigate
          */
         flow_action?: 'navigate' | 'data_exchange'
 
         /**
-         * Payload for flow action (v24.0)
+         * Payload for flow action (v25.0)
          * Optional only if flow_action is navigate
          */
         flow_action_payload?: {
@@ -1088,7 +1100,7 @@ export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMe
            */
           text: string
           /**
-           * Optional sub-text for the header (v24.0)
+           * Optional sub-text for the header (v25.0)
            * Maximum 60 characters
            */
           sub_text?: string
@@ -1127,12 +1139,12 @@ export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMe
           type: 'gif'
           gif: {
             /**
-             * Media ID of the uploaded gif (v24.0)
+             * Media ID of the uploaded gif (v25.0)
              * Only one of id or link should be provided
              */
             id?: string
             /**
-             * Link to the gif (v24.0)
+             * Link to the gif (v25.0)
              * Only one of id or link should be provided
              */
             link?: string
@@ -1271,7 +1283,7 @@ export interface CloudAPISendInteractiveListMessageRequest extends CloudAPIMessa
 }
 
 /**
- * Request body for sending a reaction message (v24.0)
+ * Request body for sending a reaction message (v25.0)
  */
 export interface CloudAPISendReactionMessageRequest extends CloudAPIMessageRequestBase {
   /**
@@ -1298,7 +1310,7 @@ export interface CloudAPISendReactionMessageRequest extends CloudAPIMessageReque
 }
 
 /**
- * Request body for sending a call permission request message (v24.0)
+ * Request body for sending a call permission request message (v25.0)
  */
 export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
@@ -1342,7 +1354,7 @@ export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAP
 }
 
 /**
- * Request body for sending a catalog message (v24.0)
+ * Request body for sending a catalog message (v25.0)
  */
 export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageRequestWithContext {
   /**
@@ -1407,6 +1419,54 @@ export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageReques
 }
 
 /**
+ * Request body for sending a request-contact-info interactive message (v25.0)
+ * Asks the user to share their phone number. Typically sent to a
+ * business-scoped user ID (set `recipient`). The button cannot be customized,
+ * so no parameters are required.
+ * Ref: https://developers.facebook.com/docs/whatsapp/business-scoped-user-ids/
+ */
+export interface CloudAPISendRequestContactInfoMessageRequest extends CloudAPIMessageRequestBase {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'contact_request' to request the user's contact information
+     */
+    type: 'contact_request'
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content explaining why you need their contact info
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required action for the contact-info request
+     */
+    action: {
+      /**
+       * Action name
+       * Must be 'request_contact_info'
+       */
+      name: 'request_contact_info'
+    }
+  }
+}
+
+/**
  * Request body for marking a message as read
  * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/typing-indicators/
  */
@@ -1459,3 +1519,4 @@ export type CloudAPIRequest =
   | CloudAPISendReactionMessageRequest
   | CloudAPISendCallPermissionRequestMessageRequest
   | CloudAPISendCatalogMessageRequest
+  | CloudAPISendRequestContactInfoMessageRequest

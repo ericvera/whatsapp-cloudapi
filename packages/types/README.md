@@ -13,6 +13,45 @@
 - 🔒 Strict type checking
 - 📦 Zero runtime overhead - types only!
 
+## Upgrading to v5.0.0 (Business-scoped user IDs)
+
+v5.0.0 updates the types to the current WhatsApp Cloud API, including the
+**business-scoped user ID (BSUID)** / WhatsApp usernames rollout. Because users
+can now hide their phone number behind a username, several previously-required
+identifiers are now optional and a new `user_id` (BSUID) appears throughout.
+
+**Breaking changes**
+
+- `WebhookChange` is now a discriminated union on `field`
+  (`'messages' | 'user_id_update' | 'business_username_update' | 'user_preferences'`).
+  Narrow on `change.field === 'messages'` before reading `value.messages` /
+  `value.statuses`.
+- Identifiers that can now be omitted (typed optional):
+  - Webhook: `WebhookContact.wa_id`, `WebhookMessageBase.from`,
+    `WebhookStatus.recipient_id`
+  - Cloud API: `CloudAPIMessageRequestBase.to`, `CloudAPIResponse.contacts[].wa_id`
+- `WebhookStatus.status` adds `'failed'`.
+
+**New (non-breaking) additions**
+
+- BSUID fields: `user_id` / `parent_user_id` on contacts, `from_user_id` /
+  `from_parent_user_id` on messages, `recipient_user_id` /
+  `recipient_parent_user_id` on statuses, `user_id` on the send response, and a
+  new `recipient` field on send requests (to address a BSUID directly).
+- Inbound message types: `WebhookReactionMessage`, `WebhookLocationMessage`,
+  `WebhookContactsMessage`.
+- New webhook events: `user_id_update`, `business_username_update`,
+  `user_preferences`.
+- `CloudAPISendRequestContactInfoMessageRequest` for requesting a user's phone
+  number, plus `profile.username`, `identity_key_hash`, message-level
+  `errors`/`referral`, and `context.referred_product`.
+
+**Meta migration references**
+
+- [Business-scoped user IDs](https://developers.facebook.com/docs/whatsapp/business-scoped-user-ids/)
+- [Webhooks reference (messages)](https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/components)
+- [Graph API changelog (v25.0)](https://developers.facebook.com/docs/graph-api/changelog/version25.0/)
+
 ## Installation
 
 ```bash
@@ -49,6 +88,7 @@ For request/response types when sending messages.
 | `CloudAPISendFlowMessageRequest`                  | WhatsApp Flow messages               |
 | `CloudAPISendCatalogMessageRequest`               | Product catalog messages             |
 | `CloudAPISendCallPermissionRequestMessageRequest` | Request call permissions             |
+| `CloudAPISendRequestContactInfoMessageRequest`    | Request the user's contact info      |
 
 #### Example
 
@@ -131,11 +171,16 @@ import {
 
 // Your webhook handler gets full type information
 function handleWebhook(payload: WebhookPayload) {
-  const message = payload.entry[0].changes[0].value.messages?.[0]
+  const change = payload.entry[0].changes[0]
 
-  if (message?.type === 'text') {
-    // message is automatically typed as WebhookTextMessage
-    console.log(message.text.body)
+  // `change` is a discriminated union — narrow on `field` first
+  if (change.field === 'messages') {
+    const message = change.value.messages?.[0]
+
+    if (message?.type === 'text') {
+      // message is automatically typed as WebhookTextMessage
+      console.log(message.text.body)
+    }
   }
 }
 ```
@@ -160,12 +205,17 @@ interface WebhookPayload {
   object: 'whatsapp_business_account'
   entry: {
     id: string
-    changes: {
-      value: {
-        messages?: WebhookMessage[]
-        statuses?: WebhookStatus[]
-      }
-    }[]
+    time?: number
+    // `changes` is a discriminated union on `field`
+    changes: (
+      | { field: 'messages'; value: WebhookValue }
+      | { field: 'user_id_update'; value: WebhookUserIdUpdateValue }
+      | {
+          field: 'business_username_update'
+          value: WebhookBusinessUsernameUpdateValue
+        }
+      | { field: 'user_preferences'; value: WebhookUserPreferencesValue }
+    )[]
   }[]
 }
 ```

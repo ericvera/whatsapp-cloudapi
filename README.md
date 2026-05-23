@@ -21,6 +21,15 @@ This monorepo contains the following packages:
 - 📦 Modern ESM packages
 - ✅ Full compatibility with WhatsApp Business Platform
 
+## Upgrading
+
+v5.0.0 brings the types in line with the current WhatsApp Cloud API, including
+the **business-scoped user ID (BSUID)** / WhatsApp usernames rollout. This
+includes breaking changes (some identifiers are now optional and `WebhookChange`
+is a discriminated union). See the
+[types package upgrade guide](./packages/types#upgrading-to-v500-business-scoped-user-ids)
+for details and Meta migration links.
+
 ## Requirements
 
 - Node.js >= 22

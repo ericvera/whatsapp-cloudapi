@@ -10,7 +10,7 @@ export const WhatsAppCloudAPIBaseUrl = 'https://graph.facebook.com'
 /**
  * WhatsApp Cloud API version
  */
-export const WhatsAppCloudAPIVersion = 'v24.0'
+export const WhatsAppCloudAPIVersion = 'v25.0'
 
 /**
  * WhatsApp Flow message version

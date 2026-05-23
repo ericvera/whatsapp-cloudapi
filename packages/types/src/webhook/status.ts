@@ -63,17 +63,32 @@ export interface WebhookStatus {
   id: string
 
   /**
-   * WhatsApp ID of the message recipient
+   * Phone-number-based WhatsApp ID of the message recipient
+   * May be omitted for `failed` statuses when the message was addressed to a
+   * business-scoped user ID rather than a phone number.
    */
-  recipient_id: string
+  recipient_id?: string
+
+  /**
+   * Business-scoped user ID (BSUID) of the message recipient
+   * Always set for `sent`, `delivered`, and `read` statuses.
+   */
+  recipient_user_id?: string
+
+  /**
+   * Parent business-scoped user ID of the message recipient
+   * Only present for businesses enrolled in parent BSUIDs.
+   */
+  recipient_parent_user_id?: string
 
   /**
    * Current status of the message
+   * - sent: Message has been sent by the business
    * - delivered: Message has been delivered to the recipient
    * - read: Message has been read by the recipient
-   * - sent: Message has been sent by the business
+   * - failed: Message failed to send (see `errors` for details)
    */
-  status: 'delivered' | 'read' | 'sent'
+  status: 'delivered' | 'read' | 'sent' | 'failed'
 
   /**
    * Unix timestamp for when this status was updated
