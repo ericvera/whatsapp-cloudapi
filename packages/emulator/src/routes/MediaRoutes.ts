@@ -276,11 +276,11 @@ export class MediaRoutes {
           expiresAt: expiresAt.toISOString(),
         })
 
+        // The real upload endpoint returns the media ID only. file_size,
+        // mime_type, and sha256 are surfaced by the GET media-URL/metadata
+        // response instead, so omit them here for parity.
         const response: CloudAPIMediaUploadResponse = {
           id: mediaId,
-          file_size: req.file.size,
-          mime_type: req.file.mimetype,
-          sha256,
         }
 
         res.status(200).json(response)

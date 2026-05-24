@@ -45,7 +45,7 @@ afterAll(async () => {
 
 const uploadPath = `/v25.0/${businessPhoneNumberId}/media`
 
-it('uploads a PNG and returns id, file_size, mime_type, and sha256', async () => {
+it('uploads a PNG and returns the media id only', async () => {
   const bytes = Buffer.from('fake png bytes')
 
   const res = await request
@@ -56,9 +56,11 @@ it('uploads a PNG and returns id, file_size, mime_type, and sha256', async () =>
   expect(res.status).toBe(200)
   const body = res.body as CloudAPIMediaUploadResponse
   expect(body.id).toMatch(/^media_/)
-  expect(body.file_size).toBe(bytes.length)
-  expect(body.mime_type).toBe('image/png')
-  expect(body.sha256).toBe(createHash('sha256').update(bytes).digest('hex'))
+  // The real upload endpoint returns { id } only; the metadata fields are
+  // surfaced by the GET media-URL response instead.
+  expect(body.file_size).toBeUndefined()
+  expect(body.mime_type).toBeUndefined()
+  expect(body.sha256).toBeUndefined()
 })
 
 it('accepts an audio file', async () => {
@@ -160,7 +162,7 @@ it('round-trips upload -> metadata -> download with matching bytes', async () =>
   expect(meta.id).toBe(uploaded.id)
   expect(meta.mime_type).toBe('image/png')
   expect(meta.file_size).toBe(bytes.length)
-  expect(meta.sha256).toBe(uploaded.sha256)
+  expect(meta.sha256).toBe(createHash('sha256').update(bytes).digest('hex'))
   expect(meta.url).toContain(`/v25.0/${uploaded.id}/download`)
 
   const downloadPath = new URL(meta.url).pathname
