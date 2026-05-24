@@ -432,6 +432,14 @@ export class WhatsAppEmulator {
     this.app.get('/webhook', this.handleWebhookValidation.bind(this))
   }
 
+  /**
+   * Returns the underlying HTTP server (or null if not started).
+   * Exposed so integration tests can drive the running server with supertest.
+   */
+  public getServer(): Server | null {
+    return this.server
+  }
+
   public async start(): Promise<void> {
     if (!this.app || !this.config) {
       throw new Error('Emulator not properly initialized')

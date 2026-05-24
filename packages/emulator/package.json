@@ -36,7 +36,9 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.9",
+    "@types/supertest": "^7.2.0",
     "eslint": "^9.39.2",
+    "supertest": "^7.2.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
     "vitest": "^4.0.18"
