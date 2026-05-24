@@ -3,21 +3,23 @@
 > Inventory of what this library implements against the documented WhatsApp
 > Cloud API **v25.0** surface: send messages, media, block users, webhooks, and
 > business-scoped user IDs (BSUID). Each row states whether the **current code**
-> matches the documented spec. Rows marked `➖` carry a numbered note below the
-> table explaining the deliberate scope decision.
+> matches the documented spec. Rows marked `🟡` or `➖` carry a numbered note
+> below the table explaining the deviation.
 
 ## Status legend
 
-There is a single status dimension: does the code, as it is right now, match the
-documented v25.0 spec for that item?
+A single status dimension: how closely does the code, as it is right now,
+conform to the documented v25.0 spec for that item?
 
-| Status           | Meaning                                                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅ Matches       | Current code matches the documented v25.0 spec for this item.                                                                                             |
-| ➖ Not supported | Documented by Meta but intentionally not implemented, or implemented with a deliberate simplification. Every `➖` has a numbered note stating the reason. |
+| Status           | Meaning                                                                                                                    |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ✅ Matches       | **Exactly** matches the documented v25.0 spec for this item.                                                               |
+| 🟡 Partial       | Implemented, but not an exact match — a superset, an optionality difference, or a deliberate simplification. See the note. |
+| ➖ Not supported | Documented by Meta but not implemented. See the note.                                                                      |
 
-Every `➖` is a conscious scope decision (a client helper or emulator behaviour
-we chose not to build); there are no unexplained gaps.
+Every `🟡` and `➖` carries a numbered note; each is a conscious decision (a
+relaxation or superset we accept, or behaviour we chose not to build), not an
+unexplained gap.
 
 ## Versions & maintenance
 
@@ -49,17 +51,25 @@ variants, each with a typed client helper in `packages/client/src`.
 | Field                      | Documented as           | Status |
 | -------------------------- | ----------------------- | ------ |
 | `messaging_product`        | required (`'whatsapp'`) | ✅     |
-| `recipient_type`           | `individual` / `group`  | ✅     |
-| `to`                       | phone / group id        | ✅     |
+| `recipient_type`           | `individual` / `group`  | 🟡 ¹   |
+| `to`                       | phone / group id        | 🟡 ²   |
 | `recipient`                | BSUID (see §6)          | ✅     |
 | `type`                     | required discriminant   | ✅     |
-| `context.message_id`       | reply threading         | ✅     |
+| `context.message_id`       | reply threading         | 🟡 ³   |
 | `biz_opaque_callback_data` | tracking string (≤512)  | ✅     |
 | `message_activity_sharing` | event-sharing override  | ✅     |
 
-`to` and `recipient` are both optional at the type level: a send is valid with
-either one (`to` takes precedence when both are present). `context.message_id` is
-exposed on the reply-capable variants via `CloudAPIMessageRequestWithContext`.
+**Notes**
+
+1. Optional in the type; the docs mark it required (defaulting to `individual`).
+   Omitting it is accepted by the API, so this is a harmless relaxation.
+2. `to` and `recipient` are both optional at the type level; the spec requires at
+   least one, with `to` taking precedence. The "at least one" rule is enforced by
+   the emulator at runtime, not by the type.
+3. Reply `context` is exposed on most variants (via
+   `CloudAPIMessageRequestWithContext`) but **not** on `text`, `image`, `flow`,
+   `reaction`, or `contact_request`; the docs allow replying with at least
+   `text` / `image`.
 
 ### 1.2 Per-type coverage
 
@@ -69,7 +79,7 @@ applies to the media types.
 | Type                       | Implementing type                                 | Key fields                                                  | Status |
 | -------------------------- | ------------------------------------------------- | ----------------------------------------------------------- | ------ |
 | `text`                     | `CloudAPISendTextMessageRequest`                  | `text.{body, preview_url?}`                                 | ✅     |
-| `image`                    | `CloudAPISendImageMessageRequest`                 | `image.{id, caption?}`                                      | ➖ ¹   |
+| `image`                    | `CloudAPISendImageMessageRequest`                 | `image.{id, caption?}`                                      | 🟡 ¹   |
 | `audio`                    | `CloudAPISendAudioMessageRequest`                 | `audio.{id?, link?}`                                        | ✅     |
 | `video`                    | `CloudAPISendVideoMessageRequest`                 | `video.{id?, link?, caption?}`                              | ✅     |
 | `document`                 | `CloudAPISendDocumentMessageRequest`              | `document.{id?, link?, caption?, filename?}`                | ✅     |
@@ -92,40 +102,39 @@ applies to the media types.
 **Notes**
 
 1. The client and types model `image.id` only; the documented `image.link`
-   alternative is intentionally not supported. This is a pre-existing narrowing
-   kept to avoid a breaking change (every other media type accepts `id` **or**
-   `link`).
+   alternative is not supported. Pre-existing narrowing, kept to avoid a breaking
+   change (every other media type accepts `id` **or** `link`).
 2. Single-product (`product`) and multi-product (`product_list`) interactive
-   messages are intentionally out of scope: they are not in the
-   `CloudAPIRequest` union and were not part of this project's spec.
+   messages are out of scope: they are not in the `CloudAPIRequest` union and
+   were not part of this project's spec.
 
 ---
 
 ## 2. Emulator `/messages` behaviour
 
-Status here is whether the emulator
-(`packages/emulator/src/routes/MessageRoutes.ts`) behaves like the real API for
-the documented surface.
+How the emulator (`packages/emulator/src/routes/MessageRoutes.ts`) behaves
+against the documented API. (Its console rendering is an internal dev
+convenience, not a documented surface, so it is not assessed here.)
 
-| Behaviour                                                                                                            | Status |
-| -------------------------------------------------------------------------------------------------------------------- | ------ |
-| `version` must equal `SupportedVersion` (400 otherwise)                                                              | ✅     |
-| Accept a send addressed by `to` **or** `recipient` (BSUID); 400 only if both are missing                             | ✅     |
-| Fire the status webhook on accept                                                                                    | ✅     |
-| Mark-as-read handling                                                                                                | ✅     |
-| Deep request validation: `text`, `image`, `contacts`, interactive cta_url/flow/button/list/contact_request           | ✅     |
-| Deep request validation: `audio`, `video`, `document`, `sticker`, `location`, catalog, call_permission               | ➖ ¹   |
-| Type-specific console log: `text`, `image`, `reaction`, `contacts`, contact_request, interactive button/list/cta_url | ✅     |
-| Type-specific console log: `audio`, `video`, `document`, `sticker`, `location`, flow, catalog, call_permission       | ➖ ²   |
+| Behaviour                                                                                             | Status |
+| ----------------------------------------------------------------------------------------------------- | ------ |
+| Reject an unsupported API version (400)                                                               | ✅     |
+| Accept a send addressed by `to` **or** `recipient` (BSUID); 400 only when both are missing            | ✅     |
+| Success response shape (`messaging_product`, `contacts[]`, `messages[]`)                              | ✅     |
+| Mark-as-read response (`{ success: true }`)                                                           | ✅     |
+| Deliver a delivery-status webhook on accept                                                           | 🟡 ¹   |
+| Request validation: `text`, `image`, `contacts`, interactive cta_url/flow/button/list/contact_request | 🟡 ²   |
+| Request validation: `audio`, `video`, `document`, `sticker`, `location`, catalog, call_permission     | ➖ ³   |
 
 **Notes**
 
-1. These types are accepted and answered `200` (matching real-API acceptance of
-   a well-formed body), but their fields are not validated. Deep validation is a
-   convenience the emulator only provides for the most-used types; intentional
-   dev-tool simplification.
-2. These render via the generic text / "unsupported message" logger rather than
-   a dedicated bubble. Cosmetic only — the send still succeeds; intentional.
+1. Fires a single status webhook; it does not reproduce the full documented
+   status lifecycle (sent → delivered → read) or the conversation / pricing
+   detail.
+2. Validates required fields and common limits for these types, but not the
+   complete documented constraint set.
+3. Accepted and answered `200` (matching real-API acceptance of a well-formed
+   body) but not field-validated — intentional dev-tool simplification.
 
 ---
 
@@ -156,15 +165,19 @@ Endpoints: `POST /{phone-number-id}/media` (upload), `GET /{media-id}`
 
 | Surface                        | Type / symbol                                                                        | Status |
 | ------------------------------ | ------------------------------------------------------------------------------------ | ------ |
-| Upload — returns `{ id }`      | `CloudAPIMediaUploadResponse`; client `uploadMedia`; emulator `POST …/media`         | ✅     |
+| Upload — returns `{ id }`      | `CloudAPIMediaUploadResponse`; client `uploadMedia`; emulator `POST …/media`         | 🟡 ¹   |
 | Get URL / metadata             | `CloudAPIMediaURLResponse`; client `getMediaUrl`; emulator `GET /{media-id}`         | ✅     |
 | Download (binary)              | client `downloadMedia`; emulator `GET …/download`                                    | ✅     |
 | Delete — returns `{ success }` | `CloudAPIMediaDeleteResponse`; client `deleteMedia`; emulator `DELETE /{media-id}`   | ✅     |
-| Media-ID / URL expiry          | Media IDs expire after 30 days (API) / 7 days (webhook); URLs expire after 5 minutes | ➖ ¹   |
+| Media-ID / URL expiry          | Media IDs expire after 30 days (API) / 7 days (webhook); URLs expire after 5 minutes | 🟡 ²   |
 
 **Notes**
 
-1. The emulator gives uploaded media IDs a 30-day expiry but does not expire
+1. The endpoint and emulator return `{ id }` only (matching the docs), but the
+   `CloudAPIMediaUploadResponse` type additionally declares optional
+   `file_size` / `mime_type` / `sha256` (a v25.0-tagged superset) that are never
+   populated by the upload response.
+2. The emulator gives uploaded media IDs a 30-day expiry but does not expire
    download **URLs** after 5 minutes (a returned URL stays valid for the
    emulator's lifetime). Intentional dev-tool simplification.
 
@@ -179,7 +192,7 @@ Enforced by both client `uploadMedia` and emulator `MediaRoutes`
 | **audio**    | `audio/aac`, `audio/amr`, `audio/mpeg`, `audio/mp4`, `audio/ogg`                                                                                                                                         | 16 MB                           | ✅     |
 | **video**    | `video/3gpp`, `video/mp4`                                                                                                                                                                                | 16 MB                           | ✅     |
 | **document** | `text/plain`, `application/pdf`, `application/vnd.ms-excel`, `…spreadsheetml.sheet`, `application/msword`, `…wordprocessingml.document`, `application/vnd.ms-powerpoint`, `…presentationml.presentation` | 100 MB                          | ✅     |
-| **sticker**  | `image/webp`                                                                                                                                                                                             | 100 KB static / 500 KB animated | ➖ ¹   |
+| **sticker**  | `image/webp`                                                                                                                                                                                             | 100 KB static / 500 KB animated | 🟡 ¹   |
 
 - Inbound media-message download cap: **100 MB** (error `131052`). Mismatched
   MIME error: `131053`.
@@ -187,9 +200,8 @@ Enforced by both client `uploadMedia` and emulator `MediaRoutes`
 **Notes**
 
 1. A single 500 KB cap is enforced for stickers; the 100 KB **static**-sticker
-   limit is not separately checked (a static WebP up to 500 KB is accepted).
-   Intentional simplification — the code does not inspect WebP frames to tell
-   static from animated.
+   limit is not separately checked (a static WebP up to 500 KB is accepted). The
+   code does not inspect WebP frames to tell static from animated.
 
 ---
 
