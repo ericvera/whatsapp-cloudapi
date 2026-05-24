@@ -118,3 +118,108 @@ it('should accept PNG images', async () => {
 
   expect(result).toEqual({ id: 'mock_media_png' })
 })
+
+it('should accept an audio file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_audio' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['audio'], { type: 'audio/mpeg' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_audio' })
+})
+
+it('should accept a video file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_video' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['video'], { type: 'video/mp4' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_video' })
+})
+
+it('should accept a document file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_doc' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['doc'], { type: 'application/pdf' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_doc' })
+})
+
+it('should accept a sticker file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_sticker' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['sticker'], { type: 'image/webp' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_sticker' })
+})
+
+it('should accept an audio file larger than the image limit', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_big_audio' }),
+  })
+
+  // 6MB: over the 5MB image limit but under the 16MB audio limit
+  const bigAudio = new Blob(['x'.repeat(6 * 1024 * 1024)], {
+    type: 'audio/mpeg',
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: bigAudio,
+  })
+
+  expect(result).toEqual({ id: 'mock_big_audio' })
+})
+
+it('should reject a sticker exceeding the sticker size limit', async () => {
+  // 600KB: over the 500KB sticker limit
+  const bigSticker = new Blob(['x'.repeat(600 * 1024)], {
+    type: 'image/webp',
+  })
+
+  await expect(
+    uploadMedia({
+      accessToken: 'test-token',
+      from: '1234567890',
+      file: bigSticker,
+    }),
+  ).rejects.toThrow('File size too large')
+})
+
+it('should reject a MIME type in no category', async () => {
+  await expect(
+    uploadMedia({
+      accessToken: 'test-token',
+      from: '1234567890',
+      file: new Blob(['x'], { type: 'application/x-foo' }),
+    }),
+  ).rejects.toThrow('Unsupported MIME type: application/x-foo')
+})

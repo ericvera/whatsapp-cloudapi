@@ -1,7 +1,8 @@
 import { CloudAPIMediaUploadResponse } from '@whatsapp-cloudapi/types/cloudapi'
 import {
-  ImageMaxFileSize,
-  ImageSupportedMimeTypes,
+  AllSupportedMediaMimeTypes,
+  MediaCategory,
+  MediaSpecByCategory,
   WhatsAppCloudAPIBaseUrl,
   WhatsAppCloudAPIVersion,
 } from './constants.js'
@@ -11,7 +12,7 @@ interface UploadMediaParams {
   accessToken: string
   /** The sender's phone number ID (e.g. "1234567890") */
   from: string
-  /** The image file to upload as a Blob */
+  /** The media file to upload as a Blob (image/audio/video/document/sticker) */
   file: Blob
   /**
    * Optional base URL for the API (defaults to Facebook Graph API, use
@@ -21,7 +22,9 @@ interface UploadMediaParams {
 }
 
 /**
- * Uploads an image to the WhatsApp Cloud API media endpoint
+ * Uploads a media file to the WhatsApp Cloud API media endpoint
+ * Supports all v25.0 media categories (image, audio, video, document, sticker);
+ * the MIME type and size limit are validated per category.
  * @param params - Upload parameters
  * @returns Promise with the media upload response containing the media ID
  */
@@ -31,19 +34,23 @@ export const uploadMedia = async (
   const { accessToken, from, file, baseUrl } = params
   const apiUrl = baseUrl ?? WhatsAppCloudAPIBaseUrl
 
-  // Validate file size
-  if (file.size > ImageMaxFileSize) {
+  // Determine the media category from the file's MIME type
+  const category = (Object.keys(MediaSpecByCategory) as MediaCategory[]).find(
+    (cat) => MediaSpecByCategory[cat].mimeTypes.includes(file.type),
+  )
+
+  if (!category) {
     throw new Error(
-      `File size too large: ${file.size.toString()} bytes. Maximum allowed: ${ImageMaxFileSize.toString()} bytes (5MB)`,
+      `Unsupported MIME type: ${file.type}. Supported types: ${AllSupportedMediaMimeTypes.join(', ')}`,
     )
   }
 
-  // Validate MIME type
-  const supportedTypes: readonly string[] = ImageSupportedMimeTypes
+  // Validate file size against the category's limit
+  const { maxBytes } = MediaSpecByCategory[category]
 
-  if (!supportedTypes.includes(file.type)) {
+  if (file.size > maxBytes) {
     throw new Error(
-      `Unsupported MIME type: ${file.type}. Supported types: ${ImageSupportedMimeTypes.join(', ')}`,
+      `File size too large: ${file.size.toString()} bytes. Maximum allowed for ${category}: ${maxBytes.toString()} bytes`,
     )
   }
 
