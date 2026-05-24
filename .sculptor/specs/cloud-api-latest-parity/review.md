@@ -6,8 +6,8 @@
   doc, corrected/added types, all 10 missing send helpers, the full media
   lifecycle (client + emulator), the Block API (types + client + emulator), and
   proper `contacts`/`contact_request` handling. `yarn smoke` (build + lint +
-  test) is green — **214 tests across 30 files pass**, with 20 new co-located
-  test files.
+  test) is green — **216 tests across 30 files pass** (214 at review time, plus
+  2 added while resolving findings), with 20 new co-located test files.
 - **One clear pre-merge cleanup:** the checked-in audit deliverable
   `docs/cloud-api-v25-coverage.md` ended with stray tool-call artifact tags
   `</content>` / `</invoke>` (lines 329–330). Low effort, but it's a published
@@ -52,14 +52,14 @@
 | REQ-EMU-3    | Covered            | Other 8 types left as-is (still 200 / logged)                                                                                                                          |
 | REQ-EMU-4    | Covered            | No changes under `packages/cli`; smoke build passes                                                                                                                    |
 | REQ-LEGACY-1 | Covered            | Sole break (`wa_id` required→optional, `CloudAPIVersion` v24→v25) shipped as `feat!:` `e391ffd`                                                                        |
-| REQ-TEST-1   | Covered            | 20 new co-located `*.test.ts`; 214 tests pass                                                                                                                          |
+| REQ-TEST-1   | Covered            | 20 new co-located `*.test.ts`; 216 tests pass                                                                                                                          |
 
 ## User Scenarios
 
 - **A — Read the audit:** Delivered. `docs/cloud-api-v25-coverage.md` is a
   thorough, per-surface, field-by-field checklist with Meta-doc references and a
-  re-run procedure. _Caveat:_ it ends with two stray artifact tags (see
-  Findings #1).
+  re-run procedure. The two stray artifact tags it previously ended with have
+  been removed (Findings #1, resolved in `11684e0`).
 - **B — Send any message type:** Delivered. All 17 `/messages` variants now have
   a typed helper; the 10 new ones are exported and unit-tested with no `any`.
 - **C — Narrow a webhook:** Delivered. The webhook unions/objects carry the
@@ -90,7 +90,8 @@
   (supertest harness). (`downloadMedia` is covered via the emulator round-trip
   test rather than a dedicated client test.)
 - **Test suite status:** PASS — `yarn smoke` (build + lint + `vitest run`) exits
-  0; **214 tests / 30 files passed**.
+  0; **216 tests / 30 files passed** (214 baseline + 2 added for the Finding #2
+  BSUID path).
 - **Integration tests run:** Emulator route tests via supertest (media, block,
   message routes) — all green. No browser/e2e tests exist for this repo by
   design (`.sculptor/testing.md`).
