@@ -28,6 +28,59 @@ export interface CloudAPIMediaUploadResponse {
 }
 
 /**
+ * Response from retrieving a media URL / metadata
+ * Returned by GET /{media-id}, which resolves an uploaded or inbound media ID
+ * to a short-lived authenticated download URL plus its metadata.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+ */
+export interface CloudAPIMediaURLResponse {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Short-lived, authenticated URL for downloading the media binary
+   * Expires after 5 minutes; query the media ID again to obtain a new URL.
+   * Requires the access token in the request to download.
+   */
+  url: string
+
+  /**
+   * MIME type of the media file
+   */
+  mime_type: string
+
+  /**
+   * SHA256 hash of the media file
+   */
+  sha256: string
+
+  /**
+   * File size in bytes
+   */
+  file_size: number
+
+  /**
+   * The unique identifier for the media
+   */
+  id: string
+}
+
+/**
+ * Response from deleting a media asset
+ * Returned by DELETE /{media-id}.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+ */
+export interface CloudAPIMediaDeleteResponse {
+  /**
+   * Indicates whether the deletion was successful
+   */
+  success: boolean
+}
+
+/**
  * Main response type for WhatsApp Cloud API requests
  */
 export interface CloudAPIResponse {
