@@ -99,7 +99,9 @@ export async function exportMedia(
 
     for (const [id, entry] of mediaStorage.entries()) {
       if (now <= entry.expiresAt) {
-        validEntries.push(entry)
+        // Strip the in-memory bytes; the manifest stays metadata-only
+        const { data: _data, ...rest } = entry
+        validEntries.push(rest)
       } else {
         mediaStorage.delete(id)
         expiredCount++
