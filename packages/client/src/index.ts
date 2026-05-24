@@ -1,4 +1,7 @@
 export * from './constants.js'
+export * from './deleteMedia.js'
+export * from './downloadMedia.js'
+export * from './getMediaUrl.js'
 export * from './markMessageRead.js'
 export * from './sendAudioMessage.js'
 export * from './sendButtonsMessage.js'
