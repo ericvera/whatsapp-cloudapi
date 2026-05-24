@@ -50,6 +50,7 @@ strict TypeScript. Published to npm as `@whatsapp-cloudapi/*`.
 - **Push command:** `git push -u origin <branch>`
 - **Create MR/PR (base command):** `gh pr create --base main` <!-- autonomous skills append --title / --body at runtime -->
 - **Auto-publish allowed:** `no` <!-- read by autonomous skills; they stop after committing and let the user push/open the PR -->
+- **No AI attribution (REQUIRED):** Commit messages and PR/MR bodies MUST NOT contain any AI co-author or "co-developed by"/"generated with" trailers — no `Co-Authored-By: Claude`, no `Co-authored-by: Sculptor`, none. Use plain messages.
 - Note: npm publishing is fully automated by CI. On merge to `main`,
   `.github/workflows/publish.yml` runs conventional-changelog, bumps
   versions, publishes all four packages to npm, and creates a GitHub
