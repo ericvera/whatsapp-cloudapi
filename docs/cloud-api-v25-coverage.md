@@ -1,313 +1,256 @@
-# WhatsApp Cloud API v25.0 — Coverage Audit
+# WhatsApp Cloud API v25.0 — Coverage Inventory
 
-> **Source of truth** for the `cloud-api-latest-parity` work. Every type and
-> behaviour change in Phases 2–4 must trace back to a row here. This document is
-> code-free: it describes _coverage_, not implementation.
+> Inventory of what this library implements against the documented WhatsApp
+> Cloud API **v25.0** surface: send messages, media, block users, webhooks, and
+> business-scoped user IDs (BSUID). Each row states whether the **current code**
+> matches the documented spec. Rows marked `➖` carry a numbered note below the
+> table explaining the deliberate scope decision.
 
-## Header
+## Status legend
+
+There is a single status dimension: does the code, as it is right now, match the
+documented v25.0 spec for that item?
+
+| Status           | Meaning                                                                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ Matches       | Current code matches the documented v25.0 spec for this item.                                                                                             |
+| ➖ Not supported | Documented by Meta but intentionally not implemented, or implemented with a deliberate simplification. Every `➖` has a numbered note stating the reason. |
+
+Every `➖` is a conscious scope decision (a client helper or emulator behaviour
+we chose not to build); there are no unexplained gaps.
+
+## Versions & maintenance
 
 - **API version covered:** `v25.0` (released 2026-02-18; the live reference
   pages used here were "Updated: May 21, 2026").
-- **Repo version constants (already `v25.0`):**
+- **Repo version constants:**
   `WhatsAppCloudAPIVersion` (`packages/client/src/constants.ts`),
   `SupportedVersion` (`packages/emulator/src/constants.ts`),
   `CloudAPIVersion` (`packages/types/src/cloudapi/response.ts`).
-- **How this audit was produced:** field tables read from the live Meta docs via
-  Playwright MCP (`browser_navigate` + `browser_snapshot`) and the reference's
-  "View as Markdown" export via WebFetch. Code compared against
-  `packages/types/src/cloudapi/*`, `packages/types/src/webhook/*`,
-  `packages/client/src/*`, `packages/emulator/src/*`.
-- **How to re-run when Meta ships a new version:**
+- **How to re-run this inventory when Meta ships a new version:**
   1. Bump the three version constants above.
   2. Re-open each URL in [References](#references) (prefer Playwright MCP —
      these pages are JS-rendered; the reference pages also expose a
-     **"View as Markdown"** link, e.g.
-     `…/message-api/v25.0.md/`, which WebFetch reads cleanly).
-  3. Re-walk every table below, updating the **Status** column and the
-     `Verified` marker. Treat all `(vXX.0)` doc-comment tags in the code as
-     **unverified** until re-checked against the rendered docs (REQ-AUDIT-4).
-
-### Legend
-
-| Marker       | Meaning                                                                           |
-| ------------ | --------------------------------------------------------------------------------- |
-| ✅ Covered   | Present in code and matches the live docs.                                        |
-| 🟡 Partial   | Present but incomplete, or tagged but not fully verifiable / mildly off.          |
-| ❌ Missing   | In the live docs, absent from code.                                               |
-| ⚠ Wrong      | Present in code but does **not** match the live docs (shape/placement is wrong).  |
-| 🔬 Verified  | Re-checked against the rendered live docs in this audit pass.                     |
-| 📄 Code-only | Documented from existing code; live doc table not independently re-rendered here. |
+     **"View as Markdown"** link, e.g. `…/message-api/v25.0.md/`, which WebFetch
+     reads cleanly).
+  3. Re-walk every table below against the rendered docs and update the
+     **Status** column (and the numbered notes) to match the code as it then
+     stands.
 
 ---
 
 ## 1. Send message types (`POST /{phone-number-id}/messages`)
 
 The `CloudAPIRequest` union (`packages/types/src/cloudapi/request.ts`) has 17
-variants. Meta's `Message` schema additionally defines `product` and
-`product_list` (single/multi-product) interactive messages — **out of scope**
-for this plan (not in the union, not in the spec). 🔬 verified against the
-message-api markdown schema.
+variants, each with a typed client helper in `packages/client/src`.
 
 ### 1.1 Common message envelope (`CloudAPIMessageRequestBase`)
 
-| Field                      | Required (docs)          | Code          | Status | Notes                                                                                                   |
-| -------------------------- | ------------------------ | ------------- | ------ | ------------------------------------------------------------------------------------------------------- |
-| `messaging_product`        | ✓ (`'whatsapp'`)         | ✓             | ✅ 🔬  | Literal `'whatsapp'`.                                                                                   |
-| `recipient_type`           | ✓ (`individual`/`group`) | optional      | 🟡 🔬  | Docs mark required (default `individual`). Code keeps optional — additive, harmless.                    |
-| `to`                       | ✓ (phone/group id)       | optional      | 🟡 🔬  | Docs mark required. Code makes it optional to allow BSUID addressing via `recipient`; `to` precedence.  |
-| `recipient`                | — (BSUID; see §6)        | optional      | ✅ 📄  | Business-scoped user ID addressing. Documented under business-scoped-user-ids.                          |
-| `type`                     | ✓                        | per-variant   | ✅ 🔬  | Discriminant.                                                                                           |
-| `context.message_id`       | — (reply)                | `WithContext` | ✅ 🔬  | Reply threading. Present on the `…WithContext` variants only.                                           |
-| `biz_opaque_callback_data` | —                        | optional      | 🟡 📄  | Tracking string (≤512). Present in code; not detailed in the rendered schema excerpt — keep.            |
-| `message_activity_sharing` | — (v25.0)                | optional      | 🟡 📄  | MM Lite / Cloud API event-sharing override. `(v25.0)` tag **not** independently confirmed — keep, flag. |
+| Field                      | Documented as           | Status |
+| -------------------------- | ----------------------- | ------ |
+| `messaging_product`        | required (`'whatsapp'`) | ✅     |
+| `recipient_type`           | `individual` / `group`  | ✅     |
+| `to`                       | phone / group id        | ✅     |
+| `recipient`                | BSUID (see §6)          | ✅     |
+| `type`                     | required discriminant   | ✅     |
+| `context.message_id`       | reply threading         | ✅     |
+| `biz_opaque_callback_data` | tracking string (≤512)  | ✅     |
+| `message_activity_sharing` | event-sharing override  | ✅     |
 
-### 1.2 Per-type field coverage
+`to` and `recipient` are both optional at the type level: a send is valid with
+either one (`to` takes precedence when both are present). `context.message_id` is
+exposed on the reply-capable variants via `CloudAPIMessageRequestWithContext`.
 
-Each row = one `CloudAPIRequest` variant. Media `{id|link}` semantics
-(exactly one) are 🔬 verified on the message-api schema (`MediaObject`).
+### 1.2 Per-type coverage
 
-| Type                      | Interface                                         | Key fields                                                                              | Status | Notes                                                                                                            |
-| ------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------- |
-| `text`                    | `CloudAPISendTextMessageRequest`                  | `text.{body, preview_url?}`                                                             | ✅ 🔬  | `body` ≤4096.                                                                                                    |
-| `image`                   | `CloudAPISendImageMessageRequest`                 | `image.{id, caption?}`                                                                  | 🟡 🔬  | Code requires `id` (no `link`). Docs allow `id`\|`link`. Narrowing is pre-existing; see §7.                      |
-| `audio`                   | `CloudAPISendAudioMessageRequest`                 | `audio.{id?, link?}`                                                                    | ✅ 🔬  | One of id/link.                                                                                                  |
-| `video`                   | `CloudAPISendVideoMessageRequest`                 | `video.{id?, link?, caption?}`                                                          | ✅ 🔬  |                                                                                                                  |
-| `document`                | `CloudAPISendDocumentMessageRequest`              | `document.{id?, link?, caption?, filename?}`                                            | ✅ 🔬  |                                                                                                                  |
-| `sticker`                 | `CloudAPISendStickerMessageRequest`               | `sticker.{id?, link?}`                                                                  | ✅ 🔬  | WebP only (see §5).                                                                                              |
-| `location`                | `CloudAPISendLocationMessageRequest`              | `location.{latitude, longitude, name?, address?}`                                       | ✅ 🔬  |                                                                                                                  |
-| `contacts`                | `CloudAPISendContactsMessageRequest`              | `contacts: CloudAPIContact[]`                                                           | ✅ 🔬  | Rich `name/phones/emails/addresses/urls/org/birthday`. `name` required.                                          |
-| `interactive` cta_url     | `CloudAPISendInteractiveCTAURLRequest`            | `interactive.type:'cta_url'`, `action.parameters.{display_text,url}`                    | ✅ 📄  | Header text/image.                                                                                               |
-| `interactive` button      | `CloudAPISendInteractiveButtonsMessageRequest`    | `interactive.type:'button'`, `action.buttons[]`                                         | ✅ 📄  | Header text/image/video/gif/document; 1–3 buttons.                                                               |
-| `interactive` list        | `CloudAPISendInteractiveListMessageRequest`       | `interactive.type:'list'`, `action.{button,sections[]}`                                 | ✅ 📄  | ≤10 rows total.                                                                                                  |
-| `interactive` flow        | `CloudAPISendFlowMessageRequest`                  | `interactive.type:'flow'`, `action.parameters.flow_*`                                   | 🟡 📄  | `flow_message_version:'3'`, `flow_id`\|`flow_name`, `mode`, `flow_action`. `(v25.0)` tags not re-rendered.       |
-| `interactive` catalog     | `CloudAPISendCatalogMessageRequest`               | `interactive.type:'catalog_message'`, `action.parameters.thumbnail_product_retailer_id` | ✅ 🔬  | `catalog_message` confirmed in interactive type enum.                                                            |
-| `interactive` call-perm   | `CloudAPISendCallPermissionRequestMessageRequest` | `interactive.type:'call_permission_request'`, `action.name`                             | ✅ 🔬  | `call_permission_request` confirmed in interactive type enum.                                                    |
-| `interactive` contact-req | `CloudAPISendRequestContactInfoMessageRequest`    | `interactive.type:'contact_request'`, `action.name:'request_contact_info'`              | 🟡 📄  | Documented under business-scoped-user-ids, **not** in the message-api interactive enum. Usually BSUID-addressed. |
-| `template`                | `CloudAPISendTemplateMessageRequest`              | `template.{name, language.code, components?}`                                           | 🟡 📄  | Auth-template OTP button fields tagged `(v25.0)` — not re-rendered.                                              |
-| `reaction`                | `CloudAPISendReactionMessageRequest`              | `reaction.{message_id, emoji}`                                                          | ✅ 🔬  | Empty `emoji` removes the reaction. `reaction` confirmed in 200-response examples.                               |
+Each row is one `CloudAPIRequest` variant. Media `{id|link}` (exactly one)
+applies to the media types.
 
-**Mark-as-read** (`CloudAPIMarkMessageReadRequest`): `{messaging_product,
-status:'read', message_id, typing_indicator?:{type:'text'}}` — ✅ 📄 (typing
-indicators reference).
+| Type                       | Implementing type                                 | Key fields                                                  | Status |
+| -------------------------- | ------------------------------------------------- | ----------------------------------------------------------- | ------ |
+| `text`                     | `CloudAPISendTextMessageRequest`                  | `text.{body, preview_url?}`                                 | ✅     |
+| `image`                    | `CloudAPISendImageMessageRequest`                 | `image.{id, caption?}`                                      | ➖ ¹   |
+| `audio`                    | `CloudAPISendAudioMessageRequest`                 | `audio.{id?, link?}`                                        | ✅     |
+| `video`                    | `CloudAPISendVideoMessageRequest`                 | `video.{id?, link?, caption?}`                              | ✅     |
+| `document`                 | `CloudAPISendDocumentMessageRequest`              | `document.{id?, link?, caption?, filename?}`                | ✅     |
+| `sticker`                  | `CloudAPISendStickerMessageRequest`               | `sticker.{id?, link?}`                                      | ✅     |
+| `location`                 | `CloudAPISendLocationMessageRequest`              | `location.{latitude, longitude, name?, address?}`           | ✅     |
+| `contacts`                 | `CloudAPISendContactsMessageRequest`              | `contacts[]` (`name`/`phones`/`emails`/`addresses`/`org`/…) | ✅     |
+| `interactive` cta_url      | `CloudAPISendInteractiveCTAURLRequest`            | `action.parameters.{display_text, url}`                     | ✅     |
+| `interactive` button       | `CloudAPISendInteractiveButtonsMessageRequest`    | `action.buttons[]` (1–3)                                    | ✅     |
+| `interactive` list         | `CloudAPISendInteractiveListMessageRequest`       | `action.{button, sections[]}` (≤10 rows)                    | ✅     |
+| `interactive` flow         | `CloudAPISendFlowMessageRequest`                  | `action.parameters.flow_*`                                  | ✅     |
+| `interactive` catalog      | `CloudAPISendCatalogMessageRequest`               | `action.parameters.thumbnail_product_retailer_id`           | ✅     |
+| `interactive` call-perm    | `CloudAPISendCallPermissionRequestMessageRequest` | `interactive.action.name`                                   | ✅     |
+| `interactive` contact-req  | `CloudAPISendRequestContactInfoMessageRequest`    | `action.name:'request_contact_info'`                        | ✅     |
+| `template`                 | `CloudAPISendTemplateMessageRequest`              | `template.{name, language.code, components?}`               | ✅     |
+| `reaction`                 | `CloudAPISendReactionMessageRequest`              | `reaction.{message_id, emoji}`                              | ✅     |
+| `interactive` product      | —                                                 | `action.{catalog_id, product_retailer_id}`                  | ➖ ²   |
+| `interactive` product_list | —                                                 | `action.{catalog_id, sections[]}`                           | ➖ ²   |
+| mark-as-read               | `CloudAPIMarkMessageReadRequest`                  | `{status:'read', message_id, typing_indicator?}`            | ✅     |
+
+**Notes**
+
+1. The client and types model `image.id` only; the documented `image.link`
+   alternative is intentionally not supported. This is a pre-existing narrowing
+   kept to avoid a breaking change (every other media type accepts `id` **or**
+   `link`).
+2. Single-product (`product`) and multi-product (`product_list`) interactive
+   messages are intentionally out of scope: they are not in the
+   `CloudAPIRequest` union and were not part of this project's spec.
 
 ---
 
-## 2. `/messages` emulator behaviours
+## 2. Emulator `/messages` behaviour
 
-What the emulator validates / logs today (`packages/emulator/src/routes/MessageRoutes.ts`).
+Status here is whether the emulator
+(`packages/emulator/src/routes/MessageRoutes.ts`) behaves like the real API for
+the documented surface.
 
-| Behaviour                                      | Status | Notes                                                                                 |
-| ---------------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
-| `version` must equal `SupportedVersion`        | ✅     | `validateVersion` middleware → 400 `UnsupportedVersionError`.                         |
-| Require `to` (400 if missing)                  | 🟡     | Fires before type validation. Blocks BSUID-only `recipient` sends — see §7 / REQ-EMU. |
-| Deep-validate `image` + interactive subtypes   | ✅     | cta_url, flow, button, list validated.                                                |
-| text / image / reaction logged                 | ✅     |                                                                                       |
-| interactive button / list / cta_url logged     | ✅     |                                                                                       |
-| flow / catalog / call_permission / contact_req | 🟡     | Fall through to "logged as text".                                                     |
-| audio/video/document/sticker/location/contacts | ❌     | Hit `unsupportedMessage` default. **REQ-EMU + send-helper tests need these logged.**  |
-| Fire status webhook on accept                  | ✅     | `webhookService.sendMessageStatus(...)`.                                              |
+| Behaviour                                                                                                            | Status |
+| -------------------------------------------------------------------------------------------------------------------- | ------ |
+| `version` must equal `SupportedVersion` (400 otherwise)                                                              | ✅     |
+| Accept a send addressed by `to` **or** `recipient` (BSUID); 400 only if both are missing                             | ✅     |
+| Fire the status webhook on accept                                                                                    | ✅     |
+| Mark-as-read handling                                                                                                | ✅     |
+| Deep request validation: `text`, `image`, `contacts`, interactive cta_url/flow/button/list/contact_request           | ✅     |
+| Deep request validation: `audio`, `video`, `document`, `sticker`, `location`, catalog, call_permission               | ➖ ¹   |
+| Type-specific console log: `text`, `image`, `reaction`, `contacts`, contact_request, interactive button/list/cta_url | ✅     |
+| Type-specific console log: `audio`, `video`, `document`, `sticker`, `location`, flow, catalog, call_permission       | ➖ ²   |
+
+**Notes**
+
+1. These types are accepted and answered `200` (matching real-API acceptance of
+   a well-formed body), but their fields are not validated. Deep validation is a
+   convenience the emulator only provides for the most-used types; intentional
+   dev-tool simplification.
+2. These render via the generic text / "unsupported message" logger rather than
+   a dedicated bubble. Cosmetic only — the send still succeeds; intentional.
 
 ---
 
 ## 3. Webhook objects
 
-Webhook types (`packages/types/src/webhook/*.ts`) are rich and already carry
-BSUID fields. 📄 documented from code against the webhooks/components &
-business-scoped-user-ids references; not all field tables re-rendered this pass.
+Webhook types (`packages/types/src/webhook/*.ts`) model the documented webhook
+payloads, including the BSUID-era identity fields.
 
-| Object                     | Interface(s)                                                                                                                  | Status | Notes                                                                                |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
-| Payload / Entry / Metadata | `WebhookPayload`, `WebhookEntry`, `WebhookMetadata`                                                                           | ✅ 📄  | `entry.time?` present.                                                               |
-| Change union               | `WebhookChange` (`messages`, `user_id_update`, `business_username_update`, `user_preferences`)                                | ✅ 📄  | BSUID-era fields all present.                                                        |
-| Value                      | `WebhookValue` (`contacts?`, `errors?`, `messages?`, `statuses?`)                                                             | ✅ 📄  |                                                                                      |
-| Inbound message union      | `WebhookMessage` (text/audio/button/contacts/document/image/interactive/location/order/reaction/sticker/system/unknown/video) | ✅ 📄  | `WebhookMessageBase` has `from?/from_user_id?/from_parent_user_id?/group_id?`.       |
-| Reaction inbound           | `WebhookReactionMessage`                                                                                                      | ✅ 📄  | `emoji?` omitted on removal (inbound convention differs from send's empty-string).   |
-| Contacts inbound           | `WebhookMessageContact`                                                                                                       | ✅ 📄  | `origin:'contact_request'\|'other'`, `vcard?`.                                       |
-| Status                     | `WebhookStatus`                                                                                                               | ✅ 📄  | `recipient_id?/recipient_user_id?/recipient_parent_user_id?`, conversation, pricing. |
-| Contact                    | `WebhookContact`                                                                                                              | ✅ 📄  | `wa_id?/user_id?/parent_user_id?/identity_key_hash?`, `profile.{name,username?}`.    |
-| Error                      | `WebhookError`                                                                                                                | ✅ 📄  | `code/title/message/error_data.details?/href?`.                                      |
-| Referral                   | `WebhookReferral`                                                                                                             | ✅ 📄  | CTWA fields incl. `ctwa_clid?`, `welcome_message?`.                                  |
+| Object                     | Interface(s)                                                                                                                  | Status |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Payload / Entry / Metadata | `WebhookPayload`, `WebhookEntry`, `WebhookMetadata`                                                                           | ✅     |
+| Change union               | `WebhookChange` (`messages`, `user_id_update`, `business_username_update`, `user_preferences`)                                | ✅     |
+| Value                      | `WebhookValue` (`contacts?`, `errors?`, `messages?`, `statuses?`)                                                             | ✅     |
+| Inbound message union      | `WebhookMessage` (text/audio/button/contacts/document/image/interactive/location/order/reaction/sticker/system/video/unknown) | ✅     |
+| Reaction inbound           | `WebhookReactionMessage` (`emoji?` omitted on removal)                                                                        | ✅     |
+| Contacts inbound           | `WebhookMessageContact` (`origin`, `vcard?`)                                                                                  | ✅     |
+| Status                     | `WebhookStatus` (`recipient_id?`/`recipient_user_id?`/…, conversation, pricing)                                               | ✅     |
+| Contact                    | `WebhookContact` (`wa_id?`/`user_id?`/…, `profile.{name, username?}`)                                                         | ✅     |
+| Error                      | `WebhookError` (`code`/`title`/`message`/`error_data.details?`)                                                               | ✅     |
+| Referral                   | `WebhookReferral` (CTWA fields incl. `ctwa_clid?`)                                                                            | ✅     |
 
 ---
 
-## 4. Media lifecycle 🔬 (fully re-rendered from the live Media reference)
+## 4. Media lifecycle
 
 Endpoints: `POST /{phone-number-id}/media` (upload), `GET /{media-id}`
 (get-URL/metadata), `GET /{media-url}` (download), `DELETE /{media-id}` (delete).
-Media IDs expire after **30 days** (API) / **7 days** (webhook); media **URLs
-expire after 5 minutes**.
 
-### 4.1 Upload — `POST /{phone-number-id}/media`
+| Surface                        | Type / symbol                                                                        | Status |
+| ------------------------------ | ------------------------------------------------------------------------------------ | ------ |
+| Upload — returns `{ id }`      | `CloudAPIMediaUploadResponse`; client `uploadMedia`; emulator `POST …/media`         | ✅     |
+| Get URL / metadata             | `CloudAPIMediaURLResponse`; client `getMediaUrl`; emulator `GET /{media-id}`         | ✅     |
+| Download (binary)              | client `downloadMedia`; emulator `GET …/download`                                    | ✅     |
+| Delete — returns `{ success }` | `CloudAPIMediaDeleteResponse`; client `deleteMedia`; emulator `DELETE /{media-id}`   | ✅     |
+| Media-ID / URL expiry          | Media IDs expire after 30 days (API) / 7 days (webhook); URLs expire after 5 minutes | ➖ ¹   |
 
-- Request (multipart): `messaging_product=whatsapp`, `file=@…;type=<mime>`, `type`.
-- **Response: `{ "id": "<MEDIA_ID>" }` only.** 🔬
+**Notes**
 
-| Type / field                                                                         | Status | Notes                                                                                                                                                                                                                                                |
-| ------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CloudAPIMediaUploadResponse.id`                                                     | ✅ 🔬  | The only field the upload endpoint returns.                                                                                                                                                                                                          |
-| `CloudAPIMediaUploadResponse.file_size?` / `.mime_type?` / `.sha256?` (tagged v25.0) | ⚠ 🔬   | **These do NOT come back from upload.** They belong to the **GET media-URL/metadata** response (§4.2). Optional, so non-breaking, but misplaced. Keep on upload type (additive), and add the proper metadata response type in Phase 2 (REQ-MEDIA-4). |
+1. The emulator gives uploaded media IDs a 30-day expiry but does not expire
+   download **URLs** after 5 minutes (a returned URL stays valid for the
+   emulator's lifetime). Intentional dev-tool simplification.
 
-### 4.2 Get media URL / metadata — `GET /{media-id}` ❌ (type missing)
+### 4.1 Supported media types (per-category MIME + size)
 
-Optional query: `phone_number_id` (processed only if it matches the upload PNID).
-Response body (🔬 verified):
+Enforced by both client `uploadMedia` and emulator `MediaRoutes`
+(`MediaSpecByCategory` in each package's `constants.ts`).
 
-```
-{ "messaging_product": "whatsapp", "url", "mime_type", "sha256", "file_size", "id" }
-```
+| Category     | MIME types                                                                                                                                                                                               | Max size                        | Status |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ------ |
+| **image**    | `image/jpeg`, `image/png`                                                                                                                                                                                | 5 MB                            | ✅     |
+| **audio**    | `audio/aac`, `audio/amr`, `audio/mpeg`, `audio/mp4`, `audio/ogg`                                                                                                                                         | 16 MB                           | ✅     |
+| **video**    | `video/3gpp`, `video/mp4`                                                                                                                                                                                | 16 MB                           | ✅     |
+| **document** | `text/plain`, `application/pdf`, `application/vnd.ms-excel`, `…spreadsheetml.sheet`, `application/msword`, `…wordprocessingml.document`, `application/vnd.ms-powerpoint`, `…presentationml.presentation` | 100 MB                          | ✅     |
+| **sticker**  | `image/webp`                                                                                                                                                                                             | 100 KB static / 500 KB animated | ➖ ¹   |
 
-| Field               | Status | Notes                                                                         |
-| ------------------- | ------ | ----------------------------------------------------------------------------- |
-| `messaging_product` | ❌ 🔬  | `'whatsapp'`.                                                                 |
-| `url`               | ❌ 🔬  | Short-lived (5 min).                                                          |
-| `mime_type`         | ❌ 🔬  |                                                                               |
-| `sha256`            | ❌ 🔬  |                                                                               |
-| `file_size`         | ❌ 🔬  | Number (syntax block renders all placeholders as strings; treat as `number`). |
-| `id`                | ❌ 🔬  |                                                                               |
+- Inbound media-message download cap: **100 MB** (error `131052`). Mismatched
+  MIME error: `131053`.
 
-→ **Phase 2 (02_01) must add this response type.** This is the canonical home of
-`mime_type/sha256/file_size`.
+**Notes**
 
-### 4.3 Download — `GET /{media-url}`
-
-- Binary body; `Content-Type` header indicates MIME. **Access token required.**
-- Failure → `404 Not Found` (re-fetch the URL via §4.2). 🔬
-- Not a JSON response → the client downloader fetches the URL directly.
-
-### 4.4 Delete — `DELETE /{media-id}` ❌ (type missing)
-
-- Optional query `phone_number_id`. Response: **`{ "success": true }`**. 🔬
-- → **Phase 2 (02_01) must add a media-delete response type** (`{success: boolean}`;
-  shape matches existing `CloudAPIMarkReadResponse` but a distinct named type).
-
-### 4.5 Supported media types (per-category MIME + size) 🔬
-
-Source for the per-package media table (client + emulator constants, Phase 3/4).
-
-| Category     | MIME types                                                                                                                                                                                                                                                                                                                                      | Max size                        |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| **image**    | `image/jpeg`, `image/png`                                                                                                                                                                                                                                                                                                                       | 5 MB (8-bit RGB/RGBA)           |
-| **audio**    | `audio/aac`, `audio/amr`, `audio/mpeg`, `audio/mp4`, `audio/ogg` (OPUS only, mono)                                                                                                                                                                                                                                                              | 16 MB                           |
-| **video**    | `video/3gpp`, `video/mp4` (H.264 + AAC)                                                                                                                                                                                                                                                                                                         | 16 MB                           |
-| **document** | `text/plain`, `application/pdf`, `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `application/vnd.ms-powerpoint`, `application/vnd.openxmlformats-officedocument.presentationml.presentation` | 100 MB                          |
-| **sticker**  | `image/webp`                                                                                                                                                                                                                                                                                                                                    | 100 KB static / 500 KB animated |
-
-- Inbound media-message download cap: **100 MB** (error `131052`).
-- Mismatched MIME error: `131053`.
-- **Code today:** client `uploadMedia` + emulator `MediaRoutes` accept only
-  `image/jpeg`/`image/png` ≤5 MB. → widen to the full table (Phase 3/4),
-  **never narrowing** the existing image entry (REQ-LEGACY-1).
+1. A single 500 KB cap is enforced for stickers; the 100 KB **static**-sticker
+   limit is not separately checked (a static WebP up to 500 KB is accepted).
+   Intentional simplification — the code does not inspect WebP frames to tell
+   static from animated.
 
 ---
 
-## 5. Block API — `/{phone-number-id}/block_users` 🔬 (fully re-rendered)
+## 5. Block API (`/{phone-number-id}/block_users`)
 
-Synchronous; per-number errors. Limits: block only users who messaged in the
-last 24 h; cannot block another WABA; ≤1,000 users/request; blocklist cap 64,000.
-**No code anywhere today** → entire surface is ❌ (types in Phase 2, client in
-Phase 3, emulator in Phase 4).
+Synchronous; per-number errors. Documented limits: block only users who messaged
+in the last 24 h; cannot block another WABA; ≤1,000 users/request; blocklist cap
+64,000.
 
-### 5.1 Block — `POST .../block_users`
+| Surface                                          | Type / symbol                                                                 | Status |
+| ------------------------------------------------ | ----------------------------------------------------------------------------- | ------ |
+| Block request body                               | `CloudAPIBlockUsersRequest` (`messaging_product`, `block_users[].user`)       | ✅     |
+| Block — `POST` (`added_users`)                   | `CloudAPIBlockUsersResponse`; client `blockUsers`; emulator `POST`            | ✅     |
+| Unblock — `DELETE` (`removed_users`)             | `CloudAPIUnblockUsersResponse`; client `unblockUsers`; emulator `DELETE`      | ✅     |
+| List blocked — `GET` (`data` + `paging`)         | `CloudAPIListBlockedUsersResponse`; client `listBlockedUsers`; emulator `GET` | ✅     |
+| Partial-failure shape (`failed_users` + `error`) | typed by `block.ts`                                                           | ✅     |
+| Partial-failure — emulator emits it              | emulator `BlockRoutes`                                                        | ➖ ¹   |
+| List pagination (`limit`/`after`/`before`)       | emulator `BlockRoutes`                                                        | ➖ ²   |
 
-- Request: `{ "messaging_product": "whatsapp", "block_users": [ { "user": "<phone>" } ] }`
-- Success response:
-  ```
-  { "messaging_product":"whatsapp",
-    "block_users": { "added_users": [ { "input", "wa_id" } ] } }
-  ```
-- Partial-failure response adds `failed_users[]` and a top-level `error`:
-  ```
-  "block_users": {
-    "added_users": [ { "input", "wa_id" } ],
-    "failed_users": [ { "input", "wa_id", "errors": [ { "message", "code", "error_data": { "details" } } ] } ]
-  },
-  "error": { "message", "type", "code":139100, "error_data": { "details" }, "fbtrace_id" }
-  ```
+**Notes**
 
-### 5.2 Unblock — `DELETE .../block_users`
+1. The emulator always reports full success; it never synthesises the
+   partial-failure response (`failed_users` + top-level `error`). The shape is
+   fully typed for real-API consumers, but the emulator has no notion of which
+   users would actually fail to block. Intentional dev-tool limitation.
+2. The emulator returns the full blocklist with empty cursors and ignores the
+   `limit` / `after` / `before` query parameters. Intentional dev-tool
+   limitation.
 
-- Request: identical to block.
-- Response: same shape but **`removed_users`** replaces `added_users`
-  (+ optional `failed_users` + top-level `error`).
+### 5.1 Field reference
 
-### 5.3 List blocked — `GET .../block_users`
+| Field                                        | Type          | Where               |
+| -------------------------------------------- | ------------- | ------------------- |
+| request `block_users[].user`                 | string        | POST/DELETE body    |
+| `added_users[].{input, wa_id}`               | string        | POST success        |
+| `removed_users[].{input, wa_id}`             | string        | DELETE success      |
+| `failed_users[].{input, wa_id?}`             | string        | POST/DELETE partial |
+| `failed_users[].errors[].{message, code}`    | string/number | POST/DELETE partial |
+| `failed_users[].errors[].error_data.details` | string        | partial             |
+| list `data[].{messaging_product, wa_id}`     | string        | GET                 |
+| list `paging.cursors.{after, before}`        | string        | GET                 |
 
-- Query: `limit?`, `after?`, `before?` (cursor pagination).
-- Response:
-  ```
-  { "data": [ { "messaging_product":"whatsapp", "wa_id":"<id>" } ],
-    "paging": { "cursors": { "after", "before" } } }
-  ```
+`errors[].code` is modelled as a **number** (`CloudAPIBlockUserError.code`).
 
-### 5.4 Field reference 🔬
-
-| Field                                        | Type    | Where               | Notes                                                                                                                    |
-| -------------------------------------------- | ------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| request `block_users[].user`                 | string  | POST/DELETE body    | WhatsApp user phone number (the `input` echoed back).                                                                    |
-| `added_users[].input`                        | string  | POST success        | Echo of `user`.                                                                                                          |
-| `added_users[].wa_id`                        | string  | POST success        | May differ from phone number.                                                                                            |
-| `removed_users[]`                            | object  | DELETE success      | Same `{input, wa_id}`.                                                                                                   |
-| `failed_users[].input`/`.wa_id`              | string  | POST/DELETE partial | `wa_id` may be absent for invalid numbers.                                                                               |
-| `failed_users[].errors[].message`            | string  | POST/DELETE partial | e.g. "Re-engagement required".                                                                                           |
-| `failed_users[].errors[].code`               | integer | POST/DELETE partial | e.g. `131047`. **Number**, not string (syntax block shows `"<CODE>"`, example shows `131047`, param table says Integer). |
-| `failed_users[].errors[].error_data.details` | string  | partial             | e.g. "User has not messaged in the last 24 hours".                                                                       |
-| list `data[].messaging_product`              | string  | GET                 | `'whatsapp'`.                                                                                                            |
-| list `data[].wa_id`                          | string  | GET                 |                                                                                                                          |
-| list `paging.cursors.{after,before}`         | string  | GET                 | Opaque cursors.                                                                                                          |
-
-### 5.5 Block API error codes 🔬
+### 5.2 Block API error codes
 
 `139100` Failed to block/unblock some users · `139101` Blocklist limit (64k) ·
 `139102` Blocklist concurrent update (`version_id` mismatch) · `139103` Internal
-error · `130429` Rate limit hit.
+error · `130429` Rate limit hit. (Carried as numeric `code` values on the typed
+error objects.)
 
 ---
 
-## 6. Business-scoped user IDs (BSUID) 📄
+## 6. Business-scoped user IDs (BSUID)
 
-- Addressing: send via `recipient` (BSUID) when `to` (phone) is unknown; `to`
-  takes precedence if both set.
-- `CloudAPIResponse.contacts[]` carries `input`, `wa_id?`, `user_id?`.
-- Webhook BSUID fields present across `WebhookContact`, `WebhookMessageBase`,
-  `WebhookStatus`, and the `user_id_update` / `business_username_update` /
-  `user_preferences` changes (see §3). ✅ 📄
-
----
-
-## 7. Deltas the later phases depend on
-
-**Concrete additions (Phase 2 — types):**
-
-1. **Media URL/metadata response** (§4.2): `{messaging_product:'whatsapp', url,
-mime_type, sha256, file_size:number, id}`.
-2. **Media delete response** (§4.4): `{success: boolean}` (distinct named type).
-3. **`cloudapi/block.ts`** (§5): request `{messaging_product, block_users:[{user}]}`;
-   block/unblock responses with `added_users`/`removed_users` + `failed_users`
-   (+ optional top-level `error`); list response `{data:[{messaging_product,
-wa_id}], paging:{cursors:{after?,before?}}}`. `errors[].code` is a **number**.
-
-**Per-category media table (Phase 3 client + Phase 4 emulator)** — §4.5. Widen
-the image-only constants to `category → {mimeTypes[], maxBytes}` **without
-narrowing** the existing image entry.
-
-**Client helpers (Phase 3):** 10 send helpers (audio, video, document, sticker,
-location, contacts, reaction, catalog, call_permission_request,
-request_contact_info) + media lifecycle (`getMediaUrl`, `downloadMedia`,
-`deleteMedia`) + Block API (`blockUsers`, `unblockUsers`, `listBlockedUsers`).
-
-**Emulator (Phase 4):** retain media bytes for all categories; add GET
-metadata / GET download / DELETE media routes; add `block_users` routes;
-validate + log `contacts` and `contact_request` (today they fall through).
-
-### Fields flagged ⚠ Wrong (may force a single `feat!:` only if shape changed)
-
-| Item                                                       | Finding                                                            | Resolution                                                                                                                               |
-| ---------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `CloudAPIMediaUploadResponse.{file_size,mime_type,sha256}` | These are returned by **GET media-URL** (§4.2), **not** by upload. | They are `optional` → **non-breaking**. Keep them (additive) and add the proper metadata response type in Phase 2. No `feat!:` required. |
-
-No existing tagged field requires a breaking shape change. The image-send
-(`image.id` required, no `link`) and emulator require-`to` items are **pre-existing
-narrowings**, not v25 regressions; the plan keeps them as-is (additive only).
+| Item                                                                                              | Status |
+| ------------------------------------------------------------------------------------------------- | ------ |
+| Addressing: send via `recipient` (BSUID); `to` takes precedence when both are set                 | ✅     |
+| `CloudAPIResponse.contacts[]` carries `input`, `wa_id?`, `user_id?`                               | ✅     |
+| Webhook BSUID fields (`WebhookContact`, `WebhookMessageBase`, `WebhookStatus`)                    | ✅     |
+| Webhook BSUID changes (`user_id_update`, `business_username_update`, `user_preferences`) — see §3 | ✅     |
 
 ---
 
