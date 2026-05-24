@@ -444,7 +444,7 @@ export interface WebhookSystemMessage extends WebhookMessageBase {
 
     /**
      * New WhatsApp ID if this was a customer number change message
-     * @deprecated Legacy field from older API versions. Current (v25.0)
+     * @deprecated Legacy field from older API versions. Current
      * payloads carry the new ID in `wa_id` instead.
      */
     new_wa_id?: string
