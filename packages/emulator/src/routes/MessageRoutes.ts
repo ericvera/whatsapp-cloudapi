@@ -3,10 +3,12 @@ import type {
   CloudAPIMarkReadResponse,
   CloudAPIRequest,
   CloudAPIResponse,
+  CloudAPISendContactsMessageRequest,
   CloudAPISendFlowMessageRequest,
   CloudAPISendInteractiveButtonsMessageRequest,
   CloudAPISendInteractiveCTAURLRequest,
   CloudAPISendInteractiveListMessageRequest,
+  CloudAPISendRequestContactInfoMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
@@ -71,6 +73,22 @@ export class MessageRoutes {
   ): body is CloudAPIMarkMessageReadRequest {
     const req = body as Partial<CloudAPIMarkMessageReadRequest>
     return req.status === 'read' && typeof req.message_id === 'string'
+  }
+
+  private isContactsMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendContactsMessageRequest {
+    return body.type === 'contacts'
+  }
+
+  private isContactRequestMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendRequestContactInfoMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'contact_request'
+    )
   }
 
   private logOutgoingMessage(
@@ -158,10 +176,15 @@ export class MessageRoutes {
             body.interactive.action.parameters.url,
             context,
           )
+        } else if (this.isContactRequestMessage(body)) {
+          this.logger.contactRequestMessage(body.interactive.body.text, context)
         } else {
-          // For Flow messages, just log as text for now
+          // For Flow / catalog / call_permission messages, log as text for now
           this.logger.textMessage(body.interactive.body.text, context)
         }
+        break
+      case 'contacts':
+        this.logger.contactsMessage(body.contacts, context)
         break
       case 'template':
         // Log template as text with template name
@@ -220,6 +243,47 @@ export class MessageRoutes {
               error_subcode: 1404,
             },
           })
+          return
+        }
+      }
+
+      // Validate contacts messages
+      if (this.isContactsMessage(body)) {
+        if (body.contacts.length === 0) {
+          this.logger.validationError({
+            field: 'contacts',
+            reason: 'At least one contact is required',
+          })
+
+          res.status(400).json({
+            error: {
+              message: 'At least one contact is required',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+
+          return
+        }
+
+        const hasMissingName = body.contacts.some(
+          (contact) => !contact.name.formatted_name,
+        )
+
+        if (hasMissingName) {
+          this.logger.validationError({
+            field: 'contacts.name.formatted_name',
+            reason: 'Each contact requires name.formatted_name',
+          })
+
+          res.status(400).json({
+            error: {
+              message: 'Each contact requires name.formatted_name',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+
           return
         }
       }
@@ -1033,6 +1097,62 @@ export class MessageRoutes {
               error: {
                 message:
                   'Total number of rows across all sections cannot exceed 10',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+        } else if (this.isContactRequestMessage(body)) {
+          const bodyText = body.interactive.body.text
+          const actionName: string = body.interactive.action.name
+
+          if (!bodyText) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              reason: 'Body text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (bodyText.length > 1024) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text cannot exceed 1024 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (actionName !== 'request_contact_info') {
+            this.logger.validationError({
+              field: 'interactive.action.name',
+              value: actionName,
+              reason: 'action.name must be "request_contact_info"',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'action.name must be "request_contact_info"',
                 type: 'WhatsAppBusinessAPIError',
                 code: 400,
               },

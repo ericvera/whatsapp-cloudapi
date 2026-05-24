@@ -1,3 +1,4 @@
+import type { CloudAPIContact } from '@whatsapp-cloudapi/types/cloudapi'
 import pc from 'picocolors'
 import { Formatter } from 'picocolors/types.js'
 import stringWidth from 'string-width'
@@ -603,6 +604,47 @@ export class EmulatorLogger {
       lines.push('')
       lines.push(this.colorizeAndPad(`Message ID: ${messageId}`, 'gray'))
     }
+
+    this.renderMessage(lines, context)
+  }
+
+  contactsMessage(contacts: CloudAPIContact[], context: MessageContext): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(
+      this.colorizeAndPad(
+        `[Contacts] ${contacts.length.toString()} shared`,
+        'cyan',
+      ),
+    )
+
+    for (const contact of contacts) {
+      lines.push(...this.wrapText(contact.name.formatted_name, BubbleWidth - 4))
+    }
+
+    this.renderMessage(lines, context)
+  }
+
+  contactRequestMessage(bodyText: string, context: MessageContext): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(this.colorizeAndPad('[Contact info requested]', 'cyan'))
+    lines.push('')
+    lines.push(...this.wrapText(bodyText, BubbleWidth - 4))
 
     this.renderMessage(lines, context)
   }
