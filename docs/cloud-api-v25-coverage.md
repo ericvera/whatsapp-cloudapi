@@ -43,33 +43,27 @@ unexplained gap.
 
 ## 1. Send message types (`POST /{phone-number-id}/messages`)
 
-The `CloudAPIRequest` union (`packages/types/src/cloudapi/request.ts`) has 17
+The `CloudAPIRequest` union (`packages/types/src/cloudapi/request.ts`) has 19
 variants, each with a typed client helper in `packages/client/src`.
 
 ### 1.1 Common message envelope (`CloudAPIMessageRequestBase`)
 
-| Field                      | Documented as           | Status |
-| -------------------------- | ----------------------- | ------ |
-| `messaging_product`        | required (`'whatsapp'`) | ✅     |
-| `recipient_type`           | `individual` / `group`  | 🟡 ¹   |
-| `to`                       | phone / group id        | 🟡 ²   |
-| `recipient`                | BSUID (see §6)          | ✅     |
-| `type`                     | required discriminant   | ✅     |
-| `context.message_id`       | reply threading         | 🟡 ³   |
-| `biz_opaque_callback_data` | tracking string (≤512)  | ✅     |
-| `message_activity_sharing` | event-sharing override  | ✅     |
+| Field                      | Documented as                     | Status |
+| -------------------------- | --------------------------------- | ------ |
+| `messaging_product`        | required (`'whatsapp'`)           | ✅     |
+| `recipient_type`           | required (`individual` / `group`) | ✅     |
+| `to`                       | phone / group id                  | ✅     |
+| `recipient`                | BSUID (see §6)                    | ✅     |
+| `type`                     | required discriminant             | ✅     |
+| `context.message_id`       | reply threading (all types)       | ✅     |
+| `biz_opaque_callback_data` | tracking string (≤512)            | ✅     |
+| `message_activity_sharing` | event-sharing override            | ✅     |
 
-**Notes**
-
-1. Optional in the type; the docs mark it required (defaulting to `individual`).
-   Omitting it is accepted by the API, so this is a harmless relaxation.
-2. `to` and `recipient` are both optional at the type level; the spec requires at
-   least one, with `to` taking precedence. The "at least one" rule is enforced by
-   the emulator at runtime, not by the type.
-3. Reply `context` is exposed on most variants (via
-   `CloudAPIMessageRequestWithContext`) but **not** on `text`, `image`, `flow`,
-   `reaction`, or `contact_request`; the docs allow replying with at least
-   `text` / `image`.
+`recipient_type` is required (the API defaults it to `individual`). `context` is
+a top-level field available on every message type. At least one of `to` /
+`recipient` is required — enforced at the type level by
+`CloudAPIRecipientAddressing` on `CloudAPIRequest`, with `to` taking precedence
+when both are present.
 
 ### 1.2 Per-type coverage
 
@@ -79,7 +73,7 @@ applies to the media types.
 | Type                       | Implementing type                                 | Key fields                                                  | Status |
 | -------------------------- | ------------------------------------------------- | ----------------------------------------------------------- | ------ |
 | `text`                     | `CloudAPISendTextMessageRequest`                  | `text.{body, preview_url?}`                                 | ✅     |
-| `image`                    | `CloudAPISendImageMessageRequest`                 | `image.{id, caption?}`                                      | 🟡 ¹   |
+| `image`                    | `CloudAPISendImageMessageRequest`                 | `image.{id?, link?, caption?}`                              | ✅     |
 | `audio`                    | `CloudAPISendAudioMessageRequest`                 | `audio.{id?, link?}`                                        | ✅     |
 | `video`                    | `CloudAPISendVideoMessageRequest`                 | `video.{id?, link?, caption?}`                              | ✅     |
 | `document`                 | `CloudAPISendDocumentMessageRequest`              | `document.{id?, link?, caption?, filename?}`                | ✅     |
@@ -93,20 +87,11 @@ applies to the media types.
 | `interactive` catalog      | `CloudAPISendCatalogMessageRequest`               | `action.parameters.thumbnail_product_retailer_id`           | ✅     |
 | `interactive` call-perm    | `CloudAPISendCallPermissionRequestMessageRequest` | `interactive.action.name`                                   | ✅     |
 | `interactive` contact-req  | `CloudAPISendRequestContactInfoMessageRequest`    | `action.name:'request_contact_info'`                        | ✅     |
+| `interactive` product      | `CloudAPISendProductMessageRequest`               | `action.{catalog_id, product_retailer_id}`                  | ✅     |
+| `interactive` product_list | `CloudAPISendProductListMessageRequest`           | `header`, `body`, `action.{catalog_id, sections[]}`         | ✅     |
 | `template`                 | `CloudAPISendTemplateMessageRequest`              | `template.{name, language.code, components?}`               | ✅     |
 | `reaction`                 | `CloudAPISendReactionMessageRequest`              | `reaction.{message_id, emoji}`                              | ✅     |
-| `interactive` product      | —                                                 | `action.{catalog_id, product_retailer_id}`                  | ➖ ²   |
-| `interactive` product_list | —                                                 | `action.{catalog_id, sections[]}`                           | ➖ ²   |
 | mark-as-read               | `CloudAPIMarkMessageReadRequest`                  | `{status:'read', message_id, typing_indicator?}`            | ✅     |
-
-**Notes**
-
-1. The client and types model `image.id` only; the documented `image.link`
-   alternative is not supported. Pre-existing narrowing, kept to avoid a breaking
-   change (every other media type accepts `id` **or** `link`).
-2. Single-product (`product`) and multi-product (`product_list`) interactive
-   messages are out of scope: they are not in the `CloudAPIRequest` union and
-   were not part of this project's spec.
 
 ---
 
@@ -116,15 +101,15 @@ How the emulator (`packages/emulator/src/routes/MessageRoutes.ts`) behaves
 against the documented API. (Its console rendering is an internal dev
 convenience, not a documented surface, so it is not assessed here.)
 
-| Behaviour                                                                                             | Status |
-| ----------------------------------------------------------------------------------------------------- | ------ |
-| Reject an unsupported API version (400)                                                               | ✅     |
-| Accept a send addressed by `to` **or** `recipient` (BSUID); 400 only when both are missing            | ✅     |
-| Success response shape (`messaging_product`, `contacts[]`, `messages[]`)                              | ✅     |
-| Mark-as-read response (`{ success: true }`)                                                           | ✅     |
-| Deliver a delivery-status webhook on accept                                                           | 🟡 ¹   |
-| Request validation: `text`, `image`, `contacts`, interactive cta_url/flow/button/list/contact_request | 🟡 ²   |
-| Request validation: `audio`, `video`, `document`, `sticker`, `location`, catalog, call_permission     | ➖ ³   |
+| Behaviour                                                                                                                  | Status |
+| -------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Reject an unsupported API version (400)                                                                                    | ✅     |
+| Accept a send addressed by `to` **or** `recipient` (BSUID); 400 only when both are missing                                 | ✅     |
+| Success response shape (`messaging_product`, `contacts[]`, `messages[]`)                                                   | ✅     |
+| Mark-as-read response (`{ success: true }`)                                                                                | ✅     |
+| Deliver a delivery-status webhook on accept                                                                                | 🟡 ¹   |
+| Request validation: `text`, `image`, `contacts`, interactive cta_url/flow/button/list/contact_request/product/product_list | 🟡 ²   |
+| Request validation: `audio`, `video`, `document`, `sticker`, `location`, catalog, call_permission                          | ➖ ³   |
 
 **Notes**
 
