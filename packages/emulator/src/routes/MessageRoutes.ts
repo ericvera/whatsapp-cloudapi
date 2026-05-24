@@ -205,17 +205,22 @@ export class MessageRoutes {
       }
 
       const body = req.body as CloudAPIRequest
-      const { to } = body
+      // Accept either `to` (phone number) or `recipient` (business-scoped user
+      // ID). When both are present, `to` takes precedence, matching the Cloud
+      // API and the `to`/`recipient` request-type docs. The `contact_request`
+      // type is typically addressed by BSUID, so a `recipient`-only send is
+      // valid and must not be rejected here.
+      const recipientId = body.to ?? body.recipient
 
-      if (!to) {
+      if (!recipientId) {
         this.logger.validationError({
           field: 'to',
-          reason: 'Missing recipient phone number',
+          reason: 'Missing recipient: provide "to" or "recipient"',
         })
 
         res.status(400).json({
           error: {
-            message: 'Recipient phone number is required',
+            message: 'A recipient is required: provide "to" or "recipient"',
             type: 'OAuthException',
             code: 400,
           },
@@ -1165,8 +1170,9 @@ export class MessageRoutes {
 
       const messageId = `message_${nanoid(6)}`
 
-      // Normalize WhatsApp ID (remove '+' prefix if present)
-      const normalizedTo = normalizeWhatsAppId(to)
+      // Normalize WhatsApp ID (remove '+' prefix if present). A BSUID has no
+      // '+' prefix, so it passes through unchanged.
+      const normalizedTo = normalizeWhatsAppId(recipientId)
 
       // Log the message based on type
       this.logOutgoingMessage(body, normalizedTo, messageId)

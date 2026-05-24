@@ -167,6 +167,35 @@ it('rejects a contact_request with body text over 1024 characters', async () => 
   expect(res.status).toBe(400)
 })
 
+it('accepts a BSUID recipient-only contact_request (no "to")', async () => {
+  const bsuid = 'US.13491208655302741918'
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    recipient: bsuid,
+    type: 'interactive',
+    interactive: {
+      type: 'contact_request',
+      body: { text: 'Share your number so we can follow up' },
+      action: { name: 'request_contact_info' },
+    },
+  })
+
+  expect(res.status).toBe(200)
+  const body = res.body as CloudAPIResponse
+  expect(body.contacts[0]?.input).toBe(bsuid)
+  expect(body.messages[0]?.id).toMatch(/^message_/)
+})
+
+it('rejects a send with neither "to" nor "recipient"', async () => {
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    type: 'text',
+    text: { body: 'hi' },
+  })
+
+  expect(res.status).toBe(400)
+})
+
 it('still accepts an audio message (unsupported type unchanged)', async () => {
   const res = await request.post(messagesPath).send({
     messaging_product: 'whatsapp',
