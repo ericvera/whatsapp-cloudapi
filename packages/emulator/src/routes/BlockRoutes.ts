@@ -58,7 +58,7 @@ export class BlockRoutes {
       return { input: entry.user, wa_id: waId }
     })
 
-    this.logger.mediaOperation(
+    this.logger.blockOperation(
       'block',
       addedUsers.map((u) => u.wa_id).join(', '),
     )
@@ -85,7 +85,7 @@ export class BlockRoutes {
       return { input: entry.user, wa_id: waId }
     })
 
-    this.logger.mediaOperation(
+    this.logger.blockOperation(
       'unblock',
       removedUsers.map((u) => u.wa_id).join(', '),
     )

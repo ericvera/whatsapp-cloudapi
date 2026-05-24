@@ -800,6 +800,16 @@ export class EmulatorLogger {
     console.log()
   }
 
+  blockOperation(operation: 'block' | 'unblock', userIds: string): void {
+    if (!this.shouldLog('block')) {
+      return
+    }
+
+    const label = operation === 'block' ? 'Blocked' : 'Unblocked'
+    console.log(`${this.colorize('🚫', 'cyan')} ${label}: ${userIds}`)
+    console.log()
+  }
+
   validationError(error: ErrorDetails): void {
     if (!this.shouldLog('validation')) {
       return

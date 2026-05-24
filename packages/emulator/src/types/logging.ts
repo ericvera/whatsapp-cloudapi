@@ -9,6 +9,8 @@ export type LogCategory =
   | 'http'
   // Media operations
   | 'media'
+  // Block/unblock operations
+  | 'block'
   // Validation errors
   | 'validation'
   // Startup/shutdown
