@@ -9,6 +9,7 @@ import express from 'express'
 import type { Server } from 'http'
 import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
+import { BlockRoutes } from '../routes/BlockRoutes.js'
 import { MediaRoutes } from '../routes/MediaRoutes.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
 import { EmulatorLogger } from '../services/Logger.js'
@@ -31,6 +32,7 @@ export class WhatsAppEmulator {
   private webhookService: WebhookService | undefined
   private messageRoutes: MessageRoutes | null = null
   private mediaRoutes: MediaRoutes | null = null
+  private blockRoutes: BlockRoutes | null = null
   private options: EmulatorOptions
   private logger: EmulatorLogger
 
@@ -376,7 +378,12 @@ export class WhatsAppEmulator {
   }
 
   private setupRoutes(): void {
-    if (!this.app || !this.messageRoutes || !this.mediaRoutes) {
+    if (
+      !this.app ||
+      !this.messageRoutes ||
+      !this.mediaRoutes ||
+      !this.blockRoutes
+    ) {
       throw new Error('App or routes not initialized')
     }
 
@@ -394,6 +401,28 @@ export class WhatsAppEmulator {
       this.validateVersion.bind(this),
       this.validatePhoneNumberId.bind(this),
       this.mediaRoutes.handleMediaUpload.bind(this.mediaRoutes),
+    )
+
+    // Block API routes
+    this.app.post(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleBlock.bind(this.blockRoutes),
+    )
+
+    this.app.delete(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleUnblock.bind(this.blockRoutes),
+    )
+
+    this.app.get(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleList.bind(this.blockRoutes),
     )
 
     // Debug endpoints for development and testing
@@ -490,6 +519,7 @@ export class WhatsAppEmulator {
         this.mediaRoutes,
         this.logger,
       )
+      this.blockRoutes = new BlockRoutes(this.logger)
 
       // Setup routes after initialization
       this.setupRoutes()
