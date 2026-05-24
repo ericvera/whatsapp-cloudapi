@@ -54,6 +54,7 @@ it('sends an audio message by link to a recipient (BSUID)', async () => {
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       type: 'audio',
       audio: { link: 'https://example.com/a.mp3' },

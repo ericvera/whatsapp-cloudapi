@@ -64,7 +64,8 @@ export const sendCallPermissionRequestMessage = async (
 
   const message: CloudAPISendCallPermissionRequestMessageRequest = {
     messaging_product: 'whatsapp',
-    ...(to && { recipient_type: 'individual', to }),
+    recipient_type: 'individual',
+    ...(to && { to }),
     ...(recipient && { recipient }),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'interactive',

@@ -649,6 +649,27 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
+  productMessage(
+    variant: 'product' | 'product_list',
+    detail: string,
+    context: MessageContext,
+  ): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const label = variant === 'product' ? '[Product]' : '[Product list]'
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(this.colorizeAndPad(label, 'cyan'))
+    lines.push(...this.wrapText(detail, BubbleWidth - 4))
+
+    this.renderMessage(lines, context)
+  }
+
   markAsRead(
     messageId: string,
     context: MessageContext,

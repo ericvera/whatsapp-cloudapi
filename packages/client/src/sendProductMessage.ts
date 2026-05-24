@@ -1,11 +1,14 @@
 import {
   CloudAPIResponse,
-  CloudAPISendRequestContactInfoMessageRequest,
+  CloudAPISendProductMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
-import { InteractiveBodyMaxLength } from './constants.js'
+import {
+  InteractiveBodyMaxLength,
+  InteractiveFooterMaxLength,
+} from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
-interface SendRequestContactInfoMessageParams {
+interface SendProductMessageParams {
   /** The access token for the WhatsApp Cloud API */
   accessToken: string
   /** The sender's phone number ID (e.g. "1234567890") */
@@ -18,11 +21,18 @@ interface SendRequestContactInfoMessageParams {
   /**
    * The recipient's business-scoped user ID (BSUID)
    * At least one of `to` / `recipient` is required; `to` takes precedence.
-   * This is the common addressing mode for a contact-info request.
    */
   recipient?: string
-  /** Body text explaining why you need their contact info (max 1024 chars) */
-  bodyText: string
+  /** ID of the catalog connected to the WhatsApp Business Account */
+  catalogId: string
+  /** Retailer ID of the product to share */
+  productRetailerId: string
+  /** Optional body text content (maximum 1024 characters) */
+  bodyText?: string
+  /** Optional footer text content (maximum 60 characters) */
+  footerText?: string
+  /** Optional message ID to reply to */
+  context?: { messageId: string }
   /** An arbitrary string, useful for tracking */
   bizOpaqueCallbackData?: string
   /**
@@ -33,19 +43,23 @@ interface SendRequestContactInfoMessageParams {
 }
 
 /**
- * Sends an interactive message asking the user to share their contact info
- * @param params - Send request-contact-info message parameters
+ * Sends a single-product message sharing one item from a connected catalog
+ * @param params - Send product message parameters
  * @returns Promise with the API response
  */
-export const sendRequestContactInfoMessage = async (
-  params: SendRequestContactInfoMessageParams,
+export const sendProductMessage = async (
+  params: SendProductMessageParams,
 ): Promise<CloudAPIResponse> => {
   const {
     accessToken,
     from,
     to,
     recipient,
+    catalogId,
+    productRetailerId,
     bodyText,
+    footerText,
+    context,
     bizOpaqueCallbackData,
     baseUrl,
   } = params
@@ -54,22 +68,33 @@ export const sendRequestContactInfoMessage = async (
     throw new Error('Either "to" or "recipient" is required')
   }
 
-  if (bodyText.length > InteractiveBodyMaxLength) {
+  if (bodyText && bodyText.length > InteractiveBodyMaxLength) {
     throw new Error(
       `Body text too long: ${bodyText.length.toString()} characters. Maximum allowed: ${InteractiveBodyMaxLength.toString()} characters`,
     )
   }
 
-  const message: CloudAPISendRequestContactInfoMessageRequest = {
+  if (footerText && footerText.length > InteractiveFooterMaxLength) {
+    throw new Error(
+      `Footer text too long: ${footerText.length.toString()} characters. Maximum allowed: ${InteractiveFooterMaxLength.toString()} characters`,
+    )
+  }
+
+  const message: CloudAPISendProductMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
     ...(to && { to }),
     ...(recipient && { recipient }),
+    ...(context && { context: { message_id: context.messageId } }),
     type: 'interactive',
     interactive: {
-      type: 'contact_request',
-      body: { text: bodyText },
-      action: { name: 'request_contact_info' },
+      type: 'product',
+      ...(bodyText && { body: { text: bodyText } }),
+      ...(footerText && { footer: { text: footerText } }),
+      action: {
+        catalog_id: catalogId,
+        product_retailer_id: productRetailerId,
+      },
     },
     ...(bizOpaqueCallbackData && {
       biz_opaque_callback_data: bizOpaqueCallbackData,

@@ -1,14 +1,24 @@
 import {
   CloudAPIResponse,
-  CloudAPISendCatalogMessageRequest,
+  CloudAPISendProductListMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import {
   InteractiveBodyMaxLength,
   InteractiveFooterMaxLength,
+  InteractiveHeaderTextMaxLength,
+  ListSectionTitleMaxLength,
 } from './constants.js'
 import { sendRequest } from './internal/sendRequest.js'
 
-interface SendCatalogMessageParams {
+/** A section grouping one or more catalog products under a title */
+interface ProductListSection {
+  /** Section title (maximum 24 characters) */
+  title: string
+  /** Retailer IDs of the products listed in this section (at least one) */
+  productRetailerIds: string[]
+}
+
+interface SendProductListMessageParams {
   /** The access token for the WhatsApp Cloud API */
   accessToken: string
   /** The sender's phone number ID (e.g. "1234567890") */
@@ -23,10 +33,14 @@ interface SendCatalogMessageParams {
    * At least one of `to` / `recipient` is required; `to` takes precedence.
    */
   recipient?: string
+  /** ID of the catalog connected to the WhatsApp Business Account */
+  catalogId: string
+  /** Header text content (maximum 60 characters) */
+  headerText: string
   /** Body text content (maximum 1024 characters) */
   bodyText: string
-  /** Product retailer ID to use as the catalog thumbnail */
-  thumbnailProductRetailerId: string
+  /** Product sections (at least one, each with at least one product) */
+  sections: ProductListSection[]
   /** Optional footer text content (maximum 60 characters) */
   footerText?: string
   /** Optional message ID to reply to */
@@ -41,20 +55,22 @@ interface SendCatalogMessageParams {
 }
 
 /**
- * Sends a catalog message showcasing the business product catalog
- * @param params - Send catalog message parameters
+ * Sends a multi-product message sharing catalog products grouped into sections
+ * @param params - Send product-list message parameters
  * @returns Promise with the API response
  */
-export const sendCatalogMessage = async (
-  params: SendCatalogMessageParams,
+export const sendProductListMessage = async (
+  params: SendProductListMessageParams,
 ): Promise<CloudAPIResponse> => {
   const {
     accessToken,
     from,
     to,
     recipient,
+    catalogId,
+    headerText,
     bodyText,
-    thumbnailProductRetailerId,
+    sections,
     footerText,
     context,
     bizOpaqueCallbackData,
@@ -63,6 +79,12 @@ export const sendCatalogMessage = async (
 
   if (!to && !recipient) {
     throw new Error('Either "to" or "recipient" is required')
+  }
+
+  if (headerText.length > InteractiveHeaderTextMaxLength) {
+    throw new Error(
+      `Header text too long: ${headerText.length.toString()} characters. Maximum allowed: ${InteractiveHeaderTextMaxLength.toString()} characters`,
+    )
   }
 
   if (bodyText.length > InteractiveBodyMaxLength) {
@@ -77,7 +99,23 @@ export const sendCatalogMessage = async (
     )
   }
 
-  const message: CloudAPISendCatalogMessageRequest = {
+  if (sections.length === 0) {
+    throw new Error('At least one product section is required')
+  }
+
+  for (const section of sections) {
+    if (section.title.length > ListSectionTitleMaxLength) {
+      throw new Error(
+        `Section title too long: ${section.title.length.toString()} characters. Maximum allowed: ${ListSectionTitleMaxLength.toString()} characters`,
+      )
+    }
+
+    if (section.productRetailerIds.length === 0) {
+      throw new Error('Each product section requires at least one product')
+    }
+  }
+
+  const message: CloudAPISendProductListMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
     ...(to && { to }),
@@ -85,14 +123,18 @@ export const sendCatalogMessage = async (
     ...(context && { context: { message_id: context.messageId } }),
     type: 'interactive',
     interactive: {
-      type: 'catalog_message',
+      type: 'product_list',
+      header: { type: 'text', text: headerText },
       body: { text: bodyText },
       ...(footerText && { footer: { text: footerText } }),
       action: {
-        name: 'catalog_message',
-        parameters: {
-          thumbnail_product_retailer_id: thumbnailProductRetailerId,
-        },
+        catalog_id: catalogId,
+        sections: sections.map((section) => ({
+          title: section.title,
+          product_items: section.productRetailerIds.map((id) => ({
+            product_retailer_id: id,
+          })),
+        })),
       },
     },
     ...(bizOpaqueCallbackData && {

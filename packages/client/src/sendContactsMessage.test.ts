@@ -62,6 +62,7 @@ it('sends a contacts message to a recipient (BSUID) with reply context', async (
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       context: { message_id: 'wamid.reply' },
       type: 'contacts',

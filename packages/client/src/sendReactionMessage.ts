@@ -57,7 +57,8 @@ export const sendReactionMessage = async (
 
   const message: CloudAPISendReactionMessageRequest = {
     messaging_product: 'whatsapp',
-    ...(to && { recipient_type: 'individual', to }),
+    recipient_type: 'individual',
+    ...(to && { to }),
     ...(recipient && { recipient }),
     type: 'reaction',
     reaction: {

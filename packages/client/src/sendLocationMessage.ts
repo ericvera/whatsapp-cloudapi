@@ -66,7 +66,8 @@ export const sendLocationMessage = async (
 
   const message: CloudAPISendLocationMessageRequest = {
     messaging_product: 'whatsapp',
-    ...(to && { recipient_type: 'individual', to }),
+    recipient_type: 'individual',
+    ...(to && { to }),
     ...(recipient && { recipient }),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'location',

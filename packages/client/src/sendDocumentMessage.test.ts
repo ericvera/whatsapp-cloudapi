@@ -60,6 +60,7 @@ it('sends a document message by link to a recipient (BSUID)', async () => {
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       type: 'document',
       document: { link: 'https://example.com/d.pdf' },

@@ -59,6 +59,7 @@ it('sends a call permission request to a recipient with reply context', async ()
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       context: { message_id: 'wamid.reply' },
       type: 'interactive',

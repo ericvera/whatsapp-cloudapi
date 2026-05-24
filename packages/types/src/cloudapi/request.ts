@@ -16,8 +16,11 @@ export interface CloudAPIMessageRequestBase {
    * Type of recipient
    * - 'individual': Message to a single recipient
    * - 'group': Message to a group
+   *
+   * Required by the v25.0 Messages reference (the API defaults it to
+   * `'individual'` when omitted).
    */
-  recipient_type?: 'individual' | 'group'
+  recipient_type: 'individual' | 'group'
 
   /**
    * An arbitrary string, useful for tracking.
@@ -29,7 +32,9 @@ export interface CloudAPIMessageRequestBase {
    * WhatsApp ID or phone number of the recipient
    * Phone numbers must include the country code
    * Optional only when `recipient` (a business-scoped user ID) is provided
-   * instead. If both are set, `to` takes precedence.
+   * instead. If both are set, `to` takes precedence. The "at least one of
+   * `to` / `recipient`" rule is enforced by {@link CloudAPIRecipientAddressing}
+   * on {@link CloudAPIRequest}.
    * @example "+16505551234"
    */
   to?: string
@@ -43,6 +48,17 @@ export interface CloudAPIMessageRequestBase {
    * @example "US.13491208655302741918"
    */
   recipient?: string
+
+  /**
+   * The context of a previous message to reply to.
+   * Available on every message type (a top-level field of the message object).
+   */
+  context?: {
+    /**
+     * The message ID of the message being replied to
+     */
+    message_id: string
+  }
 
   /**
    * Controls whether event activity is shared for each message (v25.0)
@@ -64,13 +80,20 @@ export interface CloudAPISendImageMessageRequest extends CloudAPIMessageRequestB
 
   /**
    * The image message content
+   * Provide exactly one of `id` (uploaded media) or `link` (public URL).
    */
   image: {
     /**
      * Media ID of the uploaded image
-     * Obtained from the media upload endpoint
+     * Obtained from the media upload endpoint. One of `id` / `link` required.
      */
-    id: string
+    id?: string
+
+    /**
+     * Public URL of the image to send
+     * One of `id` / `link` is required.
+     */
+    link?: string
 
     /**
      * Optional caption for the image
@@ -83,7 +106,7 @@ export interface CloudAPISendImageMessageRequest extends CloudAPIMessageRequestB
 /**
  * Request body for sending an audio message
  */
-export interface CloudAPISendAudioMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendAudioMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'audio' for audio messages
@@ -111,7 +134,7 @@ export interface CloudAPISendAudioMessageRequest extends CloudAPIMessageRequestW
 /**
  * Request body for sending a video message
  */
-export interface CloudAPISendVideoMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendVideoMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'video' for video messages
@@ -145,7 +168,7 @@ export interface CloudAPISendVideoMessageRequest extends CloudAPIMessageRequestW
 /**
  * Request body for sending a document message
  */
-export interface CloudAPISendDocumentMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendDocumentMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'document' for document messages
@@ -184,7 +207,7 @@ export interface CloudAPISendDocumentMessageRequest extends CloudAPIMessageReque
 /**
  * Request body for sending a sticker message
  */
-export interface CloudAPISendStickerMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendStickerMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'sticker' for sticker messages
@@ -212,7 +235,7 @@ export interface CloudAPISendStickerMessageRequest extends CloudAPIMessageReques
 /**
  * Request body for sending a location message
  */
-export interface CloudAPISendLocationMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendLocationMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'location' for location messages
@@ -433,7 +456,7 @@ export interface CloudAPIContact {
 /**
  * Request body for sending a contacts message
  */
-export interface CloudAPISendContactsMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendContactsMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'contacts' for contacts messages
@@ -768,25 +791,19 @@ export interface CloudAPIListSection {
 }
 
 /**
- * Base interface for message requests that support context
- * (replying to messages)
+ * Base interface for message requests that support context (replying to
+ * messages).
+ *
+ * @deprecated `context` is now available on every message request via
+ * {@link CloudAPIMessageRequestBase}. This alias is retained for backward
+ * compatibility and is equivalent to `CloudAPIMessageRequestBase`.
  */
-export interface CloudAPIMessageRequestWithContext extends CloudAPIMessageRequestBase {
-  /**
-   * The context of a previous message to reply to
-   */
-  context?: {
-    /**
-     * The message ID of the message being replied to
-     */
-    message_id: string
-  }
-}
+export type CloudAPIMessageRequestWithContext = CloudAPIMessageRequestBase
 
 /**
  * Request body for sending a template message
  */
-export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'template' for template messages
@@ -834,7 +851,7 @@ export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageReque
 /**
  * Request body for sending an interactive CTA URL message
  */
-export interface CloudAPISendInteractiveCTAURLRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveCTAURLRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1070,7 +1087,7 @@ export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBa
 /**
  * Request body for sending an interactive buttons message
  */
-export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1210,7 +1227,7 @@ export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMe
 /**
  * Request body for sending an interactive list message
  */
-export interface CloudAPISendInteractiveListMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendInteractiveListMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1312,7 +1329,7 @@ export interface CloudAPISendReactionMessageRequest extends CloudAPIMessageReque
 /**
  * Request body for sending a call permission request message (v25.0)
  */
-export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1356,7 +1373,7 @@ export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAP
 /**
  * Request body for sending a catalog message (v25.0)
  */
-export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageRequestWithContext {
+export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageRequestBase {
   /**
    * Type of message
    * Set to 'interactive' for interactive messages
@@ -1502,7 +1519,168 @@ export interface CloudAPIMarkMessageReadRequest {
   }
 }
 
-export type CloudAPIRequest =
+/**
+ * Request body for sending a single-product interactive message (v25.0)
+ * Shares one product from a connected catalog.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
+ */
+export interface CloudAPISendProductMessageRequest extends CloudAPIMessageRequestBase {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'product' for a single-product message
+     */
+    type: 'product'
+
+    /**
+     * Optional message body
+     */
+    body?: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required action identifying the catalog product to share
+     */
+    action: {
+      /**
+       * ID of the catalog connected to the WhatsApp Business Account
+       */
+      catalog_id: string
+
+      /**
+       * Retailer ID of the product to share
+       */
+      product_retailer_id: string
+    }
+  }
+}
+
+/**
+ * Request body for sending a multi-product interactive message (v25.0)
+ * Shares multiple catalog products grouped into sections.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
+ */
+export interface CloudAPISendProductListMessageRequest extends CloudAPIMessageRequestBase {
+  /**
+   * Type of message
+   * Set to 'interactive' for interactive messages
+   */
+  type: 'interactive'
+
+  /**
+   * The interactive message content
+   */
+  interactive: {
+    /**
+     * Type of interactive message
+     * Set to 'product_list' for a multi-product message
+     */
+    type: 'product_list'
+
+    /**
+     * Required header (text only for product-list messages)
+     */
+    header: {
+      /**
+       * Header type
+       * Must be 'text' for product-list messages
+       */
+      type: 'text'
+
+      /**
+       * Header text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required message body
+     */
+    body: {
+      /**
+       * Body text content
+       * Maximum 1024 characters
+       */
+      text: string
+    }
+
+    /**
+     * Optional footer content
+     */
+    footer?: {
+      /**
+       * Footer text content
+       * Maximum 60 characters
+       */
+      text: string
+    }
+
+    /**
+     * Required action identifying the catalog and the products to share
+     */
+    action: {
+      /**
+       * ID of the catalog connected to the WhatsApp Business Account
+       */
+      catalog_id: string
+
+      /**
+       * Product sections (each groups one or more products under a title)
+       */
+      sections: {
+        /**
+         * Section title
+         * Maximum 24 characters
+         */
+        title: string
+
+        /**
+         * Products listed in this section
+         */
+        product_items: {
+          /**
+           * Retailer ID of the product to share
+           */
+          product_retailer_id: string
+        }[]
+      }[]
+    }
+  }
+}
+
+/**
+ * Union of every outbound message request shape, addressed loosely. The
+ * "at least one of `to` / `recipient`" rule is applied by
+ * {@link CloudAPIRecipientAddressing} on {@link CloudAPIRequest}; prefer
+ * `CloudAPIRequest` when you need a fully-addressed request.
+ */
+export type CloudAPIMessageRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
@@ -1520,3 +1698,22 @@ export type CloudAPIRequest =
   | CloudAPISendCallPermissionRequestMessageRequest
   | CloudAPISendCatalogMessageRequest
   | CloudAPISendRequestContactInfoMessageRequest
+  | CloudAPISendProductMessageRequest
+  | CloudAPISendProductListMessageRequest
+
+/**
+ * Addressing constraint for an outbound message: at least one of `to` (phone
+ * number / group id) or `recipient` (business-scoped user ID) must be present.
+ * When both are set, `to` takes precedence.
+ */
+export type CloudAPIRecipientAddressing =
+  | { to: string; recipient?: string }
+  | { to?: string; recipient: string }
+
+/**
+ * A fully-addressed outbound message request: any
+ * {@link CloudAPIMessageRequest} shape with the "at least one of `to` /
+ * `recipient`" rule enforced at the type level.
+ */
+export type CloudAPIRequest = CloudAPIMessageRequest &
+  CloudAPIRecipientAddressing

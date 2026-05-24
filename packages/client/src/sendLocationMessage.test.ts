@@ -63,6 +63,7 @@ it('sends a minimal location message to a recipient (BSUID)', async () => {
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       type: 'location',
       location: { latitude: 1, longitude: 2 },

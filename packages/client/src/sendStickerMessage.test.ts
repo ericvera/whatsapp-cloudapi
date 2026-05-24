@@ -54,6 +54,7 @@ it('sends a sticker message by link to a recipient (BSUID)', async () => {
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       type: 'sticker',
       sticker: { link: 'https://example.com/s.webp' },

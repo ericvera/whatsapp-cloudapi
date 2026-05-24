@@ -1,13 +1,15 @@
 import type {
   CloudAPIMarkMessageReadRequest,
   CloudAPIMarkReadResponse,
-  CloudAPIRequest,
+  CloudAPIMessageRequest,
   CloudAPIResponse,
   CloudAPISendContactsMessageRequest,
   CloudAPISendFlowMessageRequest,
   CloudAPISendInteractiveButtonsMessageRequest,
   CloudAPISendInteractiveCTAURLRequest,
   CloudAPISendInteractiveListMessageRequest,
+  CloudAPISendProductListMessageRequest,
+  CloudAPISendProductMessageRequest,
   CloudAPISendRequestContactInfoMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
@@ -29,7 +31,7 @@ export class MessageRoutes {
 
   // Type guards for interactive message types
   private isCTAURLMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendInteractiveCTAURLRequest {
     return (
       body.type === 'interactive' &&
@@ -39,7 +41,7 @@ export class MessageRoutes {
   }
 
   private isFlowMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendFlowMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -49,7 +51,7 @@ export class MessageRoutes {
   }
 
   private isButtonsMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendInteractiveButtonsMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -59,7 +61,7 @@ export class MessageRoutes {
   }
 
   private isListMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendInteractiveListMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -76,13 +78,13 @@ export class MessageRoutes {
   }
 
   private isContactsMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendContactsMessageRequest {
     return body.type === 'contacts'
   }
 
   private isContactRequestMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
   ): body is CloudAPISendRequestContactInfoMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -91,8 +93,28 @@ export class MessageRoutes {
     )
   }
 
+  private isProductMessage(
+    body: CloudAPIMessageRequest,
+  ): body is CloudAPISendProductMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'product'
+    )
+  }
+
+  private isProductListMessage(
+    body: CloudAPIMessageRequest,
+  ): body is CloudAPISendProductListMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'product_list'
+    )
+  }
+
   private logOutgoingMessage(
-    body: CloudAPIRequest,
+    body: CloudAPIMessageRequest,
     recipient: string,
     messageId: string,
   ): void {
@@ -109,7 +131,11 @@ export class MessageRoutes {
         this.logger.textMessage(body.text.body, context)
         break
       case 'image':
-        this.logger.imageMessage(body.image.caption, body.image.id, context)
+        this.logger.imageMessage(
+          body.image.caption,
+          body.image.id ?? body.image.link ?? '',
+          context,
+        )
         break
       case 'reaction':
         this.logger.reactionMessage(
@@ -178,8 +204,24 @@ export class MessageRoutes {
           )
         } else if (this.isContactRequestMessage(body)) {
           this.logger.contactRequestMessage(body.interactive.body.text, context)
+        } else if (this.isProductMessage(body)) {
+          this.logger.productMessage(
+            'product',
+            body.interactive.action.product_retailer_id,
+            context,
+          )
+        } else if (this.isProductListMessage(body)) {
+          const productCount = body.interactive.action.sections.reduce(
+            (total, section) => total + section.product_items.length,
+            0,
+          )
+          this.logger.productMessage(
+            'product_list',
+            `${productCount.toString()} products`,
+            context,
+          )
         } else {
-          // For Flow / catalog / call_permission messages, log as text for now
+          // Flow / catalog / call_permission — log the body text.
           this.logger.textMessage(body.interactive.body.text, context)
         }
         break
@@ -204,7 +246,7 @@ export class MessageRoutes {
         return
       }
 
-      const body = req.body as CloudAPIRequest
+      const body = req.body as CloudAPIMessageRequest
       // Accept either `to` (phone number) or `recipient` (business-scoped user
       // ID). When both are present, `to` takes precedence, matching the Cloud
       // API and the `to`/`recipient` request-type docs. The `contact_request`
@@ -229,8 +271,9 @@ export class MessageRoutes {
         return
       }
 
-      // Validate media ID for image messages
-      if (body.type === 'image') {
+      // Validate media ID for image messages addressed by media ID (an image
+      // sent by public `link` has no media ID to check).
+      if (body.type === 'image' && body.image.id) {
         const mediaExists = this.mediaRoutes.isMediaValid(body.image.id)
 
         if (!mediaExists) {
@@ -1158,6 +1201,99 @@ export class MessageRoutes {
             res.status(400).json({
               error: {
                 message: 'action.name must be "request_contact_info"',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+        } else if (this.isProductMessage(body)) {
+          const { action } = body.interactive
+
+          if (!action.catalog_id || !action.product_retailer_id) {
+            this.logger.validationError({
+              field: 'interactive.action',
+              reason: 'catalog_id and product_retailer_id are required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'catalog_id and product_retailer_id are required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+        } else if (this.isProductListMessage(body)) {
+          const { header, body: listBody, action } = body.interactive
+
+          if (!header.text) {
+            this.logger.validationError({
+              field: 'interactive.header.text',
+              reason: 'Header text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Header text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (!listBody.text) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              reason: 'Body text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (action.sections.length === 0) {
+            this.logger.validationError({
+              field: 'interactive.action.sections',
+              reason: 'At least one product section is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'At least one product section is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          const hasEmptySection = action.sections.some(
+            (section) => section.product_items.length === 0,
+          )
+
+          if (hasEmptySection) {
+            this.logger.validationError({
+              field: 'interactive.action.sections.product_items',
+              reason: 'Each product section requires at least one product',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Each product section requires at least one product',
                 type: 'WhatsAppBusinessAPIError',
                 code: 400,
               },

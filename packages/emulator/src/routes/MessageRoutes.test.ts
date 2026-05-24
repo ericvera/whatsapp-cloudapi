@@ -196,6 +196,79 @@ it('rejects a send with neither "to" nor "recipient"', async () => {
   expect(res.status).toBe(400)
 })
 
+it('accepts a valid product interactive message', async () => {
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    to: '+15551234567',
+    type: 'interactive',
+    interactive: {
+      type: 'product',
+      body: { text: 'Check this out' },
+      action: { catalog_id: 'CATALOG-1', product_retailer_id: 'SKU-1' },
+    },
+  })
+
+  expect(res.status).toBe(200)
+  const body = res.body as CloudAPIResponse
+  expect(body.messages[0]?.id).toMatch(/^message_/)
+})
+
+it('rejects a product message missing catalog/product ids', async () => {
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    to: '+15551234567',
+    type: 'interactive',
+    interactive: {
+      type: 'product',
+      action: { catalog_id: '', product_retailer_id: '' },
+    },
+  })
+
+  expect(res.status).toBe(400)
+})
+
+it('accepts a valid product_list interactive message', async () => {
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    to: '+15551234567',
+    type: 'interactive',
+    interactive: {
+      type: 'product_list',
+      header: { type: 'text', text: 'Our picks' },
+      body: { text: 'Browse our products' },
+      action: {
+        catalog_id: 'CATALOG-1',
+        sections: [
+          {
+            title: 'Shoes',
+            product_items: [{ product_retailer_id: 'SKU-1' }],
+          },
+        ],
+      },
+    },
+  })
+
+  expect(res.status).toBe(200)
+  const body = res.body as CloudAPIResponse
+  expect(body.messages[0]?.id).toMatch(/^message_/)
+})
+
+it('rejects a product_list message with no sections', async () => {
+  const res = await request.post(messagesPath).send({
+    messaging_product: 'whatsapp',
+    to: '+15551234567',
+    type: 'interactive',
+    interactive: {
+      type: 'product_list',
+      header: { type: 'text', text: 'Our picks' },
+      body: { text: 'Browse' },
+      action: { catalog_id: 'CATALOG-1', sections: [] },
+    },
+  })
+
+  expect(res.status).toBe(400)
+})
+
 it('still accepts an audio message (unsupported type unchanged)', async () => {
   const res = await request.post(messagesPath).send({
     messaging_product: 'whatsapp',

@@ -56,6 +56,7 @@ it('sends a reaction to a recipient (BSUID)', async () => {
     '123456789',
     {
       messaging_product: 'whatsapp',
+      recipient_type: 'individual',
       recipient: 'US.123',
       type: 'reaction',
       reaction: { message_id: 'wamid.target', emoji: '❤️' },
