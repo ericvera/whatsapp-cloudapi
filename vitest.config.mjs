@@ -6,6 +6,6 @@ export default defineConfig({
     mockReset: true,
     // Only run TypeScript test sources, never compiled output under dist.
     // (Vitest 4's default exclude no longer covers dist.)
-    include: ['src/**/*.test.ts'],
+    include: ['packages/*/src/**/*.test.ts'],
   },
 })
