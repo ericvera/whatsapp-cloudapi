@@ -325,6 +325,3 @@ narrowings**, not v25 regressions; the plan keeps them as-is (additive only).
 | Set up webhooks                                          | https://developers.facebook.com/docs/whatsapp/cloud-api/guides/set-up-webhooks                                   |
 | Business-scoped user IDs                                 | https://developers.facebook.com/docs/whatsapp/business-scoped-user-ids                                           |
 | Typing indicators                                        | https://developers.facebook.com/docs/whatsapp/cloud-api/typing-indicators                                        |
-
-</content>
-</invoke>
