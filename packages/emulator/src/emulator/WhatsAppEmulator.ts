@@ -430,6 +430,28 @@ export class WhatsAppEmulator {
 
     // Webhook validation endpoint
     this.app.get('/webhook', this.handleWebhookValidation.bind(this))
+
+    // Media lifecycle routes (Graph-style /:version/:mediaId paths).
+    // Registered AFTER all /debug + /webhook routes so the 2-segment
+    // GET /:version/:mediaId does not shadow GET /debug/health. The 3-segment
+    // /download route is registered before the 2-segment metadata route.
+    this.app.get(
+      '/:version/:mediaId/download',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.downloadMedia.bind(this.mediaRoutes),
+    )
+
+    this.app.get(
+      '/:version/:mediaId',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.getMediaMetadata.bind(this.mediaRoutes),
+    )
+
+    this.app.delete(
+      '/:version/:mediaId',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.deleteMedia.bind(this.mediaRoutes),
+    )
   }
 
   /**

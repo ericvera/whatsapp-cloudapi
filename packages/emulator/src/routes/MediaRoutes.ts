@@ -1,4 +1,8 @@
-import type { CloudAPIMediaUploadResponse } from '@whatsapp-cloudapi/types/cloudapi'
+import type {
+  CloudAPIMediaDeleteResponse,
+  CloudAPIMediaUploadResponse,
+  CloudAPIMediaURLResponse,
+} from '@whatsapp-cloudapi/types/cloudapi'
 import { createHash } from 'crypto'
 import type { Request, Response } from 'express'
 import multer from 'multer'
@@ -7,6 +11,7 @@ import {
   MaxMediaFileSize,
   MediaSpecByCategory,
   SupportedMediaMimeTypes,
+  SupportedVersion,
   type MediaCategory,
 } from '../constants.js'
 import type { EmulatorLogger } from '../services/Logger.js'
@@ -431,6 +436,108 @@ export class MediaRoutes {
         },
       })
     }
+  }
+
+  /**
+   * Returns the media download URL + metadata for a media ID (GET /:mediaId)
+   */
+  public getMediaMetadata(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const entry = this.mediaStorage.get(mediaId)
+    if (!entry) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const version = req.params['version'] ?? SupportedVersion
+    const host = req.get('host') ?? ''
+    const url = `${req.protocol}://${host}/${version}/${mediaId}/download`
+
+    const response: CloudAPIMediaURLResponse = {
+      messaging_product: 'whatsapp',
+      url,
+      mime_type: entry.mimeType,
+      sha256: entry.sha256 ?? '',
+      file_size: entry.size,
+      id: mediaId,
+    }
+
+    res.status(200).json(response)
+  }
+
+  /**
+   * Streams the retained bytes for a media ID (GET /:mediaId/download)
+   */
+  public downloadMedia(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const entry = this.mediaStorage.get(mediaId)
+    if (!entry?.data) {
+      // Entry exists as metadata only (e.g. imported from a manifest)
+      res.status(404).json({
+        error: {
+          message: 'Media bytes are not available for download',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    res.status(200).type(entry.mimeType).send(entry.data)
+  }
+
+  /**
+   * Deletes a media entry by its media ID (DELETE /:mediaId)
+   */
+  public deleteMedia(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    this.mediaStorage.delete(mediaId)
+    this.logger.mediaOperation('delete', mediaId)
+
+    const response: CloudAPIMediaDeleteResponse = { success: true }
+    res.status(200).json(response)
   }
 
   /**
