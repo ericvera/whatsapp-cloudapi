@@ -125,23 +125,24 @@ convenience, not a documented surface, so it is not assessed here.)
 
 ## 3. Webhook objects
 
-Webhook types (`packages/types/src/webhook/*.ts`). The BSUID identity-field
-presence in §3.1 is verified against the Business-scoped user IDs reference; the
-other object shapes are modeled from code and Meta's webhooks docs (object-level
-only — field shapes beyond §3.1 were not re-rendered this pass).
+Webhook types (`packages/types/src/webhook/*.ts`), verified field-by-field
+against the live v25 reference (per-message-type pages, status, errors) and the
+BSUID reference. Object-level coverage is below; field-level deviations are in
+§3.1 (BSUID identity) and §3.2 (other). `edit` / `group` / `revoke` message
+webhooks exist in the docs but are intentionally not modeled.
 
-| Object                     | Interface(s)                                                                                                                  | Status |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Payload / Entry / Metadata | `WebhookPayload`, `WebhookEntry`, `WebhookMetadata`                                                                           | ✅     |
-| Change union               | `WebhookChange` (`messages`, `user_id_update`, `business_username_update`, `user_preferences`)                                | ✅     |
-| Value                      | `WebhookValue` (`contacts?`, `errors?`, `messages?`, `statuses?`)                                                             | ✅     |
-| Inbound message union      | `WebhookMessage` (text/audio/button/contacts/document/image/interactive/location/order/reaction/sticker/system/video/unknown) | ✅     |
-| Reaction inbound           | `WebhookReactionMessage` (`emoji?` omitted on removal)                                                                        | ✅     |
-| Contacts inbound           | `WebhookMessageContact` (`origin`, `vcard?`)                                                                                  | ✅     |
-| Status                     | `WebhookStatus` (`recipient_id?`/`recipient_user_id?`/…, conversation, pricing)                                               | ✅     |
-| Contact                    | `WebhookContact` (`wa_id?`/`user_id?`/…, `profile.{name, username?}`)                                                         | ✅     |
-| Error                      | `WebhookError` (`code`/`title`/`message`/`error_data.details?`)                                                               | ✅     |
-| Referral                   | `WebhookReferral` (CTWA fields incl. `ctwa_clid?`)                                                                            | ✅     |
+| Object                     | Interface(s)                                                                                                                  | Status  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------- |
+| Payload / Entry / Metadata | `WebhookPayload`, `WebhookEntry`, `WebhookMetadata`                                                                           | ✅      |
+| Change union               | `WebhookChange` (`messages`, `user_id_update`, `business_username_update`, `user_preferences`)                                | ✅      |
+| Value                      | `WebhookValue` (`contacts?`, `errors?`, `messages?`, `statuses?`)                                                             | ✅      |
+| Inbound message union      | `WebhookMessage` (text/audio/button/contacts/document/image/interactive/location/order/reaction/sticker/system/video/unknown) | 🟡 §3.2 |
+| Reaction inbound           | `WebhookReactionMessage` (`emoji?` omitted on removal)                                                                        | ✅      |
+| Contacts inbound           | `WebhookMessageContact` (`origin`, `vcard?`)                                                                                  | ✅      |
+| Status                     | `WebhookStatus` (`recipient_id?`/`recipient_user_id?`/…, conversation, pricing)                                               | 🟡 §3.2 |
+| Contact                    | `WebhookContact` (`wa_id?`/`user_id?`/…, `profile.{name, username?}`)                                                         | ✅      |
+| Error                      | `WebhookError` (`code`/`title`/`message`/`error_data.details?`)                                                               | ✅      |
+| Referral                   | `WebhookReferral` (CTWA fields incl. `ctwa_clid?`)                                                                            | ✅      |
 
 ### 3.1 BSUID identity-field presence (verified — BSUID reference)
 
@@ -161,7 +162,39 @@ only — field shapes beyond §3.1 were not re-rendered this pass).
 
 1. The reference says this field appears in every relevant messages webhook, but
    the type marks it optional. Left optional pending a decision (making it
-   required is a breaking change to an inbound type — see below).
+   required is a breaking change to an inbound type).
+
+### 3.2 Other webhook field deviations (verified — per-type references)
+
+| Type · field                                                                                  | Live doc                                              | Code                               | Kind                 |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------- | -------------------- |
+| `WebhookAudioMessage.audio` — `url`, `voice`, `sha256`                                        | present                                               | absent                             | missing fields ¹     |
+| `WebhookImageMessage.image` — `url`                                                           | present                                               | absent                             | missing field ¹      |
+| `WebhookVideoMessage.video` — `url`                                                           | present                                               | absent                             | missing field ¹      |
+| `WebhookDocumentMessage.document` — `url`, `sha256`                                           | present                                               | absent                             | missing fields ¹     |
+| `WebhookStickerMessage.sticker` — `url`                                                       | present                                               | absent                             | missing field ¹      |
+| `WebhookOrderMessage.order` — `text`                                                          | present                                               | absent                             | missing field        |
+| `WebhookMessage` unsupported variant                                                          | `type:'unsupported'` + `unsupported.type`             | `type:'unknown'`, no `unsupported` | wrong discriminant ² |
+| `WebhookStatus.status`                                                                        | adds `'played'`                                       | 4 values                           | missing enum value   |
+| `WebhookStatus` — `recipient_type`, `recipient_participant_id`, `recipient_identity_key_hash` | present (group / identity)                            | absent                             | missing fields       |
+| `WebhookPricing` — `billable`, `type`                                                         | present (`type`: regular / free\_\*)                  | absent                             | missing fields       |
+| `WebhookPricing.pricing_model`                                                                | `CBP` \| `PMP`                                        | `CBP`                              | missing enum value   |
+| `WebhookConversationType`                                                                     | adds `authentication_international`, `marketing_lite` | 5 values                           | missing enum values  |
+
+**Notes**
+
+1. `url` on received media is a gradual rollout (from Nov 12, 2025) — query it
+   directly with the access token to download.
+2. The API sends `type:'unsupported'` (not `'unknown'`) for unsupported inbound
+   messages; fixing the discriminant is breaking.
+
+All additions above are received-side (inbound) fields/enums, so adding them is
+non-breaking; the `unsupported` discriminant fix and requiring
+`from_user_id`/`user_id` (§3.1) are breaking.
+
+**Could not confirm against current v25 send payloads:** the auth-template OTP
+`button` parameter object (send shape), and flow-message media headers (only a
+text header is shown). Left as-is.
 
 ---
 
