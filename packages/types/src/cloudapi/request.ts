@@ -791,16 +791,6 @@ export interface CloudAPIListSection {
 }
 
 /**
- * Base interface for message requests that support context (replying to
- * messages).
- *
- * @deprecated `context` is now available on every message request via
- * {@link CloudAPIMessageRequestBase}. This alias is retained for backward
- * compatibility and is equivalent to `CloudAPIMessageRequestBase`.
- */
-export type CloudAPIMessageRequestWithContext = CloudAPIMessageRequestBase
-
-/**
  * Request body for sending a template message
  */
 export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageRequestBase {
