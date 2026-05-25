@@ -84,6 +84,18 @@ it('throws when neither mediaId nor link is provided', async () => {
   ).rejects.toThrow('Either "mediaId" or "link" is required')
 })
 
+it('throws when both mediaId and link are provided', async () => {
+  await expect(
+    sendImageMessage({
+      accessToken: 'test-token',
+      from: '1234567890',
+      to: '+1234567890',
+      mediaId: 'media_123',
+      link: 'https://example.com/pic.png',
+    }),
+  ).rejects.toThrow('Provide only one of "mediaId" / "link"')
+})
+
 it('should include caption when provided', async () => {
   const mockResponse = {
     messaging_product: 'whatsapp' as const,

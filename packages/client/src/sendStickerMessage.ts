@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendStickerMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { buildMediaSource } from './internal/buildMediaSource.js'
 import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
@@ -55,10 +56,6 @@ export const sendStickerMessage = async (
     baseUrl,
   } = params
 
-  if (!mediaId && !link) {
-    throw new Error('Either "mediaId" or "link" is required')
-  }
-
   const message: CloudAPISendStickerMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -66,8 +63,7 @@ export const sendStickerMessage = async (
     ...(context && { context: { message_id: context.messageId } }),
     type: 'sticker',
     sticker: {
-      ...(mediaId && { id: mediaId }),
-      ...(link && { link }),
+      ...buildMediaSource(mediaId, link),
     },
     ...(bizOpaqueCallbackData && {
       biz_opaque_callback_data: bizOpaqueCallbackData,

@@ -1,4 +1,5 @@
 import {
+  CloudAPIMediaSource,
   CloudAPIResponse,
   CloudAPISendInteractiveButtonsMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
@@ -50,19 +51,19 @@ interface SendButtonsMessageParams {
    * Optional image header using media ID or link (cannot be used with other
    * header types)
    */
-  headerImage?: { id?: string; link?: string }
+  headerImage?: CloudAPIMediaSource
 
   /**
    * Optional video header using media ID or link (cannot be used with other
    * header types)
    */
-  headerVideo?: { id?: string; link?: string }
+  headerVideo?: CloudAPIMediaSource
 
   /**
    * Optional document header using media ID or link (cannot be used with other
    * header types)
    */
-  headerDocument?: { id?: string; link?: string; filename?: string }
+  headerDocument?: CloudAPIMediaSource & { filename?: string }
 
   /** Optional footer text (maximum 60 characters) */
   footerText?: string

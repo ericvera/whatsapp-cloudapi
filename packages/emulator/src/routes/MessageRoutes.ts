@@ -130,13 +130,17 @@ export class MessageRoutes {
       case 'text':
         this.logger.textMessage(body.text.body, context)
         break
-      case 'image':
+      case 'image': {
+        // Read through a loose view: the media XOR collapses `id` to a
+        // non-optional type, so `body.image.id` alone would hide the link case.
+        const media: { id?: string; link?: string } = body.image
         this.logger.imageMessage(
           body.image.caption,
-          body.image.id ?? body.image.link ?? '',
+          media.id ?? media.link ?? '',
           context,
         )
         break
+      }
       case 'reaction':
         this.logger.reactionMessage(
           body.reaction.emoji,

@@ -79,6 +79,15 @@ export type CloudAPIRecipientAddressing =
   | { to?: string; recipient: string }
 
 /**
+ * Media source: provide exactly one of `id` (uploaded media) or `link` (public
+ * URL). Intersected into every media object so that supplying both, or neither,
+ * is rejected at the type level.
+ */
+export type CloudAPIMediaSource =
+  | { id: string; link?: never }
+  | { link: string; id?: never }
+
+/**
  * Request body for sending an image message
  */
 export type CloudAPISendImageMessageRequest = CloudAPIMessageRequestBase &
@@ -93,19 +102,7 @@ export type CloudAPISendImageMessageRequest = CloudAPIMessageRequestBase &
      * The image message content
      * Provide exactly one of `id` (uploaded media) or `link` (public URL).
      */
-    image: {
-      /**
-       * Media ID of the uploaded image
-       * Obtained from the media upload endpoint. One of `id` / `link` required.
-       */
-      id?: string
-
-      /**
-       * Public URL of the image to send
-       * One of `id` / `link` is required.
-       */
-      link?: string
-
+    image: CloudAPIMediaSource & {
       /**
        * Optional caption for the image
        * Maximum length: 1024 characters
@@ -128,19 +125,7 @@ export type CloudAPISendAudioMessageRequest = CloudAPIMessageRequestBase &
     /**
      * The audio message content
      */
-    audio: {
-      /**
-       * Media ID of the uploaded audio
-       * Only one of id or link should be provided
-       */
-      id?: string
-
-      /**
-       * URL of the audio file
-       * Only one of id or link should be provided
-       */
-      link?: string
-    }
+    audio: CloudAPIMediaSource
   }
 
 /**
@@ -157,19 +142,7 @@ export type CloudAPISendVideoMessageRequest = CloudAPIMessageRequestBase &
     /**
      * The video message content
      */
-    video: {
-      /**
-       * Media ID of the uploaded video
-       * Only one of id or link should be provided
-       */
-      id?: string
-
-      /**
-       * URL of the video file
-       * Only one of id or link should be provided
-       */
-      link?: string
-
+    video: CloudAPIMediaSource & {
       /**
        * Optional caption for the video
        * Maximum length: 1024 characters
@@ -192,19 +165,7 @@ export type CloudAPISendDocumentMessageRequest = CloudAPIMessageRequestBase &
     /**
      * The document message content
      */
-    document: {
-      /**
-       * Media ID of the uploaded document
-       * Only one of id or link should be provided
-       */
-      id?: string
-
-      /**
-       * URL of the document file
-       * Only one of id or link should be provided
-       */
-      link?: string
-
+    document: CloudAPIMediaSource & {
       /**
        * Optional caption for the document
        * Maximum length: 1024 characters
@@ -232,19 +193,7 @@ export type CloudAPISendStickerMessageRequest = CloudAPIMessageRequestBase &
     /**
      * The sticker message content
      */
-    sticker: {
-      /**
-       * Media ID of the uploaded sticker
-       * Only one of id or link should be provided
-       */
-      id?: string
-
-      /**
-       * URL of the sticker file
-       * Only one of id or link should be provided
-       */
-      link?: string
-    }
+    sticker: CloudAPIMediaSource
   }
 
 /**
@@ -584,34 +533,13 @@ export interface CloudAPITemplateParameter {
    * Image parameter
    * Used when type='image'
    */
-  image?: {
-    /**
-     * ID of the image
-     * Only one of id or link should be provided
-     */
-    id?: string
-    /**
-     * Link to the image
-     * Only one of id or link should be provided
-     */
-    link?: string
-  }
+  image?: CloudAPIMediaSource
 
   /**
    * Document parameter
    * Used when type='document'
    */
-  document?: {
-    /**
-     * ID of the document
-     * Only one of id or link should be provided
-     */
-    id?: string
-    /**
-     * Link to the document
-     * Only one of id or link should be provided
-     */
-    link?: string
+  document?: CloudAPIMediaSource & {
     /**
      * Caption for the document
      */
@@ -626,17 +554,7 @@ export interface CloudAPITemplateParameter {
    * Video parameter
    * Used when type='video'
    */
-  video?: {
-    /**
-     * ID of the video
-     * Only one of id or link should be provided
-     */
-    id?: string
-    /**
-     * Link to the video
-     * Only one of id or link should be provided
-     */
-    link?: string
+  video?: CloudAPIMediaSource & {
     /**
      * Caption for the video
      */
@@ -986,10 +904,10 @@ export type CloudAPISendFlowMessageRequest = CloudAPIMessageRequestBase &
         type: 'text' | 'image' | 'video' | 'gif' | 'document'
         text?: string
         sub_text?: string
-        image?: { id?: string; link?: string }
-        video?: { id?: string; link?: string }
-        gif?: { id?: string; link?: string }
-        document?: { id?: string; link?: string; filename?: string }
+        image?: CloudAPIMediaSource
+        video?: CloudAPIMediaSource
+        gif?: CloudAPIMediaSource
+        document?: CloudAPIMediaSource & { filename?: string }
       }
 
       /**
@@ -1137,67 +1055,19 @@ export type CloudAPISendInteractiveButtonsMessageRequest =
             }
           | {
               type: 'image'
-              image: {
-                /**
-                 * Media ID of the uploaded image
-                 * Only one of id or link should be provided
-                 */
-                id?: string
-                /**
-                 * Link to the image
-                 * Only one of id or link should be provided
-                 */
-                link?: string
-              }
+              image: CloudAPIMediaSource
             }
           | {
               type: 'video'
-              video: {
-                /**
-                 * Media ID of the uploaded video
-                 * Only one of id or link should be provided
-                 */
-                id?: string
-                /**
-                 * Link to the video
-                 * Only one of id or link should be provided
-                 */
-                link?: string
-              }
+              video: CloudAPIMediaSource
             }
           | {
               type: 'gif'
-              gif: {
-                /**
-                 * Media ID of the uploaded gif
-                 * Only one of id or link should be provided
-                 */
-                id?: string
-                /**
-                 * Link to the gif
-                 * Only one of id or link should be provided
-                 */
-                link?: string
-              }
+              gif: CloudAPIMediaSource
             }
           | {
               type: 'document'
-              document: {
-                /**
-                 * Media ID of the uploaded document
-                 * Only one of id or link should be provided
-                 */
-                id?: string
-                /**
-                 * Link to the document
-                 * Only one of id or link should be provided
-                 */
-                link?: string
-                /**
-                 * Filename for the document
-                 */
-                filename?: string
-              }
+              document: CloudAPIMediaSource & { filename?: string }
             }
 
         /**

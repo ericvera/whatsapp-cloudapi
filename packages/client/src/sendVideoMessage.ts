@@ -3,6 +3,7 @@ import {
   CloudAPISendVideoMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import { MediaCaptionMaxLength } from './constants.js'
+import { buildMediaSource } from './internal/buildMediaSource.js'
 import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
@@ -59,10 +60,6 @@ export const sendVideoMessage = async (
     baseUrl,
   } = params
 
-  if (!mediaId && !link) {
-    throw new Error('Either "mediaId" or "link" is required')
-  }
-
   if (caption && caption.length > MediaCaptionMaxLength) {
     throw new Error(
       `Caption too long: ${caption.length.toString()} characters. Maximum allowed: ${MediaCaptionMaxLength.toString()} characters`,
@@ -76,8 +73,7 @@ export const sendVideoMessage = async (
     ...(context && { context: { message_id: context.messageId } }),
     type: 'video',
     video: {
-      ...(mediaId && { id: mediaId }),
-      ...(link && { link }),
+      ...buildMediaSource(mediaId, link),
       ...(caption && { caption }),
     },
     ...(bizOpaqueCallbackData && {
