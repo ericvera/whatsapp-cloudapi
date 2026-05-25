@@ -161,10 +161,11 @@ webhooks exist in the docs but are intentionally not modeled.
 
 - Received media `url` (image/video/audio/document/sticker) is a gradual rollout
   (from 2025-11-12); modeled optional. Query it directly with the access token.
-- Meta's docs disagree on the spelling of the authentication-international
-  category (`conversation.origin.type` uses `authentication_international`;
-  `pricing.category` uses `authentication-international`). `WebhookConversationType`
-  accepts both.
+- `conversation.origin.type` (`WebhookConversationType`) and `pricing.category`
+  (`WebhookPricingCategory`) are modeled as separate enums, each matching its
+  own documented values — including the docs' different spelling of the
+  international authentication value (`authentication_international` for
+  conversation vs `authentication-international` for pricing).
 - **Could not confirm against current v25 send payloads:** the auth-template OTP
   `button` parameter object (send shape), and flow-message media headers (only a
   text header is shown). Left as-is.

@@ -1,13 +1,26 @@
 import { WebhookError } from './error.js'
 
 /**
- * Conversation origin types for webhook status updates
+ * Conversation category — values for `conversation.origin.type`
+ * (Meta's CONVERSATION_CATEGORY; note the underscore in
+ * `authentication_international`).
  */
 export type WebhookConversationType =
   | 'authentication'
   | 'authentication_international'
-  // `pricing.category` uses the hyphenated spelling in the docs' pricing table
-  // while `conversation.origin.type` uses the underscore form; accept both.
+  | 'marketing'
+  | 'marketing_lite'
+  | 'utility'
+  | 'service'
+  | 'referral_conversion'
+
+/**
+ * Pricing category — values for `pricing.category`
+ * (Meta's PRICING_CATEGORY; note the hyphen in `authentication-international`,
+ * which differs from the conversation-category spelling).
+ */
+export type WebhookPricingCategory =
+  | 'authentication'
   | 'authentication-international'
   | 'marketing'
   | 'marketing_lite'
@@ -47,9 +60,9 @@ export interface WebhookConversation {
  */
 export interface WebhookPricing {
   /**
-   * Indicates the conversation category
+   * Indicates the pricing category (rate) applied
    */
-  category: WebhookConversationType
+  category: WebhookPricingCategory
 
   /**
    * Type of pricing model used by the business
