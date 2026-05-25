@@ -19,9 +19,8 @@ here.
   visual style.
 -->
 
-Standalone backend/library project — no UI to match. The packages are
-TypeScript libraries (`types`, `client`), an Express-based API emulator
-(`emulator`), and a headless CLI (`cli`). Mocks are not applicable here.
+Standalone backend/library project (TypeScript libraries, an Express
+emulator, a headless CLI) — no UI to match, so mocks are not applicable.
 
 ## Code Review
 

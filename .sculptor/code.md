@@ -30,10 +30,9 @@ strict TypeScript. Published to npm as `@whatsapp-cloudapi/*`.
 
 ## Run
 
-- This repo is primarily libraries (`types`, `client`). The runnable
-  artifact is the emulator CLI.
-- **Run the emulator (after build):** `yarn workspace @whatsapp-cloudapi/cli wa-emulator`
-  (or `node packages/cli/dist/index.js`).
+The only runnable artifact is the emulator CLI (the rest are libraries).
+**After build:** `yarn workspace @whatsapp-cloudapi/cli wa-emulator` (or
+`node packages/cli/dist/index.js`).
 
 ## Pre-commit Verification
 
