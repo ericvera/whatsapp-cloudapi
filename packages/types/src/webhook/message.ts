@@ -90,7 +90,7 @@ export interface WebhookMessageBase {
    * Business-scoped user ID (BSUID) of the sender
    * Present in all messages webhooks regardless of username adoption.
    */
-  from_user_id?: string
+  from_user_id: string
 
   /**
    * Parent business-scoped user ID of the sender
@@ -161,8 +161,7 @@ export interface WebhookMessageBase {
 
   /**
    * Errors describing why a message could not be processed
-   * Typically accompanies messages of type 'unknown' (e.g. unsupported
-   * message types).
+   * Typically accompanies messages of type 'unsupported'.
    */
   errors?: WebhookError[]
 
@@ -182,7 +181,7 @@ export interface WebhookMessageBase {
     | 'reaction'
     | 'sticker'
     | 'system'
-    | 'unknown'
+    | 'unsupported'
     | 'video'
 }
 
@@ -213,6 +212,19 @@ export interface WebhookAudioMessage extends WebhookMessageBase {
      * Mime type of the audio file
      */
     mime_type: string
+    /**
+     * SHA256 hash of the audio asset
+     */
+    sha256: string
+    /**
+     * Whether the audio is a WhatsApp voice recording
+     */
+    voice?: boolean
+    /**
+     * Media asset URL (gradual rollout from 2025-11-12)
+     * Query directly with the access token to download the asset.
+     */
+    url?: string
   }
 }
 
@@ -255,6 +267,15 @@ export interface WebhookDocumentMessage extends WebhookMessageBase {
      * Mime type of the document file
      */
     mime_type: string
+    /**
+     * SHA256 hash of the document asset
+     */
+    sha256: string
+    /**
+     * Media asset URL (gradual rollout from 2025-11-12)
+     * Query directly with the access token to download the asset.
+     */
+    url?: string
   }
 }
 
@@ -280,6 +301,11 @@ export interface WebhookImageMessage extends WebhookMessageBase {
      * SHA256 hash of the image
      */
     sha256: string
+    /**
+     * Media asset URL (gradual rollout from 2025-11-12)
+     * Query directly with the access token to download the asset.
+     */
+    url?: string
   }
 }
 
@@ -374,6 +400,10 @@ export interface WebhookOrderMessage extends WebhookMessageBase {
        */
       currency: string
     }[]
+    /**
+     * Text accompanying the order, if provided
+     */
+    text?: string
   }
 }
 
@@ -399,6 +429,11 @@ export interface WebhookStickerMessage extends WebhookMessageBase {
      * Whether the sticker is animated
      */
     animated: boolean
+    /**
+     * Media asset URL (gradual rollout from 2025-11-12)
+     * Query directly with the access token to download the asset.
+     */
+    url?: string
   }
 }
 
@@ -473,6 +508,11 @@ export interface WebhookVideoMessage extends WebhookMessageBase {
      * SHA256 hash of the video
      */
     sha256: string
+    /**
+     * Media asset URL (gradual rollout from 2025-11-12)
+     * Query directly with the access token to download the asset.
+     */
+    url?: string
   }
 }
 
@@ -630,10 +670,22 @@ export interface WebhookContactsMessage extends WebhookMessageBase {
 }
 
 /**
- * Unknown message type received through webhook
+ * Unsupported message type received through webhook
+ * Sent when the inbound message type is not supported; the base `errors`
+ * array carries the reason.
  */
-export interface WebhookUnknownMessage extends WebhookMessageBase {
-  type: 'unknown'
+export interface WebhookUnsupportedMessage extends WebhookMessageBase {
+  type: 'unsupported'
+
+  /**
+   * Details of the unsupported inbound message
+   */
+  unsupported: {
+    /**
+     * The actual (unsupported) message type, e.g. 'gif', 'poll_update'
+     */
+    type: string
+  }
 }
 
 /**
@@ -652,5 +704,5 @@ export type WebhookMessage =
   | WebhookReactionMessage
   | WebhookStickerMessage
   | WebhookSystemMessage
-  | WebhookUnknownMessage
+  | WebhookUnsupportedMessage
   | WebhookVideoMessage

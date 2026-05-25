@@ -22,7 +22,7 @@ export interface WebhookContact {
    * Present in all messages webhooks regardless of whether the user has
    * enabled the username feature. Use it to reply when `wa_id` is unavailable.
    */
-  user_id?: string
+  user_id: string
 
   /**
    * Parent business-scoped user ID

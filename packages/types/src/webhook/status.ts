@@ -5,7 +5,9 @@ import { WebhookError } from './error.js'
  */
 export type WebhookConversationType =
   | 'authentication'
+  | 'authentication_international'
   | 'marketing'
+  | 'marketing_lite'
   | 'utility'
   | 'service'
   | 'referral_conversion'
@@ -48,9 +50,25 @@ export interface WebhookPricing {
 
   /**
    * Type of pricing model used by the business
-   * Current supported value is CBP
+   * - 'CBP': conversation-based pricing
+   * - 'PMP': per-message pricing
    */
-  pricing_model: 'CBP'
+  pricing_model: 'CBP' | 'PMP'
+
+  /**
+   * Pricing type for the message
+   * - 'regular': a regular paid message
+   * - 'free_customer_service': within the free customer-service window
+   * - 'free_entry_point': free entry-point conversation
+   * Prefer `type` + `category` over the deprecated `billable` flag.
+   */
+  type?: 'regular' | 'free_customer_service' | 'free_entry_point'
+
+  /**
+   * Whether the message was billable
+   * @deprecated Use `type` and `category` instead.
+   */
+  billable?: boolean
 }
 
 /**
@@ -82,13 +100,32 @@ export interface WebhookStatus {
   recipient_parent_user_id?: string
 
   /**
+   * Type of recipient
+   * Only included when the message was sent to a group.
+   */
+  recipient_type?: 'individual' | 'group'
+
+  /**
+   * Phone number of the group participant the status is for
+   * Only included for group messages.
+   */
+  recipient_participant_id?: string
+
+  /**
+   * Hash of the recipient's identity key
+   * Only included when the identity-change-check feature is enabled.
+   */
+  recipient_identity_key_hash?: string
+
+  /**
    * Current status of the message
    * - sent: Message has been sent by the business
    * - delivered: Message has been delivered to the recipient
    * - read: Message has been read by the recipient
+   * - played: A voice message has been played for the first time
    * - failed: Message failed to send (see `errors` for details)
    */
-  status: 'delivered' | 'read' | 'sent' | 'failed'
+  status: 'delivered' | 'read' | 'sent' | 'played' | 'failed'
 
   /**
    * Unix timestamp for when this status was updated
