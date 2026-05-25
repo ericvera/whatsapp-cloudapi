@@ -8,6 +8,7 @@ import {
   InteractiveHeaderTextMaxLength,
   ListSectionTitleMaxLength,
 } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 /** A section grouping one or more catalog products under a title */
@@ -77,10 +78,6 @@ export const sendProductListMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (headerText.length > InteractiveHeaderTextMaxLength) {
     throw new Error(
       `Header text too long: ${headerText.length.toString()} characters. Maximum allowed: ${InteractiveHeaderTextMaxLength.toString()} characters`,
@@ -118,8 +115,7 @@ export const sendProductListMessage = async (
   const message: CloudAPISendProductListMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'interactive',
     interactive: {

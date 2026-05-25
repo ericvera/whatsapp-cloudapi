@@ -1,7 +1,7 @@
 import type {
   CloudAPIMarkMessageReadRequest,
   CloudAPIMarkReadResponse,
-  CloudAPIMessageRequest,
+  CloudAPIRequest,
   CloudAPIResponse,
   CloudAPISendContactsMessageRequest,
   CloudAPISendFlowMessageRequest,
@@ -31,7 +31,7 @@ export class MessageRoutes {
 
   // Type guards for interactive message types
   private isCTAURLMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendInteractiveCTAURLRequest {
     return (
       body.type === 'interactive' &&
@@ -41,7 +41,7 @@ export class MessageRoutes {
   }
 
   private isFlowMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendFlowMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -51,7 +51,7 @@ export class MessageRoutes {
   }
 
   private isButtonsMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendInteractiveButtonsMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -61,7 +61,7 @@ export class MessageRoutes {
   }
 
   private isListMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendInteractiveListMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -78,13 +78,13 @@ export class MessageRoutes {
   }
 
   private isContactsMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendContactsMessageRequest {
     return body.type === 'contacts'
   }
 
   private isContactRequestMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendRequestContactInfoMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -94,7 +94,7 @@ export class MessageRoutes {
   }
 
   private isProductMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendProductMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -104,7 +104,7 @@ export class MessageRoutes {
   }
 
   private isProductListMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
   ): body is CloudAPISendProductListMessageRequest {
     return (
       body.type === 'interactive' &&
@@ -114,7 +114,7 @@ export class MessageRoutes {
   }
 
   private logOutgoingMessage(
-    body: CloudAPIMessageRequest,
+    body: CloudAPIRequest,
     recipient: string,
     messageId: string,
   ): void {
@@ -246,7 +246,7 @@ export class MessageRoutes {
         return
       }
 
-      const body = req.body as CloudAPIMessageRequest
+      const body = req.body as CloudAPIRequest
       // Accept either `to` (phone number) or `recipient` (business-scoped user
       // ID). When both are present, `to` takes precedence, matching the Cloud
       // API and the `to`/`recipient` request-type docs. The `contact_request`

@@ -3,6 +3,7 @@ import {
   CloudAPIResponse,
   CloudAPISendContactsMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendContactsMessageParams {
@@ -52,10 +53,6 @@ export const sendContactsMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (contacts.length === 0) {
     throw new Error('At least one contact is required')
   }
@@ -63,8 +60,7 @@ export const sendContactsMessage = async (
   const message: CloudAPISendContactsMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'contacts',
     contacts,

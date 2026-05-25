@@ -1,6 +1,6 @@
 import {
   CloudAPIMarkMessageReadRequest,
-  CloudAPIMessageRequest,
+  CloudAPIRequest,
   CloudAPIMarkReadResponse,
   CloudAPIResponse,
 } from '@whatsapp-cloudapi/types/cloudapi'
@@ -20,9 +20,7 @@ export const createHeaders = (accessToken: string): Record<string, string> => ({
 /**
  * Union type for all possible request types
  */
-type CloudAPIRequestUnion =
-  | CloudAPIMessageRequest
-  | CloudAPIMarkMessageReadRequest
+type CloudAPIRequestUnion = CloudAPIRequest | CloudAPIMarkMessageReadRequest
 
 /**
  * Conditional type that maps request type to response type

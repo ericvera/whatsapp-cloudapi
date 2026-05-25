@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendStickerMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendStickerMessageParams {
@@ -54,10 +55,6 @@ export const sendStickerMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (!mediaId && !link) {
     throw new Error('Either "mediaId" or "link" is required')
   }
@@ -65,8 +62,7 @@ export const sendStickerMessage = async (
   const message: CloudAPISendStickerMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'sticker',
     sticker: {

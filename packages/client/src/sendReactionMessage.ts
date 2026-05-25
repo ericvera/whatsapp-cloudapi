@@ -2,6 +2,7 @@ import {
   CloudAPIResponse,
   CloudAPISendReactionMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendReactionMessageParams {
@@ -51,15 +52,10 @@ export const sendReactionMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   const message: CloudAPISendReactionMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     type: 'reaction',
     reaction: {
       message_id: messageId,

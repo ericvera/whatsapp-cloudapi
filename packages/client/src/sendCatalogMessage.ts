@@ -6,6 +6,7 @@ import {
   InteractiveBodyMaxLength,
   InteractiveFooterMaxLength,
 } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendCatalogMessageParams {
@@ -61,10 +62,6 @@ export const sendCatalogMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (bodyText.length > InteractiveBodyMaxLength) {
     throw new Error(
       `Body text too long: ${bodyText.length.toString()} characters. Maximum allowed: ${InteractiveBodyMaxLength.toString()} characters`,
@@ -80,8 +77,7 @@ export const sendCatalogMessage = async (
   const message: CloudAPISendCatalogMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'interactive',
     interactive: {

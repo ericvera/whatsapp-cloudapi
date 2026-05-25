@@ -69,204 +69,220 @@ export interface CloudAPIMessageRequestBase {
 }
 
 /**
+ * Addressing constraint for an outbound message: at least one of `to` (phone
+ * number / group id) or `recipient` (business-scoped user ID) must be present.
+ * When both are set, `to` takes precedence. Intersected into every
+ * `CloudAPISend*MessageRequest` so each variant enforces the rule on its own.
+ */
+export type CloudAPIRecipientAddressing =
+  | { to: string; recipient?: string }
+  | { to?: string; recipient: string }
+
+/**
  * Request body for sending an image message
  */
-export interface CloudAPISendImageMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'image' for image messages
-   */
-  type: 'image'
-
-  /**
-   * The image message content
-   * Provide exactly one of `id` (uploaded media) or `link` (public URL).
-   */
-  image: {
+export type CloudAPISendImageMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Media ID of the uploaded image
-     * Obtained from the media upload endpoint. One of `id` / `link` required.
+     * Type of message
+     * Set to 'image' for image messages
      */
-    id?: string
+    type: 'image'
 
     /**
-     * Public URL of the image to send
-     * One of `id` / `link` is required.
+     * The image message content
+     * Provide exactly one of `id` (uploaded media) or `link` (public URL).
      */
-    link?: string
+    image: {
+      /**
+       * Media ID of the uploaded image
+       * Obtained from the media upload endpoint. One of `id` / `link` required.
+       */
+      id?: string
 
-    /**
-     * Optional caption for the image
-     * Maximum length: 1024 characters
-     */
-    caption?: string
+      /**
+       * Public URL of the image to send
+       * One of `id` / `link` is required.
+       */
+      link?: string
+
+      /**
+       * Optional caption for the image
+       * Maximum length: 1024 characters
+       */
+      caption?: string
+    }
   }
-}
 
 /**
  * Request body for sending an audio message
  */
-export interface CloudAPISendAudioMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'audio' for audio messages
-   */
-  type: 'audio'
-
-  /**
-   * The audio message content
-   */
-  audio: {
+export type CloudAPISendAudioMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Media ID of the uploaded audio
-     * Only one of id or link should be provided
+     * Type of message
+     * Set to 'audio' for audio messages
      */
-    id?: string
+    type: 'audio'
 
     /**
-     * URL of the audio file
-     * Only one of id or link should be provided
+     * The audio message content
      */
-    link?: string
+    audio: {
+      /**
+       * Media ID of the uploaded audio
+       * Only one of id or link should be provided
+       */
+      id?: string
+
+      /**
+       * URL of the audio file
+       * Only one of id or link should be provided
+       */
+      link?: string
+    }
   }
-}
 
 /**
  * Request body for sending a video message
  */
-export interface CloudAPISendVideoMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'video' for video messages
-   */
-  type: 'video'
-
-  /**
-   * The video message content
-   */
-  video: {
+export type CloudAPISendVideoMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Media ID of the uploaded video
-     * Only one of id or link should be provided
+     * Type of message
+     * Set to 'video' for video messages
      */
-    id?: string
+    type: 'video'
 
     /**
-     * URL of the video file
-     * Only one of id or link should be provided
+     * The video message content
      */
-    link?: string
+    video: {
+      /**
+       * Media ID of the uploaded video
+       * Only one of id or link should be provided
+       */
+      id?: string
 
-    /**
-     * Optional caption for the video
-     * Maximum length: 1024 characters
-     */
-    caption?: string
+      /**
+       * URL of the video file
+       * Only one of id or link should be provided
+       */
+      link?: string
+
+      /**
+       * Optional caption for the video
+       * Maximum length: 1024 characters
+       */
+      caption?: string
+    }
   }
-}
 
 /**
  * Request body for sending a document message
  */
-export interface CloudAPISendDocumentMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'document' for document messages
-   */
-  type: 'document'
-
-  /**
-   * The document message content
-   */
-  document: {
+export type CloudAPISendDocumentMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Media ID of the uploaded document
-     * Only one of id or link should be provided
+     * Type of message
+     * Set to 'document' for document messages
      */
-    id?: string
+    type: 'document'
 
     /**
-     * URL of the document file
-     * Only one of id or link should be provided
+     * The document message content
      */
-    link?: string
+    document: {
+      /**
+       * Media ID of the uploaded document
+       * Only one of id or link should be provided
+       */
+      id?: string
 
-    /**
-     * Optional caption for the document
-     * Maximum length: 1024 characters
-     */
-    caption?: string
+      /**
+       * URL of the document file
+       * Only one of id or link should be provided
+       */
+      link?: string
 
-    /**
-     * Filename to be used for the document
-     */
-    filename?: string
+      /**
+       * Optional caption for the document
+       * Maximum length: 1024 characters
+       */
+      caption?: string
+
+      /**
+       * Filename to be used for the document
+       */
+      filename?: string
+    }
   }
-}
 
 /**
  * Request body for sending a sticker message
  */
-export interface CloudAPISendStickerMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'sticker' for sticker messages
-   */
-  type: 'sticker'
-
-  /**
-   * The sticker message content
-   */
-  sticker: {
+export type CloudAPISendStickerMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Media ID of the uploaded sticker
-     * Only one of id or link should be provided
+     * Type of message
+     * Set to 'sticker' for sticker messages
      */
-    id?: string
+    type: 'sticker'
 
     /**
-     * URL of the sticker file
-     * Only one of id or link should be provided
+     * The sticker message content
      */
-    link?: string
+    sticker: {
+      /**
+       * Media ID of the uploaded sticker
+       * Only one of id or link should be provided
+       */
+      id?: string
+
+      /**
+       * URL of the sticker file
+       * Only one of id or link should be provided
+       */
+      link?: string
+    }
   }
-}
 
 /**
  * Request body for sending a location message
  */
-export interface CloudAPISendLocationMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'location' for location messages
-   */
-  type: 'location'
-
-  /**
-   * The location message content
-   */
-  location: {
+export type CloudAPISendLocationMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Latitude of the location
+     * Type of message
+     * Set to 'location' for location messages
      */
-    latitude: number
+    type: 'location'
 
     /**
-     * Longitude of the location
+     * The location message content
      */
-    longitude: number
+    location: {
+      /**
+       * Latitude of the location
+       */
+      latitude: number
 
-    /**
-     * Name of the location
-     */
-    name?: string
+      /**
+       * Longitude of the location
+       */
+      longitude: number
 
-    /**
-     * Address of the location
-     */
-    address?: string
+      /**
+       * Name of the location
+       */
+      name?: string
+
+      /**
+       * Address of the location
+       */
+      address?: string
+    }
   }
-}
 
 /**
  * Contact name object for contacts message
@@ -456,50 +472,52 @@ export interface CloudAPIContact {
 /**
  * Request body for sending a contacts message
  */
-export interface CloudAPISendContactsMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'contacts' for contacts messages
-   */
-  type: 'contacts'
+export type CloudAPISendContactsMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
+    /**
+     * Type of message
+     * Set to 'contacts' for contacts messages
+     */
+    type: 'contacts'
 
-  /**
-   * Array of contact objects
-   */
-  contacts: CloudAPIContact[]
-}
+    /**
+     * Array of contact objects
+     */
+    contacts: CloudAPIContact[]
+  }
 
 /**
  * Request body for sending a text message
  */
-export interface CloudAPISendTextMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'text' for text messages
-   */
-  type: 'text'
-
-  /**
-   * The text message content
-   */
-  text: {
+export type CloudAPISendTextMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Whether to enable link preview for URLs in the message
-     * If true, WhatsApp will attempt to render a preview of the first URL in
-     * the body text
-     * URLs must begin with http:// or https://
-     * If multiple URLs are present, only the first one will be previewed
+     * Type of message
+     * Set to 'text' for text messages
      */
-    preview_url?: boolean
+    type: 'text'
 
     /**
-     * The text content of the message
-     * Maximum length: 4096 characters
-     * Can include URLs which will be clickable
+     * The text message content
      */
-    body: string
+    text: {
+      /**
+       * Whether to enable link preview for URLs in the message
+       * If true, WhatsApp will attempt to render a preview of the first URL in
+       * the body text
+       * URLs must begin with http:// or https://
+       * If multiple URLs are present, only the first one will be previewed
+       */
+      preview_url?: boolean
+
+      /**
+       * The text content of the message
+       * Maximum length: 4096 characters
+       * Can include URLs which will be clickable
+       */
+      body: string
+    }
   }
-}
 
 /**
  * Parameter interface for template components
@@ -793,637 +811,648 @@ export interface CloudAPIListSection {
 /**
  * Request body for sending a template message
  */
-export interface CloudAPISendTemplateMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'template' for template messages
-   */
-  type: 'template'
-
-  /**
-   * The template message content
-   */
-  template: {
+export type CloudAPISendTemplateMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * The name of the template
-     * Must be an approved template name
+     * Type of message
+     * Set to 'template' for template messages
      */
-    name: string
+    type: 'template'
 
     /**
-     * The language of the template
+     * The template message content
      */
-    language: {
+    template: {
       /**
-       * The language and locale code (e.g., "en_US")
-       * Required field
+       * The name of the template
+       * Must be an approved template name
        */
-      code: string
+      name: string
 
       /**
-       * Language policy
-       * When set to 'deterministic', messages are sent using the exact
-       * language and locale code you specify
-       * If not specified, WhatsApp determines which language to use when the
-       * template is available in multiple languages
+       * The language of the template
        */
-      policy?: 'deterministic'
+      language: {
+        /**
+         * The language and locale code (e.g., "en_US")
+         * Required field
+         */
+        code: string
+
+        /**
+         * Language policy
+         * When set to 'deterministic', messages are sent using the exact
+         * language and locale code you specify
+         * If not specified, WhatsApp determines which language to use when the
+         * template is available in multiple languages
+         */
+        policy?: 'deterministic'
+      }
+
+      /**
+       * The components of the template
+       * Use to customize the template with variable values
+       */
+      components?: CloudAPITemplateComponent[]
     }
-
-    /**
-     * The components of the template
-     * Use to customize the template with variable values
-     */
-    components?: CloudAPITemplateComponent[]
   }
-}
 
 /**
  * Request body for sending an interactive CTA URL message
  */
-export interface CloudAPISendInteractiveCTAURLRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
+export type CloudAPISendInteractiveCTAURLRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Type of interactive message
-     * Set to 'cta_url' for call-to-action URL messages
+     * Type of message
+     * Set to 'interactive' for interactive messages
      */
-    type: 'cta_url'
+    type: 'interactive'
 
     /**
-     * Optional header content
-     * Only one header type can be used per message
-     * Currently only text and image headers are supported
+     * The interactive message content
      */
-    header?:
-      | {
-          type: 'text'
-          /**
-           * Header text content
-           * Maximum 60 characters
-           */
-          text: string
-        }
-      | {
-          type: 'image'
-          image: {
+    interactive: {
+      /**
+       * Type of interactive message
+       * Set to 'cta_url' for call-to-action URL messages
+       */
+      type: 'cta_url'
+
+      /**
+       * Optional header content
+       * Only one header type can be used per message
+       * Currently only text and image headers are supported
+       */
+      header?:
+        | {
+            type: 'text'
             /**
-             * Media ID of the uploaded image
-             * Obtained from the media upload endpoint
+             * Header text content
+             * Maximum 60 characters
              */
-            id: string
+            text: string
           }
+        | {
+            type: 'image'
+            image: {
+              /**
+               * Media ID of the uploaded image
+               * Obtained from the media upload endpoint
+               */
+              id: string
+            }
+          }
+
+      /**
+       * Required message body
+       */
+      body: {
+        /**
+         * Body text content
+         * Maximum 1024 characters
+         * URLs are automatically hyperlinked
+         */
+        text: string
+      }
+
+      /**
+       * Optional footer content
+       */
+      footer?: {
+        /**
+         * Footer text content
+         * Maximum 60 characters
+         * URLs are automatically hyperlinked
+         */
+        text: string
+      }
+
+      /**
+       * Required action with CTA URL button
+       */
+      action: {
+        /**
+         * Action name
+         * Must be 'cta_url' for CTA URL messages
+         */
+        name: 'cta_url'
+
+        /**
+         * Action parameters
+         */
+        parameters: {
+          /**
+           * Text displayed on the CTA button
+           * Maximum 20 characters
+           */
+          display_text: string
+
+          /**
+           * URL to open when button is tapped
+           * Must start with http:// or https://
+           * Must include a hostname (IP addresses not supported)
+           */
+          url: string
         }
-
-    /**
-     * Required message body
-     */
-    body: {
-      /**
-       * Body text content
-       * Maximum 1024 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
-    }
-
-    /**
-     * Required action with CTA URL button
-     */
-    action: {
-      /**
-       * Action name
-       * Must be 'cta_url' for CTA URL messages
-       */
-      name: 'cta_url'
-
-      /**
-       * Action parameters
-       */
-      parameters: {
-        /**
-         * Text displayed on the CTA button
-         * Maximum 20 characters
-         */
-        display_text: string
-
-        /**
-         * URL to open when button is tapped
-         * Must start with http:// or https://
-         * Must include a hostname (IP addresses not supported)
-         */
-        url: string
       }
     }
   }
-}
 
 /**
  * Request body for sending a WhatsApp Flow message
  */
-export interface CloudAPISendFlowMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for flow messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive flow message content
-   */
-  interactive: {
+export type CloudAPISendFlowMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Type of interactive message
-     * Set to 'flow' for WhatsApp Flow messages
+     * Type of message
+     * Set to 'interactive' for flow messages
      */
-    type: 'flow'
+    type: 'interactive'
 
     /**
-     * Optional header content
+     * The interactive flow message content
      */
-    header?: {
-      type: 'text' | 'image' | 'video' | 'gif' | 'document'
-      text?: string
-      sub_text?: string
-      image?: { id?: string; link?: string }
-      video?: { id?: string; link?: string }
-      gif?: { id?: string; link?: string }
-      document?: { id?: string; link?: string; filename?: string }
-    }
-
-    /**
-     * Required message body
-     */
-    body: {
+    interactive: {
       /**
-       * Body text content
-       * Maximum 1024 characters
+       * Type of interactive message
+       * Set to 'flow' for WhatsApp Flow messages
        */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       */
-      text: string
-    }
-
-    /**
-     * Required flow action configuration
-     */
-    action: {
-      /**
-       * Action name
-       * Must be 'flow' for flow messages
-       */
-      name: 'flow'
+      type: 'flow'
 
       /**
-       * Flow parameters
+       * Optional header content
        */
-      parameters: {
+      header?: {
+        type: 'text' | 'image' | 'video' | 'gif' | 'document'
+        text?: string
+        sub_text?: string
+        image?: { id?: string; link?: string }
+        video?: { id?: string; link?: string }
+        gif?: { id?: string; link?: string }
+        document?: { id?: string; link?: string; filename?: string }
+      }
+
+      /**
+       * Required message body
+       */
+      body: {
         /**
-         * Flow message version
-         * Currently only version 3 is supported
+         * Body text content
+         * Maximum 1024 characters
          */
-        flow_message_version: '3'
+        text: string
+      }
+
+      /**
+       * Optional footer content
+       */
+      footer?: {
+        /**
+         * Footer text content
+         * Maximum 60 characters
+         */
+        text: string
+      }
+
+      /**
+       * Required flow action configuration
+       */
+      action: {
+        /**
+         * Action name
+         * Must be 'flow' for flow messages
+         */
+        name: 'flow'
 
         /**
-         * Token for flow session
-         * Optional - defaults to unused
+         * Flow parameters
          */
-        flow_token?: string
-
-        /**
-         * Unique ID of the flow
-         * Required unless flow_name is set
-         * Cannot be used with flow_name parameter
-         */
-        flow_id?: string
-
-        /**
-         * The name of the Flow
-         * Required unless flow_id is set
-         * Cannot be used with flow_id parameter
-         * Note: Changing the Flow name will require updating this parameter
-         */
-        flow_name?: string
-
-        /**
-         * Call-to-action text on the button
-         * Maximum 30 characters recommended (no emoji)
-         */
-        flow_cta: string
-
-        /**
-         * The current mode of the Flow
-         * Default: published
-         */
-        mode?: 'draft' | 'published'
-
-        /**
-         * Type of flow action
-         * Default: navigate
-         */
-        flow_action?: 'navigate' | 'data_exchange'
-
-        /**
-         * Payload for flow action
-         * Optional only if flow_action is navigate
-         */
-        flow_action_payload?: {
+        parameters: {
           /**
-           * Screen to navigate to
-           * Default: FIRST_ENTRY_SCREEN
+           * Flow message version
+           * Currently only version 3 is supported
            */
-          screen?: string
+          flow_message_version: '3'
 
           /**
-           * Additional data to pass to the flow
-           * Must be a non-empty object
+           * Token for flow session
+           * Optional - defaults to unused
            */
-          data?: Record<string, unknown>
+          flow_token?: string
+
+          /**
+           * Unique ID of the flow
+           * Required unless flow_name is set
+           * Cannot be used with flow_name parameter
+           */
+          flow_id?: string
+
+          /**
+           * The name of the Flow
+           * Required unless flow_id is set
+           * Cannot be used with flow_id parameter
+           * Note: Changing the Flow name will require updating this parameter
+           */
+          flow_name?: string
+
+          /**
+           * Call-to-action text on the button
+           * Maximum 30 characters recommended (no emoji)
+           */
+          flow_cta: string
+
+          /**
+           * The current mode of the Flow
+           * Default: published
+           */
+          mode?: 'draft' | 'published'
+
+          /**
+           * Type of flow action
+           * Default: navigate
+           */
+          flow_action?: 'navigate' | 'data_exchange'
+
+          /**
+           * Payload for flow action
+           * Optional only if flow_action is navigate
+           */
+          flow_action_payload?: {
+            /**
+             * Screen to navigate to
+             * Default: FIRST_ENTRY_SCREEN
+             */
+            screen?: string
+
+            /**
+             * Additional data to pass to the flow
+             * Must be a non-empty object
+             */
+            data?: Record<string, unknown>
+          }
         }
       }
     }
   }
-}
 
 /**
  * Request body for sending an interactive buttons message
  */
-export interface CloudAPISendInteractiveButtonsMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
+export type CloudAPISendInteractiveButtonsMessageRequest =
+  CloudAPIMessageRequestBase &
+    CloudAPIRecipientAddressing & {
+      /**
+       * Type of message
+       * Set to 'interactive' for interactive messages
+       */
+      type: 'interactive'
 
-  /**
-   * The interactive message content
-   */
-  interactive: {
-    /**
-     * Type of interactive message
-     * Set to 'button' for reply buttons messages
-     */
-    type: 'button'
+      /**
+       * The interactive message content
+       */
+      interactive: {
+        /**
+         * Type of interactive message
+         * Set to 'button' for reply buttons messages
+         */
+        type: 'button'
 
-    /**
-     * Optional header content
-     * Only one header type can be used per message
-     */
-    header?:
-      | {
+        /**
+         * Optional header content
+         * Only one header type can be used per message
+         */
+        header?:
+          | {
+              type: 'text'
+              /**
+               * Header text content
+               * Maximum 60 characters
+               */
+              text: string
+              /**
+               * Optional sub-text for the header
+               * Maximum 60 characters
+               */
+              sub_text?: string
+            }
+          | {
+              type: 'image'
+              image: {
+                /**
+                 * Media ID of the uploaded image
+                 * Only one of id or link should be provided
+                 */
+                id?: string
+                /**
+                 * Link to the image
+                 * Only one of id or link should be provided
+                 */
+                link?: string
+              }
+            }
+          | {
+              type: 'video'
+              video: {
+                /**
+                 * Media ID of the uploaded video
+                 * Only one of id or link should be provided
+                 */
+                id?: string
+                /**
+                 * Link to the video
+                 * Only one of id or link should be provided
+                 */
+                link?: string
+              }
+            }
+          | {
+              type: 'gif'
+              gif: {
+                /**
+                 * Media ID of the uploaded gif
+                 * Only one of id or link should be provided
+                 */
+                id?: string
+                /**
+                 * Link to the gif
+                 * Only one of id or link should be provided
+                 */
+                link?: string
+              }
+            }
+          | {
+              type: 'document'
+              document: {
+                /**
+                 * Media ID of the uploaded document
+                 * Only one of id or link should be provided
+                 */
+                id?: string
+                /**
+                 * Link to the document
+                 * Only one of id or link should be provided
+                 */
+                link?: string
+                /**
+                 * Filename for the document
+                 */
+                filename?: string
+              }
+            }
+
+        /**
+         * Required message body
+         */
+        body: {
+          /**
+           * Body text content
+           * Maximum 1024 characters
+           * URLs are automatically hyperlinked
+           */
+          text: string
+        }
+
+        /**
+         * Optional footer content
+         */
+        footer?: {
+          /**
+           * Footer text content
+           * Maximum 60 characters
+           * URLs are automatically hyperlinked
+           */
+          text: string
+        }
+
+        /**
+         * Required action with reply buttons
+         */
+        action: {
+          /**
+           * Array of reply buttons
+           * Minimum 1 button, maximum 3 buttons
+           */
+          buttons: CloudAPIReplyButton[]
+        }
+      }
+    }
+
+/**
+ * Request body for sending an interactive list message
+ */
+export type CloudAPISendInteractiveListMessageRequest =
+  CloudAPIMessageRequestBase &
+    CloudAPIRecipientAddressing & {
+      /**
+       * Type of message
+       * Set to 'interactive' for interactive messages
+       */
+      type: 'interactive'
+
+      /**
+       * The interactive message content
+       */
+      interactive: {
+        /**
+         * Type of interactive message
+         * Set to 'list' for list messages
+         */
+        type: 'list'
+
+        /**
+         * Optional header content
+         */
+        header?: {
           type: 'text'
           /**
            * Header text content
            * Maximum 60 characters
            */
           text: string
+        }
+
+        /**
+         * Required message body
+         */
+        body: {
           /**
-           * Optional sub-text for the header
-           * Maximum 60 characters
+           * Body text content
+           * Maximum 1024 characters
+           * URLs are automatically hyperlinked
            */
-          sub_text?: string
-        }
-      | {
-          type: 'image'
-          image: {
-            /**
-             * Media ID of the uploaded image
-             * Only one of id or link should be provided
-             */
-            id?: string
-            /**
-             * Link to the image
-             * Only one of id or link should be provided
-             */
-            link?: string
-          }
-        }
-      | {
-          type: 'video'
-          video: {
-            /**
-             * Media ID of the uploaded video
-             * Only one of id or link should be provided
-             */
-            id?: string
-            /**
-             * Link to the video
-             * Only one of id or link should be provided
-             */
-            link?: string
-          }
-        }
-      | {
-          type: 'gif'
-          gif: {
-            /**
-             * Media ID of the uploaded gif
-             * Only one of id or link should be provided
-             */
-            id?: string
-            /**
-             * Link to the gif
-             * Only one of id or link should be provided
-             */
-            link?: string
-          }
-        }
-      | {
-          type: 'document'
-          document: {
-            /**
-             * Media ID of the uploaded document
-             * Only one of id or link should be provided
-             */
-            id?: string
-            /**
-             * Link to the document
-             * Only one of id or link should be provided
-             */
-            link?: string
-            /**
-             * Filename for the document
-             */
-            filename?: string
-          }
+          text: string
         }
 
-    /**
-     * Required message body
-     */
-    body: {
-      /**
-       * Body text content
-       * Maximum 1024 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
+        /**
+         * Optional footer content
+         */
+        footer?: {
+          /**
+           * Footer text content
+           * Maximum 60 characters
+           * URLs are automatically hyperlinked
+           */
+          text: string
+        }
+
+        /**
+         * Required action with list configuration
+         */
+        action: {
+          /**
+           * Button text to open the list
+           * Maximum 20 characters
+           */
+          button: string
+
+          /**
+           * Array of sections containing list items
+           * Minimum 1 section, maximum 10 rows total across all sections
+           */
+          sections: CloudAPIListSection[]
+        }
+      }
     }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
-    }
-
-    /**
-     * Required action with reply buttons
-     */
-    action: {
-      /**
-       * Array of reply buttons
-       * Minimum 1 button, maximum 3 buttons
-       */
-      buttons: CloudAPIReplyButton[]
-    }
-  }
-}
-
-/**
- * Request body for sending an interactive list message
- */
-export interface CloudAPISendInteractiveListMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
-    /**
-     * Type of interactive message
-     * Set to 'list' for list messages
-     */
-    type: 'list'
-
-    /**
-     * Optional header content
-     */
-    header?: {
-      type: 'text'
-      /**
-       * Header text content
-       * Maximum 60 characters
-       */
-      text: string
-    }
-
-    /**
-     * Required message body
-     */
-    body: {
-      /**
-       * Body text content
-       * Maximum 1024 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       * URLs are automatically hyperlinked
-       */
-      text: string
-    }
-
-    /**
-     * Required action with list configuration
-     */
-    action: {
-      /**
-       * Button text to open the list
-       * Maximum 20 characters
-       */
-      button: string
-
-      /**
-       * Array of sections containing list items
-       * Minimum 1 section, maximum 10 rows total across all sections
-       */
-      sections: CloudAPIListSection[]
-    }
-  }
-}
 
 /**
  * Request body for sending a reaction message
  */
-export interface CloudAPISendReactionMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'reaction' for reaction messages
-   */
-  type: 'reaction'
-
-  /**
-   * The reaction content
-   */
-  reaction: {
+export type CloudAPISendReactionMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * ID of the message to react to
+     * Type of message
+     * Set to 'reaction' for reaction messages
      */
-    message_id: string
+    type: 'reaction'
 
     /**
-     * Emoji to use as reaction
-     * Send empty string to remove reaction
+     * The reaction content
      */
-    emoji: string
+    reaction: {
+      /**
+       * ID of the message to react to
+       */
+      message_id: string
+
+      /**
+       * Emoji to use as reaction
+       * Send empty string to remove reaction
+       */
+      emoji: string
+    }
   }
-}
 
 /**
  * Request body for sending a call permission request message
  */
-export interface CloudAPISendCallPermissionRequestMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
-    /**
-     * Type of interactive message
-     * Set to 'call_permission_request' to request call permissions
-     */
-    type: 'call_permission_request'
-
-    /**
-     * Required message body
-     */
-    body: {
+export type CloudAPISendCallPermissionRequestMessageRequest =
+  CloudAPIMessageRequestBase &
+    CloudAPIRecipientAddressing & {
       /**
-       * Body text content explaining why you want to call
-       * Maximum 1024 characters
+       * Type of message
+       * Set to 'interactive' for interactive messages
        */
-      text: string
-    }
+      type: 'interactive'
 
-    /**
-     * Required action for call permission request
-     */
-    action: {
       /**
-       * Action name
-       * Must be 'call_permission_request'
+       * The interactive message content
        */
-      name: 'call_permission_request'
+      interactive: {
+        /**
+         * Type of interactive message
+         * Set to 'call_permission_request' to request call permissions
+         */
+        type: 'call_permission_request'
+
+        /**
+         * Required message body
+         */
+        body: {
+          /**
+           * Body text content explaining why you want to call
+           * Maximum 1024 characters
+           */
+          text: string
+        }
+
+        /**
+         * Required action for call permission request
+         */
+        action: {
+          /**
+           * Action name
+           * Must be 'call_permission_request'
+           */
+          name: 'call_permission_request'
+        }
+      }
     }
-  }
-}
 
 /**
  * Request body for sending a catalog message
  */
-export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
+export type CloudAPISendCatalogMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Type of interactive message
-     * Set to 'catalog_message' for catalog messages
+     * Type of message
+     * Set to 'interactive' for interactive messages
      */
-    type: 'catalog_message'
+    type: 'interactive'
 
     /**
-     * Required message body
+     * The interactive message content
      */
-    body: {
+    interactive: {
       /**
-       * Body text content
-       * Maximum 1024 characters
+       * Type of interactive message
+       * Set to 'catalog_message' for catalog messages
        */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       */
-      text: string
-    }
-
-    /**
-     * Required action for catalog message
-     */
-    action: {
-      /**
-       * Action name
-       * Must be 'catalog_message'
-       */
-      name: 'catalog_message'
+      type: 'catalog_message'
 
       /**
-       * Action parameters
+       * Required message body
        */
-      parameters: {
+      body: {
         /**
-         * Product retailer ID to use as thumbnail
+         * Body text content
+         * Maximum 1024 characters
          */
-        thumbnail_product_retailer_id: string
+        text: string
+      }
+
+      /**
+       * Optional footer content
+       */
+      footer?: {
+        /**
+         * Footer text content
+         * Maximum 60 characters
+         */
+        text: string
+      }
+
+      /**
+       * Required action for catalog message
+       */
+      action: {
+        /**
+         * Action name
+         * Must be 'catalog_message'
+         */
+        name: 'catalog_message'
+
+        /**
+         * Action parameters
+         */
+        parameters: {
+          /**
+           * Product retailer ID to use as thumbnail
+           */
+          thumbnail_product_retailer_id: string
+        }
       }
     }
   }
-}
 
 /**
  * Request body for sending a request-contact-info interactive message
@@ -1432,46 +1461,48 @@ export interface CloudAPISendCatalogMessageRequest extends CloudAPIMessageReques
  * so no parameters are required.
  * Ref: https://developers.facebook.com/docs/whatsapp/business-scoped-user-ids/
  */
-export interface CloudAPISendRequestContactInfoMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
-    /**
-     * Type of interactive message
-     * Set to 'contact_request' to request the user's contact information
-     */
-    type: 'contact_request'
-
-    /**
-     * Required message body
-     */
-    body: {
+export type CloudAPISendRequestContactInfoMessageRequest =
+  CloudAPIMessageRequestBase &
+    CloudAPIRecipientAddressing & {
       /**
-       * Body text content explaining why you need their contact info
-       * Maximum 1024 characters
+       * Type of message
+       * Set to 'interactive' for interactive messages
        */
-      text: string
-    }
+      type: 'interactive'
 
-    /**
-     * Required action for the contact-info request
-     */
-    action: {
       /**
-       * Action name
-       * Must be 'request_contact_info'
+       * The interactive message content
        */
-      name: 'request_contact_info'
+      interactive: {
+        /**
+         * Type of interactive message
+         * Set to 'contact_request' to request the user's contact information
+         */
+        type: 'contact_request'
+
+        /**
+         * Required message body
+         */
+        body: {
+          /**
+           * Body text content explaining why you need their contact info
+           * Maximum 1024 characters
+           */
+          text: string
+        }
+
+        /**
+         * Required action for the contact-info request
+         */
+        action: {
+          /**
+           * Action name
+           * Must be 'request_contact_info'
+           */
+          name: 'request_contact_info'
+        }
+      }
     }
-  }
-}
 
 /**
  * Request body for marking a message as read
@@ -1514,163 +1545,164 @@ export interface CloudAPIMarkMessageReadRequest {
  * Shares one product from a connected catalog.
  * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
  */
-export interface CloudAPISendProductMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
+export type CloudAPISendProductMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Type of interactive message
-     * Set to 'product' for a single-product message
+     * Type of message
+     * Set to 'interactive' for interactive messages
      */
-    type: 'product'
+    type: 'interactive'
 
     /**
-     * Optional message body
+     * The interactive message content
      */
-    body?: {
+    interactive: {
       /**
-       * Body text content
-       * Maximum 1024 characters
+       * Type of interactive message
+       * Set to 'product' for a single-product message
        */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       */
-      text: string
-    }
-
-    /**
-     * Required action identifying the catalog product to share
-     */
-    action: {
-      /**
-       * ID of the catalog connected to the WhatsApp Business Account
-       */
-      catalog_id: string
+      type: 'product'
 
       /**
-       * Retailer ID of the product to share
+       * Optional message body
        */
-      product_retailer_id: string
+      body?: {
+        /**
+         * Body text content
+         * Maximum 1024 characters
+         */
+        text: string
+      }
+
+      /**
+       * Optional footer content
+       */
+      footer?: {
+        /**
+         * Footer text content
+         * Maximum 60 characters
+         */
+        text: string
+      }
+
+      /**
+       * Required action identifying the catalog product to share
+       */
+      action: {
+        /**
+         * ID of the catalog connected to the WhatsApp Business Account
+         */
+        catalog_id: string
+
+        /**
+         * Retailer ID of the product to share
+         */
+        product_retailer_id: string
+      }
     }
   }
-}
 
 /**
  * Request body for sending a multi-product interactive message
  * Shares multiple catalog products grouped into sections.
  * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
  */
-export interface CloudAPISendProductListMessageRequest extends CloudAPIMessageRequestBase {
-  /**
-   * Type of message
-   * Set to 'interactive' for interactive messages
-   */
-  type: 'interactive'
-
-  /**
-   * The interactive message content
-   */
-  interactive: {
+export type CloudAPISendProductListMessageRequest = CloudAPIMessageRequestBase &
+  CloudAPIRecipientAddressing & {
     /**
-     * Type of interactive message
-     * Set to 'product_list' for a multi-product message
+     * Type of message
+     * Set to 'interactive' for interactive messages
      */
-    type: 'product_list'
+    type: 'interactive'
 
     /**
-     * Required header (text only for product-list messages)
+     * The interactive message content
      */
-    header: {
+    interactive: {
       /**
-       * Header type
-       * Must be 'text' for product-list messages
+       * Type of interactive message
+       * Set to 'product_list' for a multi-product message
        */
-      type: 'text'
+      type: 'product_list'
 
       /**
-       * Header text content
-       * Maximum 60 characters
+       * Required header (text only for product-list messages)
        */
-      text: string
-    }
-
-    /**
-     * Required message body
-     */
-    body: {
-      /**
-       * Body text content
-       * Maximum 1024 characters
-       */
-      text: string
-    }
-
-    /**
-     * Optional footer content
-     */
-    footer?: {
-      /**
-       * Footer text content
-       * Maximum 60 characters
-       */
-      text: string
-    }
-
-    /**
-     * Required action identifying the catalog and the products to share
-     */
-    action: {
-      /**
-       * ID of the catalog connected to the WhatsApp Business Account
-       */
-      catalog_id: string
-
-      /**
-       * Product sections (each groups one or more products under a title)
-       */
-      sections: {
+      header: {
         /**
-         * Section title
-         * Maximum 24 characters
+         * Header type
+         * Must be 'text' for product-list messages
          */
-        title: string
+        type: 'text'
 
         /**
-         * Products listed in this section
+         * Header text content
+         * Maximum 60 characters
          */
-        product_items: {
+        text: string
+      }
+
+      /**
+       * Required message body
+       */
+      body: {
+        /**
+         * Body text content
+         * Maximum 1024 characters
+         */
+        text: string
+      }
+
+      /**
+       * Optional footer content
+       */
+      footer?: {
+        /**
+         * Footer text content
+         * Maximum 60 characters
+         */
+        text: string
+      }
+
+      /**
+       * Required action identifying the catalog and the products to share
+       */
+      action: {
+        /**
+         * ID of the catalog connected to the WhatsApp Business Account
+         */
+        catalog_id: string
+
+        /**
+         * Product sections (each groups one or more products under a title)
+         */
+        sections: {
           /**
-           * Retailer ID of the product to share
+           * Section title
+           * Maximum 24 characters
            */
-          product_retailer_id: string
+          title: string
+
+          /**
+           * Products listed in this section
+           */
+          product_items: {
+            /**
+             * Retailer ID of the product to share
+             */
+            product_retailer_id: string
+          }[]
         }[]
-      }[]
+      }
     }
   }
-}
 
 /**
- * Union of every outbound message request shape, addressed loosely. The
- * "at least one of `to` / `recipient`" rule is applied by
- * {@link CloudAPIRecipientAddressing} on {@link CloudAPIRequest}; prefer
- * `CloudAPIRequest` when you need a fully-addressed request.
+ * Union of every outbound message request. Each variant already carries the
+ * "at least one of `to` / `recipient`" rule via
+ * {@link CloudAPIRecipientAddressing}.
  */
-export type CloudAPIMessageRequest =
+export type CloudAPIRequest =
   | CloudAPISendTextMessageRequest
   | CloudAPISendTemplateMessageRequest
   | CloudAPISendImageMessageRequest
@@ -1690,20 +1722,3 @@ export type CloudAPIMessageRequest =
   | CloudAPISendRequestContactInfoMessageRequest
   | CloudAPISendProductMessageRequest
   | CloudAPISendProductListMessageRequest
-
-/**
- * Addressing constraint for an outbound message: at least one of `to` (phone
- * number / group id) or `recipient` (business-scoped user ID) must be present.
- * When both are set, `to` takes precedence.
- */
-export type CloudAPIRecipientAddressing =
-  | { to: string; recipient?: string }
-  | { to?: string; recipient: string }
-
-/**
- * A fully-addressed outbound message request: any
- * {@link CloudAPIMessageRequest} shape with the "at least one of `to` /
- * `recipient`" rule enforced at the type level.
- */
-export type CloudAPIRequest = CloudAPIMessageRequest &
-  CloudAPIRecipientAddressing

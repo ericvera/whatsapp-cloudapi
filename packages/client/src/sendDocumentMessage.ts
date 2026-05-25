@@ -3,6 +3,7 @@ import {
   CloudAPISendDocumentMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import { MediaCaptionMaxLength } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendDocumentMessageParams {
@@ -61,10 +62,6 @@ export const sendDocumentMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (!mediaId && !link) {
     throw new Error('Either "mediaId" or "link" is required')
   }
@@ -78,8 +75,7 @@ export const sendDocumentMessage = async (
   const message: CloudAPISendDocumentMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'document',
     document: {

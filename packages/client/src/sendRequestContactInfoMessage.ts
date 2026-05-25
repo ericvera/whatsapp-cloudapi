@@ -3,6 +3,7 @@ import {
   CloudAPISendRequestContactInfoMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import { InteractiveBodyMaxLength } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendRequestContactInfoMessageParams {
@@ -50,10 +51,6 @@ export const sendRequestContactInfoMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (bodyText.length > InteractiveBodyMaxLength) {
     throw new Error(
       `Body text too long: ${bodyText.length.toString()} characters. Maximum allowed: ${InteractiveBodyMaxLength.toString()} characters`,
@@ -63,8 +60,7 @@ export const sendRequestContactInfoMessage = async (
   const message: CloudAPISendRequestContactInfoMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     type: 'interactive',
     interactive: {
       type: 'contact_request',

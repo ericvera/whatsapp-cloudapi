@@ -3,6 +3,7 @@ import {
   CloudAPISendImageMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import { MediaCaptionMaxLength } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendImageMessageParams {
@@ -58,10 +59,6 @@ export const sendImageMessage = async (
     baseUrl,
   } = params
 
-  if (!to && !recipient) {
-    throw new Error('Either "to" or "recipient" is required')
-  }
-
   if (!mediaId && !link) {
     throw new Error('Either "mediaId" or "link" is required')
   }
@@ -76,8 +73,7 @@ export const sendImageMessage = async (
   const message: CloudAPISendImageMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    ...(to && { to }),
-    ...(recipient && { recipient }),
+    ...buildRecipient(to, recipient),
     ...(context && { context: { message_id: context.messageId } }),
     type: 'image',
     image: {
