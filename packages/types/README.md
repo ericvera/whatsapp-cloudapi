@@ -22,15 +22,39 @@ identifiers are now optional and a new `user_id` (BSUID) appears throughout.
 
 **Breaking changes**
 
+_Send requests_
+
+- `recipient_type` is now **required** on message requests (the v25 reference
+  marks it required; the API defaults it to `individual`).
+- A request must carry **at least one of `to` / `recipient`** (`to` wins when
+  both are set), enforced by `CloudAPIRecipientAddressing` on `CloudAPIRequest`
+  and on every `CloudAPISend*MessageRequest`. `CloudAPIMessageRequestBase.to`
+  alone is optional.
+- Each `CloudAPISend*MessageRequest` is now a **type alias** (was an
+  interface): no declaration merging, and no `interface … extends` of these
+  types.
+- `CloudAPIMessageRequestWithContext` is **removed** — use
+  `CloudAPIMessageRequestBase`, which now carries the optional `context` field
+  for every message type.
+- Media objects accept **exactly one** of `id` / `link` (`CloudAPIMediaSource`);
+  supplying both — or neither — no longer compiles. Applies to message
+  image/audio/video/document/sticker and the template / flow / buttons headers.
+- `CloudAPIResponse.contacts[].wa_id` is optional (BSUID sends omit it).
+
+_Webhooks_
+
 - `WebhookChange` is now a discriminated union on `field`
   (`'messages' | 'user_id_update' | 'business_username_update' | 'user_preferences'`).
   Narrow on `change.field === 'messages'` before reading `value.messages` /
   `value.statuses`.
-- Identifiers that can now be omitted (typed optional):
-  - Webhook: `WebhookContact.wa_id`, `WebhookMessageBase.from`,
-    `WebhookStatus.recipient_id`
-  - Cloud API: `CloudAPIMessageRequestBase.to`, `CloudAPIResponse.contacts[].wa_id`
-- `WebhookStatus.status` adds `'failed'`.
+- Unsupported inbound messages: `WebhookUnknownMessage` (`type: 'unknown'`) is
+  replaced by `WebhookUnsupportedMessage` (`type: 'unsupported'`, carrying an
+  `unsupported.type` field).
+- `WebhookMessageBase.from_user_id` and `WebhookContact.user_id` are now
+  **required** (always present in messages webhooks per the BSUID reference).
+- Identifiers that can be omitted are optional: `WebhookContact.wa_id`,
+  `WebhookMessageBase.from`, `WebhookStatus.recipient_id`.
+- `WebhookStatus.status` adds `'failed'` and `'played'`.
 
 **New (non-breaking) additions**
 
@@ -45,6 +69,16 @@ identifiers are now optional and a new `user_id` (BSUID) appears throughout.
 - `CloudAPISendRequestContactInfoMessageRequest` for requesting a user's phone
   number, plus `profile.username`, `identity_key_hash`, message-level
   `errors`/`referral`, and `context.referred_product`.
+- New send types: `CloudAPISendProductMessageRequest`,
+  `CloudAPISendProductListMessageRequest`, plus media (`getMediaUrl` /
+  `downloadMedia` / `deleteMedia` response types), and the full Block API
+  request/response types.
+- Webhook field additions: received-media `url` (image/audio/video/document/
+  sticker) + audio `voice`, `WebhookOrderMessage.order.text`,
+  `WebhookStatus.recipient_type`/`recipient_participant_id`/
+  `recipient_identity_key_hash`, `WebhookPricing.type` (+ deprecated
+  `billable`) and `pricing_model: 'PMP'`, and conversation categories
+  `authentication_international` / `marketing_lite`.
 
 **Meta migration references**
 
