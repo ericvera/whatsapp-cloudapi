@@ -6,6 +6,9 @@ import { WebhookError } from './error.js'
 export type WebhookConversationType =
   | 'authentication'
   | 'authentication_international'
+  // `pricing.category` uses the hyphenated spelling in the docs' pricing table
+  // while `conversation.origin.type` uses the underscore form; accept both.
+  | 'authentication-international'
   | 'marketing'
   | 'marketing_lite'
   | 'utility'
