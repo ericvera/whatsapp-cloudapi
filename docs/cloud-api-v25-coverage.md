@@ -125,8 +125,10 @@ convenience, not a documented surface, so it is not assessed here.)
 
 ## 3. Webhook objects
 
-Webhook types (`packages/types/src/webhook/*.ts`) model the documented webhook
-payloads, including the BSUID-era identity fields.
+Webhook types (`packages/types/src/webhook/*.ts`). The BSUID identity-field
+presence in §3.1 is verified against the Business-scoped user IDs reference; the
+other object shapes are modeled from code and Meta's webhooks docs (object-level
+only — field shapes beyond §3.1 were not re-rendered this pass).
 
 | Object                     | Interface(s)                                                                                                                  | Status |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -140,6 +142,26 @@ payloads, including the BSUID-era identity fields.
 | Contact                    | `WebhookContact` (`wa_id?`/`user_id?`/…, `profile.{name, username?}`)                                                         | ✅     |
 | Error                      | `WebhookError` (`code`/`title`/`message`/`error_data.details?`)                                                               | ✅     |
 | Referral                   | `WebhookReferral` (CTWA fields incl. `ctwa_clid?`)                                                                            | ✅     |
+
+### 3.1 BSUID identity-field presence (verified — BSUID reference)
+
+| Field (block)                       | Live-doc presence                                 | Code            | Status |
+| ----------------------------------- | ------------------------------------------------- | --------------- | ------ |
+| `from` (message)                    | omitted when username adopted & phone unavailable | `from?`         | ✅     |
+| `from_user_id` (message)            | **always**                                        | `from_user_id?` | 🟡 ¹   |
+| `from_parent_user_id` (message)     | only if parent BSUIDs enrolled                    | optional        | ✅     |
+| `wa_id` (contacts)                  | conditional (as `from`)                           | `wa_id?`        | ✅     |
+| `user_id` (contacts)                | **always** when the contacts block is present     | `user_id?`      | 🟡 ¹   |
+| `parent_user_id` (contacts)         | only if parent BSUIDs enrolled                    | optional        | ✅     |
+| `recipient_id` (status)             | conditional                                       | optional        | ✅     |
+| `recipient_user_id` (status)        | always, except failed status sent to a phone      | optional        | ✅     |
+| `recipient_parent_user_id` (status) | only if parent BSUIDs enrolled                    | optional        | ✅     |
+
+**Notes**
+
+1. The reference says this field appears in every relevant messages webhook, but
+   the type marks it optional. Left optional pending a decision (making it
+   required is a breaking change to an inbound type — see below).
 
 ---
 
@@ -242,12 +264,12 @@ error objects.)
 
 ## 6. Business-scoped user IDs (BSUID)
 
-| Item                                                                                              | Status |
-| ------------------------------------------------------------------------------------------------- | ------ |
-| Addressing: send via `recipient` (BSUID); `to` takes precedence when both are set                 | ✅     |
-| `CloudAPIResponse.contacts[]` carries `input`, `wa_id?`, `user_id?`                               | ✅     |
-| Webhook BSUID fields (`WebhookContact`, `WebhookMessageBase`, `WebhookStatus`)                    | ✅     |
-| Webhook BSUID changes (`user_id_update`, `business_username_update`, `user_preferences`) — see §3 | ✅     |
+| Item                                                                                                                       | Status |
+| -------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Addressing: send via `recipient` (BSUID); `to` takes precedence when both are set                                          | ✅     |
+| `CloudAPIResponse.contacts[]` carries `input`, `wa_id?`, `user_id?`                                                        | ✅     |
+| Webhook BSUID identity fields — presence verified, see §3.1 (`from_user_id` / contacts `user_id` typed optional vs always) | 🟡     |
+| Webhook BSUID changes (`user_id_update`, `business_username_update`, `user_preferences`) — see §3                          | ✅     |
 
 ---
 
