@@ -34,6 +34,7 @@
 
     // Overwrite from @tsconfig/strictest
     "esModuleInterop": false /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
+    "ignoreDeprecations": "6.0",
     "skipLibCheck": false /* Skip type checking all .d.ts files. */
   },
   "files": [],

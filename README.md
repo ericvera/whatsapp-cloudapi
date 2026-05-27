@@ -32,5 +32,5 @@ for details and Meta migration links.
 
 ## Requirements
 
-- Node.js >= 22
-- TypeScript >= 5.0 (for TypeScript users)
+- Node.js >= 24
+- TypeScript >= 6.0 (for TypeScript users)

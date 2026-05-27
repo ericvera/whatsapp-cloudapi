@@ -13,7 +13,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsc --build",
@@ -25,23 +25,23 @@
     "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "multer": "^2.0.2",
-    "nanoid": "^5.1.6",
+    "multer": "^2.1.1",
+    "nanoid": "^5.1.11",
     "picocolors": "^1.1.1",
-    "string-width": "^8.1.0"
+    "string-width": "^8.2.1"
   },
   "devDependencies": {
     "@tsconfig/strictest": "2.0.8",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/multer": "^2.0.0",
-    "@types/node": "^24.10.9",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^24.12.4",
     "@types/supertest": "^7.2.0",
-    "eslint": "^9.39.2",
+    "eslint": "^10.4.0",
     "supertest": "^7.2.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.7"
   },
   "repository": {
     "type": "git",
