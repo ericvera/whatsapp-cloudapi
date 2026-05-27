@@ -2,7 +2,7 @@
 
 ## Code Structure
 
-Yarn 4 workspaces monorepo (`packages/*`). Node `>=22`, ESM-only,
+Yarn 4 workspaces monorepo (`packages/*`). Node `>=24`, ESM-only,
 strict TypeScript. Published to npm as `@whatsapp-cloudapi/*`.
 
 - **types:** `packages/types/src` (shared TypeScript types for the
