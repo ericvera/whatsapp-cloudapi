@@ -117,7 +117,9 @@ it('throws when neither to nor recipient is provided', async () => {
       bodyText: 'Browse',
       sections: [{ title: 'Shoes', productRetailerIds: ['SKU-1'] }],
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when there are no sections', async () => {
@@ -131,7 +133,9 @@ it('throws when there are no sections', async () => {
       bodyText: 'Browse',
       sections: [],
     }),
-  ).rejects.toThrow('At least one product section is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: At least one product section is required]`,
+  )
 })
 
 it('throws when a section has no products', async () => {
@@ -145,5 +149,7 @@ it('throws when a section has no products', async () => {
       bodyText: 'Browse',
       sections: [{ title: 'Shoes', productRetailerIds: [] }],
     }),
-  ).rejects.toThrow('Each product section requires at least one product')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Each product section requires at least one product]`,
+  )
 })

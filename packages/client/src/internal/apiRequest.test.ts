@@ -146,5 +146,7 @@ it('should throw on a non-ok response', async () => {
       method: 'GET',
       path: 'media_123',
     }),
-  ).rejects.toThrow('WhatsApp API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: WhatsApp API Error: {"error":{"message":"Invalid access token","code":190}}]`,
+  )
 })

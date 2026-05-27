@@ -295,7 +295,7 @@ it('throws an error when API request fails', async () => {
       templateName: 'hello_world',
       languageCode: 'en_US',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 it('sends a template message with button component', async () => {

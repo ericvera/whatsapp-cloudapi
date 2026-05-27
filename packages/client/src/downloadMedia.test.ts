@@ -40,5 +40,7 @@ it('throws on a non-ok response', async () => {
       accessToken: 'test_token',
       url: 'https://lookaside.example/abc',
     }),
-  ).rejects.toThrow('WhatsApp Media Download Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: WhatsApp Media Download Error: Not Found]`,
+  )
 })

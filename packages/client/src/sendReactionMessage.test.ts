@@ -99,5 +99,7 @@ it('throws when neither to nor recipient is provided', async () => {
       messageId: 'wamid.target',
       emoji: '👍',
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })

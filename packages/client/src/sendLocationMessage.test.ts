@@ -80,5 +80,7 @@ it('throws when neither to nor recipient is provided', async () => {
       latitude: 1,
       longitude: 2,
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })

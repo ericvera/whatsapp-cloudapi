@@ -21,7 +21,9 @@ it('includes both when to and recipient are provided', () => {
 })
 
 it('throws when neither to nor recipient is provided', () => {
-  expect(() => buildRecipient(undefined, undefined)).toThrow(
-    'Either "to" or "recipient" is required',
+  expect(() =>
+    buildRecipient(undefined, undefined),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
   )
 })

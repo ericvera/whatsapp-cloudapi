@@ -66,7 +66,9 @@ it('should reject files that are too large', async () => {
       from: '1234567890',
       file: largeBlob,
     }),
-  ).rejects.toThrow('File size too large')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: File size too large: 6291456 bytes. Maximum allowed for image: 5242880 bytes]`,
+  )
 })
 
 it('should reject unsupported MIME types', async () => {
@@ -78,7 +80,9 @@ it('should reject unsupported MIME types', async () => {
       from: '1234567890',
       file: unsupportedBlob,
     }),
-  ).rejects.toThrow('Unsupported MIME type: image/gif')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Unsupported MIME type: image/gif. Supported types: image/jpeg, image/png, audio/aac, audio/amr, audio/mpeg, audio/mp4, audio/ogg, video/3gpp, video/mp4, text/plain, application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-powerpoint, application/vnd.openxmlformats-officedocument.presentationml.presentation, image/webp]`,
+  )
 })
 
 it('should handle API errors', async () => {
@@ -100,7 +104,9 @@ it('should handle API errors', async () => {
       from: '1234567890',
       file: new Blob(['test'], { type: 'image/jpeg' }),
     }),
-  ).rejects.toThrow('WhatsApp Media Upload Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: WhatsApp Media Upload Error: {"error":{"message":"Invalid access token","type":"OAuthException","code":190}}]`,
+  )
 })
 
 it('should accept PNG images', async () => {
@@ -211,7 +217,9 @@ it('should reject a sticker exceeding the sticker size limit', async () => {
       from: '1234567890',
       file: bigSticker,
     }),
-  ).rejects.toThrow('File size too large')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: File size too large: 614400 bytes. Maximum allowed for sticker: 512000 bytes]`,
+  )
 })
 
 it('should reject a MIME type in no category', async () => {
@@ -221,5 +229,7 @@ it('should reject a MIME type in no category', async () => {
       from: '1234567890',
       file: new Blob(['x'], { type: 'application/x-foo' }),
     }),
-  ).rejects.toThrow('Unsupported MIME type: application/x-foo')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Unsupported MIME type: application/x-foo. Supported types: image/jpeg, image/png, audio/aac, audio/amr, audio/mpeg, audio/mp4, audio/ogg, video/3gpp, video/mp4, text/plain, application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-powerpoint, application/vnd.openxmlformats-officedocument.presentationml.presentation, image/webp]`,
+  )
 })

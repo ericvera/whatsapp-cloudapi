@@ -79,7 +79,9 @@ it('throws when neither to nor recipient is provided', async () => {
       from: '123456789',
       contacts: sampleContacts,
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when the contacts array is empty', async () => {
@@ -90,5 +92,7 @@ it('throws when the contacts array is empty', async () => {
       to: '+1234567890',
       contacts: [],
     }),
-  ).rejects.toThrow('At least one contact is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: At least one contact is required]`,
+  )
 })

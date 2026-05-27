@@ -80,7 +80,9 @@ it('throws when neither to nor recipient is provided', async () => {
       from: '123456789',
       bodyText: 'May we call you?',
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when the body text is too long', async () => {
@@ -91,5 +93,7 @@ it('throws when the body text is too long', async () => {
       to: '+1234567890',
       bodyText: 'x'.repeat(1025),
     }),
-  ).rejects.toThrow('Body text too long')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text too long: 1025 characters. Maximum allowed: 1024 characters]`,
+  )
 })

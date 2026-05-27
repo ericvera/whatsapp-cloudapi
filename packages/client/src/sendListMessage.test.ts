@@ -248,7 +248,9 @@ it('throws error when no sections are provided', async () => {
       buttonText: 'Select',
       sections: [],
     }),
-  ).rejects.toThrow('Must provide at least 1 section')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Must provide at least 1 section]`,
+  )
 })
 
 it('throws error when section has no rows', async () => {
@@ -261,7 +263,9 @@ it('throws error when section has no rows', async () => {
       buttonText: 'Select',
       sections: [{ rows: [] }],
     }),
-  ).rejects.toThrow('Each section must have at least 1 row')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Each section must have at least 1 row]`,
+  )
 })
 
 it('throws error when total rows exceed 10', async () => {
@@ -281,7 +285,9 @@ it('throws error when total rows exceed 10', async () => {
         },
       ],
     }),
-  ).rejects.toThrow('Total number of rows across all sections cannot exceed 10')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Total number of rows across all sections cannot exceed 10]`,
+  )
 })
 
 it('throws error when bodyText exceeds 1024 characters', async () => {
@@ -296,7 +302,9 @@ it('throws error when bodyText exceeds 1024 characters', async () => {
       buttonText: 'Select',
       sections: [{ rows: [{ id: 'a', title: 'A' }] }],
     }),
-  ).rejects.toThrow('Body text cannot exceed 1024 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text cannot exceed 1024 characters]`,
+  )
 })
 
 it('throws error when buttonText exceeds 20 characters', async () => {
@@ -311,7 +319,9 @@ it('throws error when buttonText exceeds 20 characters', async () => {
       buttonText: longButtonText,
       sections: [{ rows: [{ id: 'a', title: 'A' }] }],
     }),
-  ).rejects.toThrow('Button text cannot exceed 20 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Button text cannot exceed 20 characters]`,
+  )
 })
 
 it('throws error when headerText exceeds 60 characters', async () => {
@@ -327,7 +337,9 @@ it('throws error when headerText exceeds 60 characters', async () => {
       sections: [{ rows: [{ id: 'a', title: 'A' }] }],
       headerText: longHeaderText,
     }),
-  ).rejects.toThrow('Header text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Header text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when footerText exceeds 60 characters', async () => {
@@ -343,7 +355,9 @@ it('throws error when footerText exceeds 60 characters', async () => {
       sections: [{ rows: [{ id: 'a', title: 'A' }] }],
       footerText: longFooterText,
     }),
-  ).rejects.toThrow('Footer text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Footer text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when section title exceeds 24 characters', async () => {
@@ -363,7 +377,9 @@ it('throws error when section title exceeds 24 characters', async () => {
         },
       ],
     }),
-  ).rejects.toThrow('Section title cannot exceed 24 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Section title cannot exceed 24 characters]`,
+  )
 })
 
 it('throws error when row ID exceeds 200 characters', async () => {
@@ -378,7 +394,9 @@ it('throws error when row ID exceeds 200 characters', async () => {
       buttonText: 'Select',
       sections: [{ rows: [{ id: longId, title: 'A' }] }],
     }),
-  ).rejects.toThrow('Row ID cannot exceed 200 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Row ID cannot exceed 200 characters]`,
+  )
 })
 
 it('throws error when row title exceeds 24 characters', async () => {
@@ -393,7 +411,9 @@ it('throws error when row title exceeds 24 characters', async () => {
       buttonText: 'Select',
       sections: [{ rows: [{ id: 'a', title: longTitle }] }],
     }),
-  ).rejects.toThrow('Row title cannot exceed 24 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Row title cannot exceed 24 characters]`,
+  )
 })
 
 it('throws error when row description exceeds 72 characters', async () => {
@@ -410,7 +430,9 @@ it('throws error when row description exceeds 72 characters', async () => {
         { rows: [{ id: 'a', title: 'A', description: longDescription }] },
       ],
     }),
-  ).rejects.toThrow('Row description cannot exceed 72 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Row description cannot exceed 72 characters]`,
+  )
 })
 
 it('throws error when duplicate row IDs are found', async () => {
@@ -430,7 +452,9 @@ it('throws error when duplicate row IDs are found', async () => {
         },
       ],
     }),
-  ).rejects.toThrow('Duplicate row ID found: same_id')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate row ID found: same_id]`,
+  )
 })
 
 it('throws error when API request fails', async () => {
@@ -445,7 +469,7 @@ it('throws error when API request fails', async () => {
       buttonText: 'Select',
       sections: [{ rows: [{ id: 'a', title: 'A' }] }],
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 // Edge Cases

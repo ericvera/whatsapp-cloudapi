@@ -249,8 +249,8 @@ it('throws error when both headerText and headerImage are provided', async () =>
       headerText: 'Header',
       headerImage: { id: 'MEDIA_ID' },
     }),
-  ).rejects.toThrow(
-    'Only one header type can be specified (headerText or headerImage)',
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Only one header type can be specified (headerText or headerImage)]`,
   )
 })
 
@@ -266,7 +266,9 @@ it('throws error when bodyText exceeds 1024 characters', async () => {
       buttonText: 'Click',
       url: 'https://example.com',
     }),
-  ).rejects.toThrow('Body text cannot exceed 1024 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text cannot exceed 1024 characters]`,
+  )
 })
 
 it('throws error when buttonText exceeds 20 characters', async () => {
@@ -281,7 +283,9 @@ it('throws error when buttonText exceeds 20 characters', async () => {
       buttonText: longButtonText,
       url: 'https://example.com',
     }),
-  ).rejects.toThrow('Button text cannot exceed 20 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Button text cannot exceed 20 characters]`,
+  )
 })
 
 it('throws error when headerText exceeds 60 characters', async () => {
@@ -297,7 +301,9 @@ it('throws error when headerText exceeds 60 characters', async () => {
       url: 'https://example.com',
       headerText: longHeaderText,
     }),
-  ).rejects.toThrow('Header text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Header text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when footerText exceeds 60 characters', async () => {
@@ -313,7 +319,9 @@ it('throws error when footerText exceeds 60 characters', async () => {
       url: 'https://example.com',
       footerText: longFooterText,
     }),
-  ).rejects.toThrow('Footer text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Footer text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error for invalid URL format', async () => {
@@ -326,7 +334,7 @@ it('throws error for invalid URL format', async () => {
       buttonText: 'Click',
       url: 'invalid-url',
     }),
-  ).rejects.toThrow('Invalid URL format')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Invalid URL format]`)
 })
 
 it('throws error for FTP protocol', async () => {
@@ -339,7 +347,9 @@ it('throws error for FTP protocol', async () => {
       buttonText: 'Click',
       url: 'ftp://example.com',
     }),
-  ).rejects.toThrow('URL must use http:// or https:// protocol')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: URL must use http:// or https:// protocol]`,
+  )
 })
 
 it('throws error for IPv4 address as hostname', async () => {
@@ -352,7 +362,9 @@ it('throws error for IPv4 address as hostname', async () => {
       buttonText: 'Click',
       url: 'https://192.168.1.1',
     }),
-  ).rejects.toThrow('URL hostname cannot be an IP address')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: URL hostname cannot be an IP address]`,
+  )
 })
 
 it('throws error for IPv6 address as hostname', async () => {
@@ -365,7 +377,9 @@ it('throws error for IPv6 address as hostname', async () => {
       buttonText: 'Click',
       url: 'https://[2001:db8::1]/',
     }),
-  ).rejects.toThrow('URL hostname cannot be an IP address')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: URL hostname cannot be an IP address]`,
+  )
 })
 
 it('throws error when API request fails', async () => {
@@ -380,7 +394,7 @@ it('throws error when API request fails', async () => {
       buttonText: 'Click',
       url: 'https://example.com',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 // Edge Cases

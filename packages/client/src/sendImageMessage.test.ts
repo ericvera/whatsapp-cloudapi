@@ -81,7 +81,9 @@ it('throws when neither mediaId nor link is provided', async () => {
       from: '1234567890',
       to: '+1234567890',
     }),
-  ).rejects.toThrow('Either "mediaId" or "link" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "mediaId" or "link" is required]`,
+  )
 })
 
 it('throws when both mediaId and link are provided', async () => {
@@ -93,7 +95,9 @@ it('throws when both mediaId and link are provided', async () => {
       mediaId: 'media_123',
       link: 'https://example.com/pic.png',
     }),
-  ).rejects.toThrow('Provide only one of "mediaId" / "link"')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Provide only one of "mediaId" / "link"]`,
+  )
 })
 
 it('should include caption when provided', async () => {
@@ -201,8 +205,8 @@ it('should reject captions that are too long', async () => {
       mediaId: 'media_123',
       caption: longCaption,
     }),
-  ).rejects.toThrow(
-    'Caption too long: 1025 characters. Maximum allowed: 1024 characters',
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Caption too long: 1025 characters. Maximum allowed: 1024 characters]`,
   )
 })
 
@@ -216,5 +220,5 @@ it('should handle sendRequest errors', async () => {
       to: '+1234567890',
       mediaId: 'media_123',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })

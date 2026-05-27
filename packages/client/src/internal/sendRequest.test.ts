@@ -137,7 +137,9 @@ it('throws error when response is not ok', async () => {
 
   await expect(
     sendRequest('invalid-token', '123456789', message),
-  ).rejects.toThrow(`WhatsApp API Error: ${JSON.stringify(errorResponse)}`)
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: WhatsApp API Error: {"error":{"message":"Invalid access token","type":"OAuthException","code":190}}]`,
+  )
 })
 
 it('properly serializes different message types', async () => {
@@ -184,7 +186,7 @@ it('handles network errors', async () => {
     text: { body: 'Hello World' },
   }
 
-  await expect(sendRequest('test-token', '123456789', message)).rejects.toThrow(
-    'Network error',
-  )
+  await expect(
+    sendRequest('test-token', '123456789', message),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: Network error]`)
 })

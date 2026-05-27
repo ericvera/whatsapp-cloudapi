@@ -14,11 +14,15 @@ it('returns a { link } fragment when only link is provided', () => {
 it('throws when both mediaId and link are provided', () => {
   expect(() =>
     buildMediaSource('media_123', 'https://example.com/a.jpg'),
-  ).toThrow('Provide only one of "mediaId" / "link"')
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Provide only one of "mediaId" / "link"]`,
+  )
 })
 
 it('throws when neither mediaId nor link is provided', () => {
-  expect(() => buildMediaSource(undefined, undefined)).toThrow(
-    'Either "mediaId" or "link" is required',
+  expect(() =>
+    buildMediaSource(undefined, undefined),
+  ).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "mediaId" or "link" is required]`,
   )
 })

@@ -460,8 +460,8 @@ it('throws error when multiple header types are provided', async () => {
       headerText: 'Header',
       headerImage: { id: 'MEDIA_ID' },
     }),
-  ).rejects.toThrow(
-    'Only one header type can be specified (headerText, headerImage, headerVideo, or headerDocument)',
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Only one header type can be specified (headerText, headerImage, headerVideo, or headerDocument)]`,
   )
 })
 
@@ -479,7 +479,9 @@ it('throws error when bodyText exceeds 1024 characters', async () => {
       flowCta: 'Start',
       flowAction: 'data_exchange',
     }),
-  ).rejects.toThrow('Body text cannot exceed 1024 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text cannot exceed 1024 characters]`,
+  )
 })
 
 it('throws error when headerText exceeds 60 characters', async () => {
@@ -497,7 +499,9 @@ it('throws error when headerText exceeds 60 characters', async () => {
       flowAction: 'data_exchange',
       headerText: longHeaderText,
     }),
-  ).rejects.toThrow('Header text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Header text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when footerText exceeds 60 characters', async () => {
@@ -515,7 +519,9 @@ it('throws error when footerText exceeds 60 characters', async () => {
       flowAction: 'data_exchange',
       footerText: longFooterText,
     }),
-  ).rejects.toThrow('Footer text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Footer text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when navigate action is used without screen parameter', async () => {
@@ -530,7 +536,9 @@ it('throws error when navigate action is used without screen parameter', async (
       flowCta: 'Start',
       flowAction: 'navigate',
     }),
-  ).rejects.toThrow('Screen parameter is required for navigate flow action')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Screen parameter is required for navigate flow action]`,
+  )
 })
 
 it('throws error when API request fails', async () => {
@@ -547,7 +555,7 @@ it('throws error when API request fails', async () => {
       flowCta: 'Start',
       flowAction: 'data_exchange',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 // Edge Cases

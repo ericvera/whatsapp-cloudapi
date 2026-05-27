@@ -91,7 +91,9 @@ it('throws when neither to nor recipient is provided', async () => {
       catalogId: 'CATALOG-1',
       productRetailerId: 'SKU-1',
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when the body text is too long', async () => {
@@ -104,5 +106,7 @@ it('throws when the body text is too long', async () => {
       productRetailerId: 'SKU-1',
       bodyText: 'x'.repeat(1025),
     }),
-  ).rejects.toThrow('Body text too long')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text too long: 1025 characters. Maximum allowed: 1024 characters]`,
+  )
 })

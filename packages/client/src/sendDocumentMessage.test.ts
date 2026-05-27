@@ -76,7 +76,9 @@ it('throws when neither to nor recipient is provided', async () => {
       from: '123456789',
       mediaId: 'media_1',
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when neither mediaId nor link is provided', async () => {
@@ -86,7 +88,9 @@ it('throws when neither mediaId nor link is provided', async () => {
       from: '123456789',
       to: '+1234567890',
     }),
-  ).rejects.toThrow('Either "mediaId" or "link" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "mediaId" or "link" is required]`,
+  )
 })
 
 it('throws when the caption is too long', async () => {
@@ -98,5 +102,7 @@ it('throws when the caption is too long', async () => {
       mediaId: 'media_1',
       caption: 'x'.repeat(1025),
     }),
-  ).rejects.toThrow('Caption too long')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Caption too long: 1025 characters. Maximum allowed: 1024 characters]`,
+  )
 })

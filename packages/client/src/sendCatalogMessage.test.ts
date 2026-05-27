@@ -91,7 +91,9 @@ it('throws when neither to nor recipient is provided', async () => {
       bodyText: 'Browse',
       thumbnailProductRetailerId: 'SKU-1',
     }),
-  ).rejects.toThrow('Either "to" or "recipient" is required')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "to" or "recipient" is required]`,
+  )
 })
 
 it('throws when the body text is too long', async () => {
@@ -103,7 +105,9 @@ it('throws when the body text is too long', async () => {
       bodyText: 'x'.repeat(1025),
       thumbnailProductRetailerId: 'SKU-1',
     }),
-  ).rejects.toThrow('Body text too long')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text too long: 1025 characters. Maximum allowed: 1024 characters]`,
+  )
 })
 
 it('throws when the footer text is too long', async () => {
@@ -116,5 +120,7 @@ it('throws when the footer text is too long', async () => {
       thumbnailProductRetailerId: 'SKU-1',
       footerText: 'x'.repeat(61),
     }),
-  ).rejects.toThrow('Footer text too long')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Footer text too long: 61 characters. Maximum allowed: 60 characters]`,
+  )
 })
