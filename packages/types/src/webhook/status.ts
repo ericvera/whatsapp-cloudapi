@@ -82,7 +82,8 @@ export interface WebhookPricing {
 
   /**
    * Whether the message was billable
-   * @deprecated Use `type` and `category` instead.
+   * Meta has signalled this property will be deprecated in a future versioned
+   * release; prefer `type` + `category` to determine billability and rate.
    */
   billable?: boolean
 }

@@ -476,13 +476,6 @@ export interface WebhookSystemMessage extends WebhookMessageBase {
      * Only included if parent BSUIDs are enabled.
      */
     parent_user_id?: string
-
-    /**
-     * New WhatsApp ID if this was a customer number change message
-     * @deprecated Legacy field from older API versions. Current
-     * payloads carry the new ID in `wa_id` instead.
-     */
-    new_wa_id?: string
   }
 }
 
