@@ -12,6 +12,15 @@ export class WebhookService {
     this.logger = logger
   }
 
+  /**
+   * Synthesizes a deterministic mock business-scoped user ID (BSUID) for an
+   * inbound sender. Real webhooks always include this; the emulator derives one
+   * from the phone number so payloads match the documented shape.
+   */
+  private mockUserId(from: string): string {
+    return `US.${from.replace(/\D/g, '')}`
+  }
+
   public async sendIncomingMessage(
     from: string,
     contactName: string,
@@ -37,6 +46,7 @@ export class WebhookService {
                 contacts: [
                   {
                     wa_id: from,
+                    user_id: this.mockUserId(from),
                     profile: {
                       name: contactName,
                     },
@@ -46,6 +56,7 @@ export class WebhookService {
                   {
                     id: messageId,
                     from,
+                    from_user_id: this.mockUserId(from),
                     timestamp: String(Math.floor(Date.now() / 1000)),
                     type: 'text',
                     text: {
@@ -134,6 +145,7 @@ export class WebhookService {
                 contacts: [
                   {
                     wa_id: from,
+                    user_id: this.mockUserId(from),
                     profile: {
                       name: contactName,
                     },
@@ -143,6 +155,7 @@ export class WebhookService {
                   {
                     id: messageId,
                     from,
+                    from_user_id: this.mockUserId(from),
                     timestamp: String(Math.floor(Date.now() / 1000)),
                     type: 'interactive',
                     interactive: {
@@ -192,6 +205,7 @@ export class WebhookService {
                 contacts: [
                   {
                     wa_id: from,
+                    user_id: this.mockUserId(from),
                     profile: {
                       name: contactName,
                     },
@@ -201,6 +215,7 @@ export class WebhookService {
                   {
                     id: messageId,
                     from,
+                    from_user_id: this.mockUserId(from),
                     timestamp: String(Math.floor(Date.now() / 1000)),
                     type: 'interactive',
                     interactive: {

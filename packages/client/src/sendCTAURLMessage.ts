@@ -114,7 +114,7 @@ export const sendCTAURLMessage = async ({
     }
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error('Invalid URL format')
+      throw new Error('Invalid URL format', { cause: error })
     }
     throw error
   }

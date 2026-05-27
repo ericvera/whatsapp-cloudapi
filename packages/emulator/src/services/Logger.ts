@@ -1,3 +1,4 @@
+import type { CloudAPIContact } from '@whatsapp-cloudapi/types/cloudapi'
 import pc from 'picocolors'
 import { Formatter } from 'picocolors/types.js'
 import stringWidth from 'string-width'
@@ -607,6 +608,68 @@ export class EmulatorLogger {
     this.renderMessage(lines, context)
   }
 
+  contactsMessage(contacts: CloudAPIContact[], context: MessageContext): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(
+      this.colorizeAndPad(
+        `[Contacts] ${contacts.length.toString()} shared`,
+        'cyan',
+      ),
+    )
+
+    for (const contact of contacts) {
+      lines.push(...this.wrapText(contact.name.formatted_name, BubbleWidth - 4))
+    }
+
+    this.renderMessage(lines, context)
+  }
+
+  contactRequestMessage(bodyText: string, context: MessageContext): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(this.colorizeAndPad('[Contact info requested]', 'cyan'))
+    lines.push('')
+    lines.push(...this.wrapText(bodyText, BubbleWidth - 4))
+
+    this.renderMessage(lines, context)
+  }
+
+  productMessage(
+    variant: 'product' | 'product_list',
+    detail: string,
+    context: MessageContext,
+  ): void {
+    if (!this.shouldLog('message')) {
+      return
+    }
+
+    this.incrementMessageStats(context)
+
+    const label = variant === 'product' ? '[Product]' : '[Product list]'
+    const lines: string[] = []
+    this.addHeaderLine(lines, context)
+    lines.push('')
+    lines.push(this.colorizeAndPad(label, 'cyan'))
+    lines.push(...this.wrapText(detail, BubbleWidth - 4))
+
+    this.renderMessage(lines, context)
+  }
+
   markAsRead(
     messageId: string,
     context: MessageContext,
@@ -755,6 +818,16 @@ export class EmulatorLogger {
       console.log(this.colorize(`   ${detailsStr}`, 'gray'))
     }
 
+    console.log()
+  }
+
+  blockOperation(operation: 'block' | 'unblock', userIds: string): void {
+    if (!this.shouldLog('block')) {
+      return
+    }
+
+    const label = operation === 'block' ? 'Blocked' : 'Unblocked'
+    console.log(`${this.colorize('🚫', 'cyan')} ${label}: ${userIds}`)
     console.log()
   }
 

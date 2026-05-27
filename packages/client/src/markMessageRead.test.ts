@@ -71,7 +71,7 @@ it('throws error when API request fails', async () => {
       from: '123456789',
       messageId: 'wamid.test789',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 it('handles network errors', async () => {
@@ -85,7 +85,9 @@ it('handles network errors', async () => {
       from: '123456789',
       messageId: 'wamid.network_test',
     }),
-  ).rejects.toThrow('Network error: Failed to fetch')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Network error: Failed to fetch]`,
+  )
 })
 
 it('marks a message as read with typing indicator', async () => {

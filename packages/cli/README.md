@@ -168,7 +168,7 @@ wa-emulator simulate text --from +1555987654 --name "Jane Smith" --message "What
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js >= 24
 - TypeScript >= 5.0 (for TypeScript users)
 
 ## Related Packages

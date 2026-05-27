@@ -3,6 +3,8 @@ import {
   CloudAPISendImageMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import { MediaCaptionMaxLength } from './constants.js'
+import { buildMediaSource } from './internal/buildMediaSource.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendImageMessageParams {
@@ -12,13 +14,22 @@ interface SendImageMessageParams {
   from: string
   /**
    * The recipient's phone number with country code or phone number ID
-   * (e.g. "+16505551234" or "5551234")
+   * (e.g. "+16505551234"). At least one of `to` / `recipient` is required.
    */
-  to: string
-  /** The media ID of the uploaded image */
-  mediaId: string
+  to?: string
+  /**
+   * The recipient's business-scoped user ID (BSUID)
+   * At least one of `to` / `recipient` is required; `to` takes precedence.
+   */
+  recipient?: string
+  /** The media ID of the uploaded image (one of mediaId / link required) */
+  mediaId?: string
+  /** A public URL to the image file (one of mediaId / link required) */
+  link?: string
   /** Optional caption for the image (maximum 1024 characters) */
   caption?: string
+  /** Optional message ID to reply to */
+  context?: { messageId: string }
   /** An arbitrary string, useful for tracking */
   bizOpaqueCallbackData?: string
   /**
@@ -29,8 +40,7 @@ interface SendImageMessageParams {
 }
 
 /**
- * Sends an image message using a media ID obtained from the media upload
- * endpoint
+ * Sends an image message using a media ID or a public link
  * @param params - Send image message parameters
  * @returns Promise with the API response
  */
@@ -41,8 +51,11 @@ export const sendImageMessage = async (
     accessToken,
     from,
     to,
+    recipient,
     mediaId,
+    link,
     caption,
+    context,
     bizOpaqueCallbackData,
     baseUrl,
   } = params
@@ -57,10 +70,11 @@ export const sendImageMessage = async (
   const message: CloudAPISendImageMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    to,
+    ...buildRecipient(to, recipient),
+    ...(context && { context: { message_id: context.messageId } }),
     type: 'image',
     image: {
-      id: mediaId,
+      ...buildMediaSource(mediaId, link),
       ...(caption && { caption }),
     },
     ...(bizOpaqueCallbackData && {

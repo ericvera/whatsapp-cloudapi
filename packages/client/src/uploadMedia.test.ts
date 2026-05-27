@@ -66,7 +66,9 @@ it('should reject files that are too large', async () => {
       from: '1234567890',
       file: largeBlob,
     }),
-  ).rejects.toThrow('File size too large')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: File size too large: 6291456 bytes. Maximum allowed for image: 5242880 bytes]`,
+  )
 })
 
 it('should reject unsupported MIME types', async () => {
@@ -78,7 +80,9 @@ it('should reject unsupported MIME types', async () => {
       from: '1234567890',
       file: unsupportedBlob,
     }),
-  ).rejects.toThrow('Unsupported MIME type: image/gif')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Unsupported MIME type: image/gif. Supported types: image/jpeg, image/png, audio/aac, audio/amr, audio/mpeg, audio/mp4, audio/ogg, video/3gpp, video/mp4, text/plain, application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-powerpoint, application/vnd.openxmlformats-officedocument.presentationml.presentation, image/webp]`,
+  )
 })
 
 it('should handle API errors', async () => {
@@ -100,7 +104,9 @@ it('should handle API errors', async () => {
       from: '1234567890',
       file: new Blob(['test'], { type: 'image/jpeg' }),
     }),
-  ).rejects.toThrow('WhatsApp Media Upload Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: WhatsApp Media Upload Error: {"error":{"message":"Invalid access token","type":"OAuthException","code":190}}]`,
+  )
 })
 
 it('should accept PNG images', async () => {
@@ -117,4 +123,113 @@ it('should accept PNG images', async () => {
   })
 
   expect(result).toEqual({ id: 'mock_media_png' })
+})
+
+it('should accept an audio file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_audio' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['audio'], { type: 'audio/mpeg' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_audio' })
+})
+
+it('should accept a video file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_video' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['video'], { type: 'video/mp4' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_video' })
+})
+
+it('should accept a document file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_doc' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['doc'], { type: 'application/pdf' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_doc' })
+})
+
+it('should accept a sticker file', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_sticker' }),
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: new Blob(['sticker'], { type: 'image/webp' }),
+  })
+
+  expect(result).toEqual({ id: 'mock_sticker' })
+})
+
+it('should accept an audio file larger than the image limit', async () => {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: () => Promise.resolve({ id: 'mock_big_audio' }),
+  })
+
+  // 6MB: over the 5MB image limit but under the 16MB audio limit
+  const bigAudio = new Blob(['x'.repeat(6 * 1024 * 1024)], {
+    type: 'audio/mpeg',
+  })
+
+  const result = await uploadMedia({
+    accessToken: 'test-token',
+    from: '1234567890',
+    file: bigAudio,
+  })
+
+  expect(result).toEqual({ id: 'mock_big_audio' })
+})
+
+it('should reject a sticker exceeding the sticker size limit', async () => {
+  // 600KB: over the 500KB sticker limit
+  const bigSticker = new Blob(['x'.repeat(600 * 1024)], {
+    type: 'image/webp',
+  })
+
+  await expect(
+    uploadMedia({
+      accessToken: 'test-token',
+      from: '1234567890',
+      file: bigSticker,
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: File size too large: 614400 bytes. Maximum allowed for sticker: 512000 bytes]`,
+  )
+})
+
+it('should reject a MIME type in no category', async () => {
+  await expect(
+    uploadMedia({
+      accessToken: 'test-token',
+      from: '1234567890',
+      file: new Blob(['x'], { type: 'application/x-foo' }),
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Unsupported MIME type: application/x-foo. Supported types: image/jpeg, image/png, audio/aac, audio/amr, audio/mpeg, audio/mp4, audio/ogg, video/3gpp, video/mp4, text/plain, application/pdf, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/vnd.ms-powerpoint, application/vnd.openxmlformats-officedocument.presentationml.presentation, image/webp]`,
+  )
 })

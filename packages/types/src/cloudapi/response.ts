@@ -12,19 +12,72 @@ export interface CloudAPIMediaUploadResponse {
   id: string
 
   /**
-   * File size in bytes (v24.0)
+   * File size in bytes
    */
   file_size?: number
 
   /**
-   * MIME type of the uploaded file (v24.0)
+   * MIME type of the uploaded file
    */
   mime_type?: string
 
   /**
-   * SHA256 hash of the file (v24.0)
+   * SHA256 hash of the file
    */
   sha256?: string
+}
+
+/**
+ * Response from retrieving a media URL / metadata
+ * Returned by GET /{media-id}, which resolves an uploaded or inbound media ID
+ * to a short-lived authenticated download URL plus its metadata.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+ */
+export interface CloudAPIMediaURLResponse {
+  /**
+   * Identifier for the messaging service
+   * Always set to 'whatsapp'
+   */
+  messaging_product: 'whatsapp'
+
+  /**
+   * Short-lived, authenticated URL for downloading the media binary
+   * Expires after 5 minutes; query the media ID again to obtain a new URL.
+   * Requires the access token in the request to download.
+   */
+  url: string
+
+  /**
+   * MIME type of the media file
+   */
+  mime_type: string
+
+  /**
+   * SHA256 hash of the media file
+   */
+  sha256: string
+
+  /**
+   * File size in bytes
+   */
+  file_size: number
+
+  /**
+   * The unique identifier for the media
+   */
+  id: string
+}
+
+/**
+ * Response from deleting a media asset
+ * Returned by DELETE /{media-id}.
+ * Ref: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
+ */
+export interface CloudAPIMediaDeleteResponse {
+  /**
+   * Indicates whether the deletion was successful
+   */
+  success: boolean
 }
 
 /**
@@ -47,10 +100,17 @@ export interface CloudAPIResponse {
     input: string
 
     /**
-     * The WhatsApp ID for the contact
-     * Note: This may differ from the input phone number
+     * The phone-number-based WhatsApp ID for the contact
+     * Note: This may differ from the input phone number.
+     * Omitted when the message was addressed to a business-scoped user ID.
      */
-    wa_id: string
+    wa_id?: string
+
+    /**
+     * The business-scoped user ID (BSUID) for the contact
+     * Omitted when the message was addressed to a phone number.
+     */
+    user_id?: string
   }[]
 
   /**
@@ -64,7 +124,7 @@ export interface CloudAPIResponse {
     id: string
 
     /**
-     * Status of the individual message (v24.0)
+     * Status of the individual message
      * - 'accepted': Message was sent to the intended recipient
      * - 'held_for_quality_assessment': Message send was delayed until quality
      *   can be validated and it will either be sent or dropped
@@ -88,13 +148,13 @@ export interface CloudAPIErrorResponse {
     code: number
     /** Additional error code for more specific error types */
     error_subcode?: number
-    /** Indicates if the error is transient and can be retried (v24.0) */
+    /** Indicates if the error is transient and can be retried */
     is_transient?: boolean
-    /** User-friendly error title (v24.0) */
+    /** User-friendly error title */
     error_user_title?: string
-    /** User-friendly error message (v24.0) */
+    /** User-friendly error message */
     error_user_msg?: string
-    /** Facebook trace ID for debugging (v24.0) */
+    /** Facebook trace ID for debugging */
     fbtrace_id?: string
     /** Additional error details */
     error_data?: {
@@ -102,9 +162,9 @@ export interface CloudAPIErrorResponse {
       messaging_product: string
       /** Detailed explanation of the error */
       details: string
-      /** Field that caused the error (v24.0) */
+      /** Field that caused the error */
       blame_field?: string
-      /** Specification of the field (v24.0) */
+      /** Specification of the field */
       blame_field_spec?: string
     }
   }
@@ -123,4 +183,4 @@ export interface CloudAPIMarkReadResponse {
 /**
  * Supported WhatsApp Cloud API version
  */
-export type CloudAPIVersion = 'v24.0'
+export type CloudAPIVersion = 'v25.0'

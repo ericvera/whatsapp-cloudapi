@@ -1,11 +1,29 @@
 import { WebhookError } from './error.js'
 
 /**
- * Conversation origin types for webhook status updates
+ * Conversation category — values for `conversation.origin.type`
+ * (Meta's CONVERSATION_CATEGORY; note the underscore in
+ * `authentication_international`).
  */
 export type WebhookConversationType =
   | 'authentication'
+  | 'authentication_international'
   | 'marketing'
+  | 'marketing_lite'
+  | 'utility'
+  | 'service'
+  | 'referral_conversion'
+
+/**
+ * Pricing category — values for `pricing.category`
+ * (Meta's PRICING_CATEGORY; note the hyphen in `authentication-international`,
+ * which differs from the conversation-category spelling).
+ */
+export type WebhookPricingCategory =
+  | 'authentication'
+  | 'authentication-international'
+  | 'marketing'
+  | 'marketing_lite'
   | 'utility'
   | 'service'
   | 'referral_conversion'
@@ -42,15 +60,33 @@ export interface WebhookConversation {
  */
 export interface WebhookPricing {
   /**
-   * Indicates the conversation category
+   * Indicates the pricing category (rate) applied
    */
-  category: WebhookConversationType
+  category: WebhookPricingCategory
 
   /**
    * Type of pricing model used by the business
-   * Current supported value is CBP
+   * - 'CBP': conversation-based pricing
+   * - 'PMP': per-message pricing
    */
-  pricing_model: 'CBP'
+  pricing_model: 'CBP' | 'PMP'
+
+  /**
+   * Pricing type for the message
+   * - 'regular': a regular paid message
+   * - 'free_customer_service': within the free customer-service window
+   * - 'free_entry_point': free entry-point conversation
+   * Prefer `type` + `category` over the deprecated `billable` flag.
+   */
+  type?: 'regular' | 'free_customer_service' | 'free_entry_point'
+
+  /**
+   * Whether the message was billable
+   * @deprecated Meta has signalled this property will be deprecated in a future
+   * versioned release; prefer `type` + `category` to determine billability and
+   * rate.
+   */
+  billable?: boolean
 }
 
 /**
@@ -63,17 +99,51 @@ export interface WebhookStatus {
   id: string
 
   /**
-   * WhatsApp ID of the message recipient
+   * Phone-number-based WhatsApp ID of the message recipient
+   * May be omitted for `failed` statuses when the message was addressed to a
+   * business-scoped user ID rather than a phone number.
    */
-  recipient_id: string
+  recipient_id?: string
+
+  /**
+   * Business-scoped user ID (BSUID) of the message recipient
+   * Always set for `sent`, `delivered`, and `read` statuses.
+   */
+  recipient_user_id?: string
+
+  /**
+   * Parent business-scoped user ID of the message recipient
+   * Only present for businesses enrolled in parent BSUIDs.
+   */
+  recipient_parent_user_id?: string
+
+  /**
+   * Type of recipient
+   * Only included when the message was sent to a group.
+   */
+  recipient_type?: 'individual' | 'group'
+
+  /**
+   * Phone number of the group participant the status is for
+   * Only included for group messages.
+   */
+  recipient_participant_id?: string
+
+  /**
+   * Hash of the recipient's identity key
+   * Only included when the identity-change-check feature is enabled.
+   */
+  recipient_identity_key_hash?: string
 
   /**
    * Current status of the message
+   * - sent: Message has been sent by the business
    * - delivered: Message has been delivered to the recipient
    * - read: Message has been read by the recipient
-   * - sent: Message has been sent by the business
+   * - played: A voice message has been played for the first time
+   * - failed: Message failed to send (see `errors` for details)
    */
-  status: 'delivered' | 'read' | 'sent'
+  status: 'delivered' | 'read' | 'sent' | 'played' | 'failed'
 
   /**
    * Unix timestamp for when this status was updated

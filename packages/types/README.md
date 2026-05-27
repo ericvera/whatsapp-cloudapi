@@ -13,6 +13,79 @@
 - 🔒 Strict type checking
 - 📦 Zero runtime overhead - types only!
 
+## Upgrading to v5.0.0 (Business-scoped user IDs)
+
+v5.0.0 updates the types to the current WhatsApp Cloud API, including the
+**business-scoped user ID (BSUID)** / WhatsApp usernames rollout. Because users
+can now hide their phone number behind a username, several previously-required
+identifiers are now optional and a new `user_id` (BSUID) appears throughout.
+
+**Breaking changes**
+
+_Send requests_
+
+- `recipient_type` is now **required** on message requests (the v25 reference
+  marks it required; the API defaults it to `individual`).
+- A request must carry **at least one of `to` / `recipient`** (`to` wins when
+  both are set), enforced by `CloudAPIRecipientAddressing` on `CloudAPIRequest`
+  and on every `CloudAPISend*MessageRequest`. `CloudAPIMessageRequestBase.to`
+  alone is optional.
+- Each `CloudAPISend*MessageRequest` is now a **type alias** (was an
+  interface): no declaration merging, and no `interface … extends` of these
+  types.
+- `CloudAPIMessageRequestWithContext` is **removed** — use
+  `CloudAPIMessageRequestBase`, which now carries the optional `context` field
+  for every message type.
+- Media objects accept **exactly one** of `id` / `link` (`CloudAPIMediaSource`);
+  supplying both — or neither — no longer compiles. Applies to message
+  image/audio/video/document/sticker and the template / flow / buttons headers.
+- `CloudAPIResponse.contacts[].wa_id` is optional (BSUID sends omit it).
+
+_Webhooks_
+
+- `WebhookChange` is now a discriminated union on `field`
+  (`'messages' | 'user_id_update' | 'business_username_update' | 'user_preferences'`).
+  Narrow on `change.field === 'messages'` before reading `value.messages` /
+  `value.statuses`.
+- Unsupported inbound messages: `WebhookUnknownMessage` (`type: 'unknown'`) is
+  replaced by `WebhookUnsupportedMessage` (`type: 'unsupported'`, carrying an
+  `unsupported.type` field).
+- `WebhookMessageBase.from_user_id` and `WebhookContact.user_id` are now
+  **required** (always present in messages webhooks per the BSUID reference).
+- Identifiers that can be omitted are optional: `WebhookContact.wa_id`,
+  `WebhookMessageBase.from`, `WebhookStatus.recipient_id`.
+- `WebhookStatus.status` adds `'failed'` and `'played'`.
+
+**New (non-breaking) additions**
+
+- BSUID fields: `user_id` / `parent_user_id` on contacts, `from_user_id` /
+  `from_parent_user_id` on messages, `recipient_user_id` /
+  `recipient_parent_user_id` on statuses, `user_id` on the send response, and a
+  new `recipient` field on send requests (to address a BSUID directly).
+- Inbound message types: `WebhookReactionMessage`, `WebhookLocationMessage`,
+  `WebhookContactsMessage`.
+- New webhook events: `user_id_update`, `business_username_update`,
+  `user_preferences`.
+- `CloudAPISendRequestContactInfoMessageRequest` for requesting a user's phone
+  number, plus `profile.username`, `identity_key_hash`, message-level
+  `errors`/`referral`, and `context.referred_product`.
+- New send types: `CloudAPISendProductMessageRequest`,
+  `CloudAPISendProductListMessageRequest`, plus media (`getMediaUrl` /
+  `downloadMedia` / `deleteMedia` response types), and the full Block API
+  request/response types.
+- Webhook field additions: received-media `url` (image/audio/video/document/
+  sticker) + audio `voice`, `WebhookOrderMessage.order.text`,
+  `WebhookStatus.recipient_type`/`recipient_participant_id`/
+  `recipient_identity_key_hash`, `WebhookPricing.type` (+ deprecated
+  `billable`) and `pricing_model: 'PMP'`, and conversation categories
+  `authentication_international` / `marketing_lite`.
+
+**Meta migration references**
+
+- [Business-scoped user IDs](https://developers.facebook.com/docs/whatsapp/business-scoped-user-ids/)
+- [Webhooks reference (messages)](https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/components)
+- [Graph API changelog (v25.0)](https://developers.facebook.com/docs/graph-api/changelog/version25.0/)
+
 ## Installation
 
 ```bash
@@ -49,6 +122,7 @@ For request/response types when sending messages.
 | `CloudAPISendFlowMessageRequest`                  | WhatsApp Flow messages               |
 | `CloudAPISendCatalogMessageRequest`               | Product catalog messages             |
 | `CloudAPISendCallPermissionRequestMessageRequest` | Request call permissions             |
+| `CloudAPISendRequestContactInfoMessageRequest`    | Request the user's contact info      |
 
 #### Example
 
@@ -131,11 +205,16 @@ import {
 
 // Your webhook handler gets full type information
 function handleWebhook(payload: WebhookPayload) {
-  const message = payload.entry[0].changes[0].value.messages?.[0]
+  const change = payload.entry[0].changes[0]
 
-  if (message?.type === 'text') {
-    // message is automatically typed as WebhookTextMessage
-    console.log(message.text.body)
+  // `change` is a discriminated union — narrow on `field` first
+  if (change.field === 'messages') {
+    const message = change.value.messages?.[0]
+
+    if (message?.type === 'text') {
+      // message is automatically typed as WebhookTextMessage
+      console.log(message.text.body)
+    }
   }
 }
 ```
@@ -160,19 +239,24 @@ interface WebhookPayload {
   object: 'whatsapp_business_account'
   entry: {
     id: string
-    changes: {
-      value: {
-        messages?: WebhookMessage[]
-        statuses?: WebhookStatus[]
-      }
-    }[]
+    time?: number
+    // `changes` is a discriminated union on `field`
+    changes: (
+      | { field: 'messages'; value: WebhookValue }
+      | { field: 'user_id_update'; value: WebhookUserIdUpdateValue }
+      | {
+          field: 'business_username_update'
+          value: WebhookBusinessUsernameUpdateValue
+        }
+      | { field: 'user_preferences'; value: WebhookUserPreferencesValue }
+    )[]
   }[]
 }
 ```
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js >= 24
 - TypeScript >= 5.0
 
 ## Related Packages

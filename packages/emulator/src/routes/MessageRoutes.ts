@@ -3,10 +3,14 @@ import type {
   CloudAPIMarkReadResponse,
   CloudAPIRequest,
   CloudAPIResponse,
+  CloudAPISendContactsMessageRequest,
   CloudAPISendFlowMessageRequest,
   CloudAPISendInteractiveButtonsMessageRequest,
   CloudAPISendInteractiveCTAURLRequest,
   CloudAPISendInteractiveListMessageRequest,
+  CloudAPISendProductListMessageRequest,
+  CloudAPISendProductMessageRequest,
+  CloudAPISendRequestContactInfoMessageRequest,
 } from '@whatsapp-cloudapi/types/cloudapi'
 import type { Request, Response } from 'express'
 import { nanoid } from 'nanoid'
@@ -73,6 +77,42 @@ export class MessageRoutes {
     return req.status === 'read' && typeof req.message_id === 'string'
   }
 
+  private isContactsMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendContactsMessageRequest {
+    return body.type === 'contacts'
+  }
+
+  private isContactRequestMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendRequestContactInfoMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'contact_request'
+    )
+  }
+
+  private isProductMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendProductMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'product'
+    )
+  }
+
+  private isProductListMessage(
+    body: CloudAPIRequest,
+  ): body is CloudAPISendProductListMessageRequest {
+    return (
+      body.type === 'interactive' &&
+      'interactive' in body &&
+      body.interactive.type === 'product_list'
+    )
+  }
+
   private logOutgoingMessage(
     body: CloudAPIRequest,
     recipient: string,
@@ -90,9 +130,17 @@ export class MessageRoutes {
       case 'text':
         this.logger.textMessage(body.text.body, context)
         break
-      case 'image':
-        this.logger.imageMessage(body.image.caption, body.image.id, context)
+      case 'image': {
+        // Read through a loose view: the media XOR collapses `id` to a
+        // non-optional type, so `body.image.id` alone would hide the link case.
+        const media: { id?: string; link?: string } = body.image
+        this.logger.imageMessage(
+          body.image.caption,
+          media.id ?? media.link ?? '',
+          context,
+        )
         break
+      }
       case 'reaction':
         this.logger.reactionMessage(
           body.reaction.emoji,
@@ -158,10 +206,31 @@ export class MessageRoutes {
             body.interactive.action.parameters.url,
             context,
           )
+        } else if (this.isContactRequestMessage(body)) {
+          this.logger.contactRequestMessage(body.interactive.body.text, context)
+        } else if (this.isProductMessage(body)) {
+          this.logger.productMessage(
+            'product',
+            body.interactive.action.product_retailer_id,
+            context,
+          )
+        } else if (this.isProductListMessage(body)) {
+          const productCount = body.interactive.action.sections.reduce(
+            (total, section) => total + section.product_items.length,
+            0,
+          )
+          this.logger.productMessage(
+            'product_list',
+            `${productCount.toString()} products`,
+            context,
+          )
         } else {
-          // For Flow messages, just log as text for now
+          // Flow / catalog / call_permission — log the body text.
           this.logger.textMessage(body.interactive.body.text, context)
         }
+        break
+      case 'contacts':
+        this.logger.contactsMessage(body.contacts, context)
         break
       case 'template':
         // Log template as text with template name
@@ -182,17 +251,22 @@ export class MessageRoutes {
       }
 
       const body = req.body as CloudAPIRequest
-      const { to } = body
+      // Accept either `to` (phone number) or `recipient` (business-scoped user
+      // ID). When both are present, `to` takes precedence, matching the Cloud
+      // API and the `to`/`recipient` request-type docs. The `contact_request`
+      // type is typically addressed by BSUID, so a `recipient`-only send is
+      // valid and must not be rejected here.
+      const recipientId = body.to ?? body.recipient
 
-      if (!to) {
+      if (!recipientId) {
         this.logger.validationError({
           field: 'to',
-          reason: 'Missing recipient phone number',
+          reason: 'Missing recipient: provide "to" or "recipient"',
         })
 
         res.status(400).json({
           error: {
-            message: 'Recipient phone number is required',
+            message: 'A recipient is required: provide "to" or "recipient"',
             type: 'OAuthException',
             code: 400,
           },
@@ -201,8 +275,9 @@ export class MessageRoutes {
         return
       }
 
-      // Validate media ID for image messages
-      if (body.type === 'image') {
+      // Validate media ID for image messages addressed by media ID (an image
+      // sent by public `link` has no media ID to check).
+      if (body.type === 'image' && body.image.id) {
         const mediaExists = this.mediaRoutes.isMediaValid(body.image.id)
 
         if (!mediaExists) {
@@ -220,6 +295,47 @@ export class MessageRoutes {
               error_subcode: 1404,
             },
           })
+          return
+        }
+      }
+
+      // Validate contacts messages
+      if (this.isContactsMessage(body)) {
+        if (body.contacts.length === 0) {
+          this.logger.validationError({
+            field: 'contacts',
+            reason: 'At least one contact is required',
+          })
+
+          res.status(400).json({
+            error: {
+              message: 'At least one contact is required',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+
+          return
+        }
+
+        const hasMissingName = body.contacts.some(
+          (contact) => !contact.name.formatted_name,
+        )
+
+        if (hasMissingName) {
+          this.logger.validationError({
+            field: 'contacts.name.formatted_name',
+            reason: 'Each contact requires name.formatted_name',
+          })
+
+          res.status(400).json({
+            error: {
+              message: 'Each contact requires name.formatted_name',
+              type: 'WhatsAppBusinessAPIError',
+              code: 400,
+            },
+          })
+
           return
         }
       }
@@ -1040,13 +1156,163 @@ export class MessageRoutes {
 
             return
           }
+        } else if (this.isContactRequestMessage(body)) {
+          const bodyText = body.interactive.body.text
+          const actionName: string = body.interactive.action.name
+
+          if (!bodyText) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              reason: 'Body text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (bodyText.length > 1024) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              value: `${bodyText.length.toString()} characters`,
+              reason: 'Body text cannot exceed 1024 characters',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text cannot exceed 1024 characters',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (actionName !== 'request_contact_info') {
+            this.logger.validationError({
+              field: 'interactive.action.name',
+              value: actionName,
+              reason: 'action.name must be "request_contact_info"',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'action.name must be "request_contact_info"',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+        } else if (this.isProductMessage(body)) {
+          const { action } = body.interactive
+
+          if (!action.catalog_id || !action.product_retailer_id) {
+            this.logger.validationError({
+              field: 'interactive.action',
+              reason: 'catalog_id and product_retailer_id are required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'catalog_id and product_retailer_id are required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+        } else if (this.isProductListMessage(body)) {
+          const { header, body: listBody, action } = body.interactive
+
+          if (!header.text) {
+            this.logger.validationError({
+              field: 'interactive.header.text',
+              reason: 'Header text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Header text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (!listBody.text) {
+            this.logger.validationError({
+              field: 'interactive.body.text',
+              reason: 'Body text is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Body text is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          if (action.sections.length === 0) {
+            this.logger.validationError({
+              field: 'interactive.action.sections',
+              reason: 'At least one product section is required',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'At least one product section is required',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
+
+          const hasEmptySection = action.sections.some(
+            (section) => section.product_items.length === 0,
+          )
+
+          if (hasEmptySection) {
+            this.logger.validationError({
+              field: 'interactive.action.sections.product_items',
+              reason: 'Each product section requires at least one product',
+            })
+
+            res.status(400).json({
+              error: {
+                message: 'Each product section requires at least one product',
+                type: 'WhatsAppBusinessAPIError',
+                code: 400,
+              },
+            })
+
+            return
+          }
         }
       }
 
       const messageId = `message_${nanoid(6)}`
 
-      // Normalize WhatsApp ID (remove '+' prefix if present)
-      const normalizedTo = normalizeWhatsAppId(to)
+      // Normalize WhatsApp ID (remove '+' prefix if present). A BSUID has no
+      // '+' prefix, so it passes through unchanged.
+      const normalizedTo = normalizeWhatsAppId(recipientId)
 
       // Log the message based on type
       this.logOutgoingMessage(body, normalizedTo, messageId)

@@ -1,7 +1,19 @@
-import type { CloudAPIMediaUploadResponse } from '@whatsapp-cloudapi/types/cloudapi'
+import type {
+  CloudAPIMediaDeleteResponse,
+  CloudAPIMediaUploadResponse,
+  CloudAPIMediaURLResponse,
+} from '@whatsapp-cloudapi/types/cloudapi'
+import { createHash } from 'crypto'
 import type { Request, Response } from 'express'
 import multer from 'multer'
 import { nanoid } from 'nanoid'
+import {
+  MaxMediaFileSize,
+  MediaSpecByCategory,
+  SupportedMediaMimeTypes,
+  SupportedVersion,
+  type MediaCategory,
+} from '../constants.js'
 import type { EmulatorLogger } from '../services/Logger.js'
 import type {
   MediaExpireResponse,
@@ -25,25 +37,24 @@ export class MediaRoutes {
       this.mediaStorage = initialMediaStorage
     }
 
-    // Configure multer for memory storage (files validated then discarded)
+    // Configure multer for memory storage (bytes retained in memory)
     this.upload = multer({
       storage: multer.memoryStorage(),
       limits: {
-        // 5MB limit
-        fileSize: 5 * 1024 * 1024,
+        // Global cap = largest per-category limit; per-category limits are
+        // enforced in the handler after parsing.
+        fileSize: MaxMediaFileSize,
         // Only allow one file
         files: 1,
       },
       fileFilter: (_req, file, cb) => {
-        // Validate MIME type
-        const supportedMimeTypes = ['image/jpeg', 'image/png']
-
-        if (supportedMimeTypes.includes(file.mimetype)) {
+        // Validate MIME type against all supported categories
+        if (SupportedMediaMimeTypes.includes(file.mimetype)) {
           cb(null, true)
         } else {
           cb(
             new Error(
-              `Unsupported MIME type: ${file.mimetype}. Supported types: ${supportedMimeTypes.join(', ')}`,
+              `Unsupported MIME type: ${file.mimetype}. Supported types: ${SupportedMediaMimeTypes.join(', ')}`,
             ),
           )
         }
@@ -99,14 +110,16 @@ export class MediaRoutes {
       if (err) {
         if (err instanceof multer.MulterError) {
           if (err.code === 'LIMIT_FILE_SIZE') {
+            const reason = `File size exceeds the maximum allowed limit of ${MaxMediaFileSize.toString()} bytes`
+
             this.logger.validationError({
               field: 'file',
-              reason: 'File size exceeds 5MB limit',
+              reason,
             })
 
             res.status(400).json({
               error: {
-                message: 'File size exceeds 5MB limit',
+                message: reason,
                 type: 'ValidationError',
                 code: 400,
               },
@@ -191,29 +204,81 @@ export class MediaRoutes {
           return
         }
 
+        // Enforce the per-category size limit (multer applies only the global
+        // cap; the category was validated by the fileFilter)
+        const category = (
+          Object.keys(MediaSpecByCategory) as MediaCategory[]
+        ).find((cat) =>
+          MediaSpecByCategory[cat].mimeTypes.includes(req.file?.mimetype ?? ''),
+        )
+
+        if (!category) {
+          this.logger.validationError({
+            field: 'file',
+            value: req.file.mimetype,
+            reason: 'Unsupported MIME type',
+          })
+
+          res.status(400).json({
+            error: {
+              message: `Unsupported MIME type: ${req.file.mimetype}`,
+              type: 'ValidationError',
+              code: 400,
+            },
+          })
+
+          return
+        }
+
+        const { maxBytes } = MediaSpecByCategory[category]
+        if (req.file.size > maxBytes) {
+          const reason = `File size too large for ${category}: ${req.file.size.toString()} bytes. Maximum allowed: ${maxBytes.toString()} bytes`
+
+          this.logger.validationError({ field: 'file', reason })
+
+          res.status(400).json({
+            error: {
+              message: reason,
+              type: 'ValidationError',
+              code: 400,
+            },
+          })
+
+          return
+        }
+
         const mediaId = this.generateMediaId()
         const now = new Date()
         // 30 days
         const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
 
-        // Store mock media entry with actual file information
+        // Compute the content hash and retain the bytes in memory
+        const sha256 = createHash('sha256')
+          .update(req.file.buffer)
+          .digest('hex')
+
+        // Store mock media entry with actual file information and bytes
         const mockEntry: MockMediaEntry = {
           id: mediaId,
-          filename: req.file.originalname || 'uploaded-image.jpg',
+          filename: req.file.originalname || 'uploaded-file',
           mimeType: req.file.mimetype,
           size: req.file.size,
           uploadedAt: now,
           expiresAt: expiresAt,
+          data: req.file.buffer,
+          sha256,
         }
 
         this.mediaStorage.set(mediaId, mockEntry)
 
-        // File is now discarded - we only keep metadata
         this.logger.mediaOperation('upload', mediaId, {
           size: req.file.size,
           expiresAt: expiresAt.toISOString(),
         })
 
+        // The real upload endpoint returns the media ID only. file_size,
+        // mime_type, and sha256 are surfaced by the GET media-URL/metadata
+        // response instead, so omit them here for parity.
         const response: CloudAPIMediaUploadResponse = {
           id: mediaId,
         }
@@ -240,7 +305,10 @@ export class MediaRoutes {
       // Cleanup expired media before listing
       this.cleanupExpiredMedia()
 
-      const mediaArray = Array.from(this.mediaStorage.values())
+      // Strip the in-memory bytes so the debug list stays metadata-only
+      const mediaArray = Array.from(this.mediaStorage.values()).map(
+        ({ data: _data, ...rest }) => rest,
+      )
       const response: MediaListResponse = {
         media: mediaArray,
         note: `Emulator media storage - ${mediaArray.length.toString()} items (auto-expires after 30 days)`,
@@ -368,6 +436,108 @@ export class MediaRoutes {
         },
       })
     }
+  }
+
+  /**
+   * Returns the media download URL + metadata for a media ID (GET /:mediaId)
+   */
+  public getMediaMetadata(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const entry = this.mediaStorage.get(mediaId)
+    if (!entry) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const version = req.params['version'] ?? SupportedVersion
+    const host = req.get('host') ?? ''
+    const url = `${req.protocol}://${host}/${version}/${mediaId}/download`
+
+    const response: CloudAPIMediaURLResponse = {
+      messaging_product: 'whatsapp',
+      url,
+      mime_type: entry.mimeType,
+      sha256: entry.sha256 ?? '',
+      file_size: entry.size,
+      id: mediaId,
+    }
+
+    res.status(200).json(response)
+  }
+
+  /**
+   * Streams the retained bytes for a media ID (GET /:mediaId/download)
+   */
+  public downloadMedia(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    const entry = this.mediaStorage.get(mediaId)
+    if (!entry?.data) {
+      // Entry exists as metadata only (e.g. imported from a manifest)
+      res.status(404).json({
+        error: {
+          message: 'Media bytes are not available for download',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    res.status(200).type(entry.mimeType).send(entry.data)
+  }
+
+  /**
+   * Deletes a media entry by its media ID (DELETE /:mediaId)
+   */
+  public deleteMedia(req: Request, res: Response): void {
+    const mediaId = req.params['mediaId']
+
+    if (!mediaId || !this.isMediaValid(mediaId)) {
+      res.status(404).json({
+        error: {
+          message: 'Media not found',
+          type: 'NotFoundError',
+          code: 404,
+        },
+      })
+      return
+    }
+
+    this.mediaStorage.delete(mediaId)
+    this.logger.mediaOperation('delete', mediaId)
+
+    const response: CloudAPIMediaDeleteResponse = { success: true }
+    res.status(200).json(response)
   }
 
   /**

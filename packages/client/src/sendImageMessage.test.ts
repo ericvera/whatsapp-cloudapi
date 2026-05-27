@@ -42,6 +42,64 @@ it('should send an image message successfully', async () => {
   )
 })
 
+it('sends an image by public link to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendImageMessage({
+    accessToken: 'test-token',
+    from: '1234567890',
+    recipient: 'US.123',
+    link: 'https://example.com/pic.png',
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test-token',
+    '1234567890',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'image',
+      image: {
+        link: 'https://example.com/pic.png',
+      },
+    },
+    undefined,
+  )
+})
+
+it('throws when neither mediaId nor link is provided', async () => {
+  await expect(
+    sendImageMessage({
+      accessToken: 'test-token',
+      from: '1234567890',
+      to: '+1234567890',
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Either "mediaId" or "link" is required]`,
+  )
+})
+
+it('throws when both mediaId and link are provided', async () => {
+  await expect(
+    sendImageMessage({
+      accessToken: 'test-token',
+      from: '1234567890',
+      to: '+1234567890',
+      mediaId: 'media_123',
+      link: 'https://example.com/pic.png',
+    }),
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Provide only one of "mediaId" / "link"]`,
+  )
+})
+
 it('should include caption when provided', async () => {
   const mockResponse = {
     messaging_product: 'whatsapp' as const,
@@ -147,8 +205,8 @@ it('should reject captions that are too long', async () => {
       mediaId: 'media_123',
       caption: longCaption,
     }),
-  ).rejects.toThrow(
-    'Caption too long: 1025 characters. Maximum allowed: 1024 characters',
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Caption too long: 1025 characters. Maximum allowed: 1024 characters]`,
   )
 })
 
@@ -162,5 +220,5 @@ it('should handle sendRequest errors', async () => {
       to: '+1234567890',
       mediaId: 'media_123',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })

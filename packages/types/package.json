@@ -23,7 +23,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsc --build",
@@ -32,11 +32,11 @@
   },
   "devDependencies": {
     "@tsconfig/strictest": "2.0.8",
-    "@types/node": "^24.10.9",
-    "eslint": "^9.39.2",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
-    "vitest": "^4.0.18"
+    "@types/node": "^24.12.4",
+    "eslint": "^10.4.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.0",
+    "vitest": "^4.1.7"
   },
   "repository": {
     "type": "git",

@@ -583,7 +583,7 @@ This helps identify what functionality might be missing from the emulator or if 
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js >= 24
 - TypeScript >= 5.0 (for TypeScript users)
 
 ## Related Packages

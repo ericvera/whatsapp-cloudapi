@@ -375,8 +375,8 @@ it('throws error when multiple header types are provided', async () => {
       headerText: 'Header',
       headerImage: { id: 'MEDIA_ID' },
     }),
-  ).rejects.toThrow(
-    'Only one header type can be specified (headerText, headerImage, headerVideo, or headerDocument)',
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Only one header type can be specified (headerText, headerImage, headerVideo, or headerDocument)]`,
   )
 })
 
@@ -389,7 +389,9 @@ it('throws error when no buttons are provided', async () => {
       bodyText: 'Test message',
       buttons: [],
     }),
-  ).rejects.toThrow('Must provide between 1 and 3 buttons')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Must provide between 1 and 3 buttons]`,
+  )
 })
 
 it('throws error when more than 3 buttons are provided', async () => {
@@ -406,7 +408,9 @@ it('throws error when more than 3 buttons are provided', async () => {
         { id: 'btn_4', title: 'Button 4' },
       ],
     }),
-  ).rejects.toThrow('Must provide between 1 and 3 buttons')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Must provide between 1 and 3 buttons]`,
+  )
 })
 
 it('throws error when bodyText exceeds 1024 characters', async () => {
@@ -420,7 +424,9 @@ it('throws error when bodyText exceeds 1024 characters', async () => {
       bodyText: longBodyText,
       buttons: [{ id: 'btn', title: 'Click' }],
     }),
-  ).rejects.toThrow('Body text cannot exceed 1024 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Body text cannot exceed 1024 characters]`,
+  )
 })
 
 it('throws error when headerText exceeds 60 characters', async () => {
@@ -435,7 +441,9 @@ it('throws error when headerText exceeds 60 characters', async () => {
       buttons: [{ id: 'btn', title: 'Click' }],
       headerText: longHeaderText,
     }),
-  ).rejects.toThrow('Header text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Header text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when footerText exceeds 60 characters', async () => {
@@ -450,7 +458,9 @@ it('throws error when footerText exceeds 60 characters', async () => {
       buttons: [{ id: 'btn', title: 'Click' }],
       footerText: longFooterText,
     }),
-  ).rejects.toThrow('Footer text cannot exceed 60 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Footer text cannot exceed 60 characters]`,
+  )
 })
 
 it('throws error when button ID exceeds 256 characters', async () => {
@@ -464,7 +474,9 @@ it('throws error when button ID exceeds 256 characters', async () => {
       bodyText: 'Test message',
       buttons: [{ id: longButtonId, title: 'Click' }],
     }),
-  ).rejects.toThrow('Button ID cannot exceed 256 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Button ID cannot exceed 256 characters]`,
+  )
 })
 
 it('throws error when button title exceeds 20 characters', async () => {
@@ -478,7 +490,9 @@ it('throws error when button title exceeds 20 characters', async () => {
       bodyText: 'Test message',
       buttons: [{ id: 'btn', title: longButtonTitle }],
     }),
-  ).rejects.toThrow('Button title cannot exceed 20 characters')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Button title cannot exceed 20 characters]`,
+  )
 })
 
 it('throws error when duplicate button IDs are provided', async () => {
@@ -493,7 +507,9 @@ it('throws error when duplicate button IDs are provided', async () => {
         { id: 'same_id', title: 'Button 2' },
       ],
     }),
-  ).rejects.toThrow('Duplicate button ID found: same_id')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(
+    `[Error: Duplicate button ID found: same_id]`,
+  )
 })
 
 it('throws error when API request fails', async () => {
@@ -507,7 +523,7 @@ it('throws error when API request fails', async () => {
       bodyText: 'Test message',
       buttons: [{ id: 'btn', title: 'Click' }],
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
 
 // Edge Cases

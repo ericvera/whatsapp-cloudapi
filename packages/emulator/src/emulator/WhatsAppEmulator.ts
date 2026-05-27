@@ -9,6 +9,7 @@ import express from 'express'
 import type { Server } from 'http'
 import { EmulatorConfiguration } from '../config/EmulatorConfig.js'
 import { SupportedVersion, UnsupportedVersionError } from '../constants.js'
+import { BlockRoutes } from '../routes/BlockRoutes.js'
 import { MediaRoutes } from '../routes/MediaRoutes.js'
 import { MessageRoutes } from '../routes/MessageRoutes.js'
 import { EmulatorLogger } from '../services/Logger.js'
@@ -31,6 +32,7 @@ export class WhatsAppEmulator {
   private webhookService: WebhookService | undefined
   private messageRoutes: MessageRoutes | null = null
   private mediaRoutes: MediaRoutes | null = null
+  private blockRoutes: BlockRoutes | null = null
   private options: EmulatorOptions
   private logger: EmulatorLogger
 
@@ -376,7 +378,12 @@ export class WhatsAppEmulator {
   }
 
   private setupRoutes(): void {
-    if (!this.app || !this.messageRoutes || !this.mediaRoutes) {
+    if (
+      !this.app ||
+      !this.messageRoutes ||
+      !this.mediaRoutes ||
+      !this.blockRoutes
+    ) {
       throw new Error('App or routes not initialized')
     }
 
@@ -394,6 +401,28 @@ export class WhatsAppEmulator {
       this.validateVersion.bind(this),
       this.validatePhoneNumberId.bind(this),
       this.mediaRoutes.handleMediaUpload.bind(this.mediaRoutes),
+    )
+
+    // Block API routes
+    this.app.post(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleBlock.bind(this.blockRoutes),
+    )
+
+    this.app.delete(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleUnblock.bind(this.blockRoutes),
+    )
+
+    this.app.get(
+      '/:version/:phoneNumberId/block_users',
+      this.validateVersion.bind(this),
+      this.validatePhoneNumberId.bind(this),
+      this.blockRoutes.handleList.bind(this.blockRoutes),
     )
 
     // Debug endpoints for development and testing
@@ -430,6 +459,36 @@ export class WhatsAppEmulator {
 
     // Webhook validation endpoint
     this.app.get('/webhook', this.handleWebhookValidation.bind(this))
+
+    // Media lifecycle routes (Graph-style /:version/:mediaId paths).
+    // Registered AFTER all /debug + /webhook routes so the 2-segment
+    // GET /:version/:mediaId does not shadow GET /debug/health. The 3-segment
+    // /download route is registered before the 2-segment metadata route.
+    this.app.get(
+      '/:version/:mediaId/download',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.downloadMedia.bind(this.mediaRoutes),
+    )
+
+    this.app.get(
+      '/:version/:mediaId',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.getMediaMetadata.bind(this.mediaRoutes),
+    )
+
+    this.app.delete(
+      '/:version/:mediaId',
+      this.validateVersion.bind(this),
+      this.mediaRoutes.deleteMedia.bind(this.mediaRoutes),
+    )
+  }
+
+  /**
+   * Returns the underlying HTTP server (or null if not started).
+   * Exposed so integration tests can drive the running server with supertest.
+   */
+  public getServer(): Server | null {
+    return this.server
   }
 
   public async start(): Promise<void> {
@@ -460,6 +519,7 @@ export class WhatsAppEmulator {
         this.mediaRoutes,
         this.logger,
       )
+      this.blockRoutes = new BlockRoutes(this.logger)
 
       // Setup routes after initialization
       this.setupRoutes()

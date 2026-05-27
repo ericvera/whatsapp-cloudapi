@@ -169,5 +169,5 @@ it('throws an error when API request fails', async () => {
       to: '+1234567890',
       text: 'Hello World',
     }),
-  ).rejects.toThrow('API Error')
+  ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
