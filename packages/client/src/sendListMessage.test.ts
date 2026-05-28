@@ -516,3 +516,54 @@ it('accepts exact character limits for all text fields', async () => {
 
   expect(mockSendRequest).toHaveBeenCalled()
 })
+
+it('sends a list message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendListMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    bodyText: 'Please select a product category.',
+    buttonText: 'View Options',
+    sections: [
+      {
+        title: 'Electronics',
+        rows: [{ id: 'phone', title: 'Phones' }],
+      },
+    ],
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        body: {
+          text: 'Please select a product category.',
+        },
+        action: {
+          button: 'View Options',
+          sections: [
+            {
+              title: 'Electronics',
+              rows: [{ id: 'phone', title: 'Phones' }],
+            },
+          ],
+        },
+      },
+    },
+    undefined,
+  )
+})

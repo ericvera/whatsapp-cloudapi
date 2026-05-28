@@ -8,6 +8,7 @@ import {
   InteractiveFooterMaxLength,
   InteractiveHeaderTextMaxLength,
 } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendCTAURLMessageParams {
@@ -16,10 +17,15 @@ interface SendCTAURLMessageParams {
   /** The senders phone number ID (e.g. "1234567890") */
   from: string
   /**
-   * The recipient's phone number with country code or phone number ID (e.g.
-   * "+16505551234" or "5551234")
+   * The recipient's phone number with country code or phone number ID
+   * (e.g. "+16505551234"). At least one of `to` / `recipient` is required.
    */
-  to: string
+  to?: string
+  /**
+   * The recipient's business-scoped user ID (BSUID).
+   * At least one of `to` / `recipient` is required; `to` takes precedence.
+   */
+  recipient?: string
   /** The main message text (maximum 1024 characters) */
   bodyText: string
   /** The text displayed on the CTA button (maximum 20 characters) */
@@ -55,6 +61,7 @@ export const sendCTAURLMessage = async ({
   accessToken,
   from,
   to,
+  recipient,
   bodyText,
   buttonText,
   url,
@@ -122,7 +129,7 @@ export const sendCTAURLMessage = async ({
   const message: CloudAPISendInteractiveCTAURLRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    to,
+    ...buildRecipient(to, recipient),
     type: 'interactive',
     interactive: {
       type: 'cta_url',

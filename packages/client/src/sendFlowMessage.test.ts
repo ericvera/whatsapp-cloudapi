@@ -678,3 +678,56 @@ it('sends flow message with both screen and data in payload', async () => {
     undefined,
   )
 })
+
+it('sends a flow message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendFlowMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    bodyText: 'Complete your application form to get started.',
+    flowToken: 'FLOW_TOKEN_123',
+    flowId: 'FLOW_ID_456',
+    flowCta: 'Start',
+    flowAction: 'navigate',
+    screen: 'welcome_screen',
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'interactive',
+      interactive: {
+        type: 'flow',
+        body: {
+          text: 'Complete your application form to get started.',
+        },
+        action: {
+          name: 'flow',
+          parameters: {
+            flow_message_version: WhatsAppFlowMessageVersion,
+            flow_token: 'FLOW_TOKEN_123',
+            flow_id: 'FLOW_ID_456',
+            flow_cta: 'Start',
+            flow_action: 'navigate',
+            flow_action_payload: {
+              screen: 'welcome_screen',
+            },
+          },
+        },
+      },
+    },
+    undefined,
+  )
+})

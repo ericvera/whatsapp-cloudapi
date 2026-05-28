@@ -14,6 +14,12 @@
 - 🔄 Modern ESM package
 - ⚡ Lightweight and efficient
 
+> **Note (v25 / BSUID addressing):** every `send*Message` method accepts an
+> optional `recipient` (business-scoped user ID) as an alternative to `to` (the
+> phone number / phone number ID). Supply at least one; if both are supplied,
+> `to` takes precedence — matching the Cloud API. `recipient` is required when
+> the user has hidden their phone number behind a WhatsApp username.
+
 ## Installation
 
 ```bash
@@ -42,6 +48,15 @@ const responseWithPreview = await sendTextMessage({
   to: 'RECIPIENT_PHONE_NUMBER',
   text: 'Check out this link: https://example.com',
   previewUrl: true, // Enable link preview
+})
+
+// Send to a business-scoped user ID (BSUID) — for users who have hidden
+// their phone number behind a WhatsApp username
+const responseToBSUID = await sendTextMessage({
+  accessToken: 'YOUR_ACCESS_TOKEN',
+  from: 'YOUR_PHONE_NUMBER_ID',
+  recipient: 'US.13491208655302741918', // BSUID instead of phone number
+  text: 'Hello from WhatsApp Cloud API!',
 })
 ```
 
@@ -160,6 +175,40 @@ import {
 
 ## API Reference
 
+### Available send methods
+
+Every method below is exported from `@whatsapp-cloudapi/client` and accepts an
+optional `recipient` (BSUID) in place of `to` (phone number). The methods marked
+**✏️ documented below** have a full reference section in this README; the
+others share the same shape (`accessToken`, `from`, `to?`, `recipient?`, plus
+their type-specific fields) and are fully typed — refer to their JSDoc in your
+editor.
+
+| Method                             | Purpose                                                  |                 |
+| ---------------------------------- | -------------------------------------------------------- | --------------- |
+| `sendTextMessage`                  | Plain text message (with optional link preview)          | ✏️ documented   |
+| `sendImageMessage`                 | Image by `mediaId` or `link` (with optional caption)     | ✏️ documented   |
+| `sendAudioMessage`                 | Audio by `mediaId` or `link`                             |                 |
+| `sendVideoMessage`                 | Video by `mediaId` or `link` (with optional caption)     |                 |
+| `sendDocumentMessage`              | Document by `mediaId` or `link` (with optional filename) |                 |
+| `sendStickerMessage`               | Sticker by `mediaId` or `link`                           |                 |
+| `sendLocationMessage`              | Lat/long location pin (with optional name/address)       |                 |
+| `sendContactsMessage`              | One or more contact cards                                |                 |
+| `sendReactionMessage`              | Emoji reaction to a previous message                     |                 |
+| `sendTemplateMessage`              | Pre-approved message template with optional components   | (example above) |
+| `sendButtonsMessage`               | Interactive reply buttons (up to 3)                      | ✏️ documented   |
+| `sendListMessage`                  | Interactive list (up to 10 rows across sections)         | ✏️ documented   |
+| `sendCTAURLMessage`                | Interactive call-to-action URL button                    | ✏️ documented   |
+| `sendFlowMessage`                  | Interactive WhatsApp Flow                                | ✏️ documented   |
+| `sendCatalogMessage`               | Catalog interactive message                              |                 |
+| `sendProductMessage`               | Single product interactive message                       |                 |
+| `sendProductListMessage`           | Multi-product interactive list                           |                 |
+| `sendRequestContactInfoMessage`    | Interactive contact-info request                         |                 |
+| `sendCallPermissionRequestMessage` | Interactive call permission request                      |                 |
+
+Other exports: `markMessageRead`, `uploadMedia`, `getMediaUrl`, `downloadMedia`,
+`deleteMedia`, `blockUsers`, `unblockUsers`, `listBlockedUsers`.
+
 ### sendTextMessage
 
 Sends a text message to a WhatsApp user.
@@ -168,7 +217,8 @@ Sends a text message to a WhatsApp user.
 function sendTextMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   text: string
   previewUrl?: boolean
   bizOpaqueCallbackData?: string
@@ -180,7 +230,8 @@ function sendTextMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `to` (string, optional) - Recipient's phone number with country code (e.g., "+16505551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `text` (string) - The message text (max 4096 characters)
 - `previewUrl` (boolean, optional) - Enable link preview for URLs in the message
 - `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
@@ -290,7 +341,8 @@ Sends an image message using a media ID obtained from the media upload endpoint.
 function sendImageMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   mediaId: string
   caption?: string
   bizOpaqueCallbackData?: string
@@ -302,7 +354,8 @@ function sendImageMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `to` (string, optional) - Recipient's phone number with country code (e.g., "+16505551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `mediaId` (string) - The media ID obtained from `uploadMedia()`
 - `caption` (string, optional) - Optional caption for the image (max 1024 characters)
 - `bizOpaqueCallbackData` (string, optional) - An arbitrary string for tracking
@@ -380,7 +433,8 @@ Sends an interactive call-to-action URL button message to a WhatsApp user.
 function sendCTAURLMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   bodyText: string
   buttonText: string
   url: string
@@ -396,7 +450,8 @@ function sendCTAURLMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code or phone number ID (e.g., "+16505551234" or "5551234")
+- `to` (string, optional) - Recipient's phone number with country code or phone number ID (e.g., "+16505551234" or "5551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `bodyText` (string) - Main message text. Maximum 1024 characters. URLs are automatically hyperlinked
 - `buttonText` (string) - Text displayed on the CTA button. Maximum 20 characters
 - `url` (string) - URL to open when button is tapped. Must start with `http://` or `https://` and cannot be an IP address
@@ -527,7 +582,8 @@ Sends a WhatsApp Flow message to guide users through interactive forms and exper
 function sendFlowMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   bodyText: string
   flowToken: string
   flowId: string
@@ -549,7 +605,8 @@ function sendFlowMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `to` (string, optional) - Recipient's phone number with country code (e.g., "+16505551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `bodyText` (string) - Main message text. Maximum 1024 characters
 - `flowToken` (string) - Session token for the flow
 - `flowId` (string) - Unique ID of the flow
@@ -679,7 +736,8 @@ Sends an interactive message with reply buttons to a WhatsApp user.
 function sendButtonsMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   bodyText: string
   buttons: { id: string; title: string }[]
   headerText?: string
@@ -696,7 +754,8 @@ function sendButtonsMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `to` (string, optional) - Recipient's phone number with country code (e.g., "+16505551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `bodyText` (string) - Main message text. Maximum 1024 characters
 - `buttons` (array) - Array of 1-3 button objects, each with:
   - `id` (string) - Unique button identifier. Maximum 256 characters
@@ -845,7 +904,8 @@ Sends an interactive message with a list of options to a WhatsApp user.
 function sendListMessage(params: {
   accessToken: string
   from: string
-  to: string
+  to?: string
+  recipient?: string
   bodyText: string
   buttonText: string
   sections: {
@@ -867,7 +927,8 @@ function sendListMessage(params: {
 
 - `accessToken` (string) - Your WhatsApp Cloud API access token
 - `from` (string) - Your WhatsApp Phone Number ID
-- `to` (string) - Recipient's phone number with country code (e.g., "+16505551234")
+- `to` (string, optional) - Recipient's phone number with country code (e.g., "+16505551234"). At least one of `to` / `recipient` is required
+- `recipient` (string, optional) - Recipient's business-scoped user ID (BSUID). At least one of `to` / `recipient` is required; `to` takes precedence when both are set
 - `bodyText` (string) - Main message text. Maximum 1024 characters
 - `buttonText` (string) - Text for the button that opens the list. Maximum 20 characters
 - `sections` (array) - Array of sections containing list items. Maximum 10 rows total across all sections, each with:

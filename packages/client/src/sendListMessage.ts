@@ -16,6 +16,7 @@ import {
   ListSectionsMinCount,
   ListSectionTitleMaxLength,
 } from './constants.js'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendListMessageParams {
@@ -26,10 +27,16 @@ interface SendListMessageParams {
   from: string
 
   /**
-   * The recipient's phone number with country code or phone number ID (e.g.
-   * "+16505551234" or "5551234")
+   * The recipient's phone number with country code or phone number ID
+   * (e.g. "+16505551234"). At least one of `to` / `recipient` is required.
    */
-  to: string
+  to?: string
+
+  /**
+   * The recipient's business-scoped user ID (BSUID).
+   * At least one of `to` / `recipient` is required; `to` takes precedence.
+   */
+  recipient?: string
 
   /** The main message text (maximum 1024 characters) */
   bodyText: string
@@ -66,6 +73,7 @@ export const sendListMessage = async ({
   accessToken,
   from,
   to,
+  recipient,
   bodyText,
   buttonText,
   sections,
@@ -164,7 +172,7 @@ export const sendListMessage = async ({
   const message: CloudAPISendInteractiveListMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    to,
+    ...buildRecipient(to, recipient),
     type: 'interactive',
     interactive: {
       type: 'list',
