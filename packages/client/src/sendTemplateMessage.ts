@@ -3,6 +3,7 @@ import {
   CloudAPISendTemplateMessageRequest,
   CloudAPITemplateComponent,
 } from '@whatsapp-cloudapi/types/cloudapi'
+import { buildRecipient } from './internal/buildRecipient.js'
 import { sendRequest } from './internal/sendRequest.js'
 
 interface SendTemplateMessageParams {
@@ -11,10 +12,16 @@ interface SendTemplateMessageParams {
   /** The senders phone number ID (e.g. "1234567890") */
   from: string
   /**
-   * The recipient's phone number with country code or phone number ID (e.g.
-   * "+16505551234" or "5551234")
+   * The recipient's phone number with country code or phone number ID
+   * (e.g. "+16505551234"). At least one of `to` / `recipient` is required.
    */
-  to: string
+  to?: string
+  /**
+   * The recipient's business-scoped user ID (BSUID). Not supported for
+   * one-tap / zero-tap / copy-code authentication templates.
+   * At least one of `to` / `recipient` is required; `to` takes precedence.
+   */
+  recipient?: string
   /**
    * The name of the template to send
    * This must be an approved template name
@@ -159,6 +166,7 @@ export const sendTemplateMessage = async ({
   accessToken,
   from,
   to,
+  recipient,
   templateName,
   languageCode,
   languagePolicy,
@@ -170,7 +178,7 @@ export const sendTemplateMessage = async ({
   const message: CloudAPISendTemplateMessageRequest = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
-    to,
+    ...buildRecipient(to, recipient),
     type: 'template',
     template: {
       name: templateName,
