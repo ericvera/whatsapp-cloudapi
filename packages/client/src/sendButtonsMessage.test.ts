@@ -610,3 +610,54 @@ it('accepts exactly 3 buttons', async () => {
 
   expect(mockSendRequest).toHaveBeenCalled()
 })
+
+it('sends a buttons message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendButtonsMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    bodyText: 'Please select an option from the buttons below.',
+    buttons: [
+      { id: 'btn_1', title: 'Option 1' },
+      { id: 'btn_2', title: 'Option 2' },
+    ],
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: {
+          text: 'Please select an option from the buttons below.',
+        },
+        action: {
+          buttons: [
+            {
+              type: 'reply',
+              reply: { id: 'btn_1', title: 'Option 1' },
+            },
+            {
+              type: 'reply',
+              reply: { id: 'btn_2', title: 'Option 2' },
+            },
+          ],
+        },
+      },
+    },
+    undefined,
+  )
+})

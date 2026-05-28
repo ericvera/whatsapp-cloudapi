@@ -360,3 +360,39 @@ it('sends a template message with button component', async () => {
     undefined,
   )
 })
+
+it('sends a template message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendTemplateMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    templateName: 'hello_world',
+    languageCode: 'en_US',
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'template',
+      template: {
+        name: 'hello_world',
+        language: {
+          code: 'en_US',
+        },
+      },
+    },
+    undefined,
+  )
+})

@@ -171,3 +171,35 @@ it('throws an error when API request fails', async () => {
     }),
   ).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: API Error]`)
 })
+
+it('sends a text message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendTextMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    text: 'Hello World',
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'text',
+      text: {
+        body: 'Hello World',
+      },
+    },
+    undefined,
+  )
+})

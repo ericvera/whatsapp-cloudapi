@@ -500,3 +500,47 @@ it('accepts URLs with ports and paths', async () => {
     undefined,
   )
 })
+
+it('sends a CTA URL message to a recipient (BSUID)', async () => {
+  const mockResponse = {
+    messaging_product: 'whatsapp' as const,
+    contacts: [{ input: 'US.123', wa_id: '1234567890' }],
+    messages: [{ id: 'wamid.123' }],
+  }
+
+  mockSendRequest.mockResolvedValueOnce(mockResponse)
+
+  await sendCTAURLMessage({
+    accessToken: 'test_token',
+    from: '123456789',
+    recipient: 'US.123',
+    bodyText: 'Check out our latest deals.',
+    buttonText: 'Shop Now',
+    url: 'https://shop.example.com/deals',
+  })
+
+  expect(mockSendRequest).toHaveBeenCalledWith(
+    'test_token',
+    '123456789',
+    {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      recipient: 'US.123',
+      type: 'interactive',
+      interactive: {
+        type: 'cta_url',
+        body: {
+          text: 'Check out our latest deals.',
+        },
+        action: {
+          name: 'cta_url',
+          parameters: {
+            display_text: 'Shop Now',
+            url: 'https://shop.example.com/deals',
+          },
+        },
+      },
+    },
+    undefined,
+  )
+})
